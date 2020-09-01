@@ -1,0 +1,69 @@
+{
+	// Place your Bled workspace snippets here. Each snippet is defined under a snippet name and has a scope, prefix, body and 
+	// description. Add comma separated ids of the languages where the snippet is applicable in the scope field. If scope 
+	// is left empty or omitted, the snippet gets applied to all languages. The prefix is what is 
+	// used to trigger the snippet and the body will be expanded and inserted. Possible variables are: 
+	// $1, $2 for tab stops, $0 for the final cursor position, and ${1:label}, ${2:another} for placeholders. 
+	// Placeholders with the same ids are connected.
+	// Example:
+	// "Print to console": {
+	// 	"scope": "javascript,typescript",
+	// 	"prefix": "log",
+	// 	"body": [
+	// 		"console.log('$1');",
+	// 		"$2"
+	// 	],
+	// 	"description": "Log output to console"
+	// }
+	"alerta mensaje": {
+		"scope": "php",
+		"prefix": "men",
+		"body": [
+			"$$mensaje['tipo'] = '$1';",
+			"$$mensaje['cuerpo'] = '$2';",
+			"Alert::mensaje($$mensaje);"
+		],
+		"description": "Mensaje de alerta."
+	},
+	"print lindo": {
+		"scope": "php",
+		"prefix": "epre",
+		"body": [
+			"echo '<pre>';",
+			"print_r($1);",
+			"echo '</pre>';"
+		],
+		"description": "Print variable lindo."
+	},
+	"if isset _POST": {
+		"scope": "php",
+		"prefix": "ispost",
+		"body": [
+			"if(isset($$_POST)){",
+			"	$1",
+			"}else{",
+			"	$$mensaje['tipo'] = 'danger';",
+			"	$$mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';",
+			"	Alert::mensaje($$mensaje);",
+			"}"
+		],
+		"description": "Sniper para corroborar POST en includes y engine."
+	},
+	"foreach POST": {
+		"scope": "php",
+		"prefix": "forpost",
+		"body": [
+			"foreach($$_POST AS $$key => $$value){",
+			"	if(!isset($$value) || is_null($$value) || $$value == ''){",
+			"		$$mensaje['tipo'] = 'warning';",
+			"		$$mensaje['cuerpo'] = 'Hubo un error con uno de los datos recibidos ['.$$key.']. <b>Intente nuevamente o contacte al administrador</b>.';",
+			"		$$mensaje['cuerpo'] .= '<div class=\"d-block p-2\"><button onclick=\"$(\\''.$$_POST['form'].'\\').show(350);$(\\''.$$_POST['process'].'\\').hide(350);\" class=\"btn btn-warning\">Regresar</button></div>';",
+			"		Alert::mensaje($$mensaje);",
+			"		exit;"
+			"	}",
+			"	$$data[$$key] = $$value;",
+			"}"
+		],
+		"description": "Sniper para corroborar POST en includes y engine."
+	}
+}

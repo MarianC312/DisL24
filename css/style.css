@@ -1,0 +1,74 @@
+:root {
+    --orange: #e5781b;
+    --red: #e51b23;
+    --violet: #e51b88;
+    --white: #fdeeef;
+    --mono-orange-1: #a15412;
+    --mono-orange-2: #b86015;
+    --mono-orange-3: #cf6c18;
+    --mono-orange-4: #e5781b;
+    --mono-orange-5: #e88632;
+    --mono-orange-6: #ea9349;
+    --mono-orange-7: #eda160;
+    --mono-red-1: #a11218;
+    --mono-red-2: #b8151b;
+    --mono-red-3: #cf181f;
+    --mono-red-4: #e51b23;
+    --mono-red-5: #e83239;
+    --mono-red-6: #ea494f;
+    --mono-red-7: #ed6065;
+    --orange-rgb: 229, 120, 27;
+    --red-rgb: 229, 27, 35;
+    --violet-rgb: 229, 27, 136;
+    --mono-red-5-rgb: 91, 20, 22;
+    --mono-red-7-rgb: 93, 38, 40;
+}
+
+.text-red {
+    color: var(--red);
+}
+
+.index-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.card .card-body .form-header {
+    background-color: var(--red);
+    background: linear-gradient(90deg, rgba(var(--red-rgb), 1) 0%, rgba(var(--mono-red-7-rgb), 1) 100%);
+    color: var(--white);
+    padding: 1.5rem;
+}
+
+.btn-default {
+    padding: 0.75rem 1.45rem;
+    color: var(--white);
+    background-color: var(--orange);
+    transition-duration: .5s;
+}
+
+.btn-default:hover {
+    background-color: var(--mono-orange-7);
+    transition-duration: .5s;
+}
+
+.wrapper-logo {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.logo {
+    max-height: 25vh;
+}
+
+@media screen and (max-width: 599px) {
+    .card .card-body .form-header {
+        padding: 0.45rem;
+    }
+    .btn-default {
+        padding: 0.55rem 1.25rem;
+    }
+}
