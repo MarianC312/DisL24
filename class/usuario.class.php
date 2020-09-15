@@ -10,6 +10,12 @@
 
         function getAuth(){ return $this->auth; }
 
+        public static function logout(){
+            Session::iniciar();
+            unset($_SESSION);
+            echo '<meta http-equiv="refresh" content="1;URL=./index.php" />';
+        }
+
         public static function login($data){
             $response = null;
             if(isset($data) && is_array($data) && count($data) == 2){

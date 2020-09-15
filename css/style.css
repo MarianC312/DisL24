@@ -64,6 +64,28 @@
     max-height: 25vh;
 }
 
+#main-body #left-menu {
+    min-width: 18vw;
+}
+
+#main-body #left-menu>div nav {
+    min-height: 100%;
+}
+
+#main-body #left-menu>div>div {
+    padding: 0.5rem 1rem;
+    text-align: center;
+}
+
+#main-body #left-menu>div nav .navbar-collapse {
+    align-items: flex-start;
+}
+
+#main-body #right-content {
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
 @media screen and (max-width: 599px) {
     .card .card-body .form-header {
         padding: 0.45rem;

@@ -1,4 +1,4 @@
-function requestLogin() {
+const requestLogin = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -17,6 +17,38 @@ function requestLogin() {
         beforeSend: function() {
             $(divProcess).load("./includes/loading.php");
             $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).html(data);
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const requestLogout = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./engine/logout.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).load("./includes/loading.php");
+            //$(divForm).hide(350);
             $(divProcess).show(350);
         },
         data: data,

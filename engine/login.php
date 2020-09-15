@@ -19,7 +19,7 @@
                     $mensaje['tipo'] = 'success';
                     $mensaje['cuerpo'] = 'Bienvenido! Ingresando al sistema...';
                     Alert::mensaje($mensaje);
-                    echo '<meta http-equiv="refresh" content="2;URL=./members.html" />';
+                    echo '<meta http-equiv="refresh" content="2;URL=./members.php" />';
                 }else{
                     $mensaje['tipo'] = 'warning';
                     $mensaje['cuerpo'] = 'El usuario y/o contraseña son incorrectos. <b>Intente nuevamente.</b>';
