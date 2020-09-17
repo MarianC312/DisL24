@@ -9,6 +9,7 @@
     <div id="main-body" class="d-flex">
         <div id="left-menu" class="mr-2"></div>
         <div id="right-content" class="flex-grow-1">
+            <?php require_once './includes/usuario/header.html' ?>
             Administración site
         </div>
     </div>

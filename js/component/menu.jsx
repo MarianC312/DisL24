@@ -1,6 +1,6 @@
 const Copy = () => {
     return(
-        <div className="mt-auto text-small text-muted">
+        <div className="mt-auto text-small text-light font-weight-bold">
             <div className="dropdown-divider"></div>
             2020 <i className="fa fa-copyright"></i> EFECE Soluciones Informáticas
         </div>
@@ -22,7 +22,7 @@ class Main extends React.Component{
             code: 1,
             name: null,
             version: "1.0.0", 
-            deploy: null,
+            deploy: "",
             interval: null,
             error: null
         };
@@ -63,7 +63,7 @@ class Main extends React.Component{
                 },
                 (error) => {
                     this.setState({
-                        isLoaded: true,
+                        deploy: false,
                         error
                     });
                 }
@@ -118,7 +118,7 @@ class Main extends React.Component{
                                     <a href="./administracion.php" className="nav-item nav-link" tabIndex="-1"><i className="fa fa-cogs"></i> Administración</a>
                                 </div>
                                 <div className="navbar-nav ml-auto">
-                                    <a href="#/" onClick={this.logout()} className="nav-item nav-link"><i className="fa fa-sign-in"></i> Salir</a>
+                                    <a href="#/" className="nav-item nav-link"><i className="fa fa-sign-out"></i> Salir</a>
                                 </div>
                             </div>
                             <Copy />
@@ -126,7 +126,7 @@ class Main extends React.Component{
                     </div>
                 )
             }else{
-                if(deploy === null){
+                if(deploy === ""){
                     return(
                         <Loading />
                     ) 

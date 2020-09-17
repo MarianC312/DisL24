@@ -2,13 +2,14 @@
 <html lang="en">
 
 <head>
-    <?php require_once 'header.html' ?>
+    <?php require_once 'header.html'; ?>
 </head> 
 
 <body>
     <div id="main-body" class="d-flex">
         <div id="left-menu" class="mr-2"></div>
         <div id="right-content" class="flex-grow-1">
+            <?php require_once './includes/usuario/header.html' ?>
             Producto site
         </div>
     </div>

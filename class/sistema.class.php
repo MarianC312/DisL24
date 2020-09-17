@@ -30,7 +30,7 @@
             }
         }
 
-        private static function json_format($json) {
+        public static function json_format($json) {
             if (!is_string($json)) {
                 if (phpversion() && phpversion() >= 5.4) {
                     return json_encode($json, JSON_PRETTY_PRINT);
