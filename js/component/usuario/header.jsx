@@ -11,6 +11,7 @@ class UserAlert extends React.Component{
     constructor(props){
         super(props);
         this.state = {
+            id: null,
             amount: 12,
             url: "",
             icon: null,
@@ -21,6 +22,7 @@ class UserAlert extends React.Component{
     componentDidMount(){
         let gIcon = this.props.icon;
         this.setState({
+            id: this.props.id,
             icon: (typeof gIcon !== 'undefined') ? gIcon : "question-circle-o",
             url: this.props.url
         });
@@ -28,19 +30,15 @@ class UserAlert extends React.Component{
     }
 
     render(){
-        const {amount,icon} = this.state;
+        const {amount,icon,id} = this.state;
         return(
             <div className="dropdown bg-orange mr-2">
-                <button type="button" className="btn user clear" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button type="button" className="btn user clear" id={"dropdownMenuButtonAlert" + id} data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i className={"fa fa-" + icon}></i>
                     <span className={"badge badge-pill badge-primary " + ((amount == 0) ? "d-none" : "")}>{amount}</span>
                 </button>
-                <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <a className="dropdown-item" href="#"><i className="fa fa-cog"></i> Configurar cuenta</a>
-                    <a className="dropdown-item" href="#"><i className="fa fa-unlock-alt"></i> Cambiar contraseña</a>
-                    <a className="dropdown-item" href="#"><i className="fa fa-envelope"></i> Ver mensajes</a>
-                    <div className="dropdown-divider"></div>
-                    <a className="dropdown-item" href="#"><i className="fa fa-sign-out"></i> Salir</a>
+                <div className="dropdown-menu" aria-labelledby={"dropdownMenuButtonAlert" + id}>
+                    {id}
                 </div> 
             </div>
         )
@@ -53,6 +51,8 @@ class User extends React.Component{
         this.state = {
             name: "Undefined",
             rol: "undefined",
+            company: null,
+            companyId: 0,
             id: 0,
             state: "",
             url: {
@@ -75,6 +75,8 @@ class User extends React.Component{
         if(typeof data === "object" && data !== null){
             this.setState({
                 name: data.nombre,
+                company: data.compañia,
+                companyId: data.compañiaId,
                 rol: data.rol,
                 id: data.id,
                 state: (data.estado === "1") ? true : false
@@ -90,18 +92,18 @@ class User extends React.Component{
     }
 
     render(){
-        const {name,rol,id} = this.state;
+        const {name,company,companyId,rol,id} = this.state;
         return(
             <div className="dropdown bg-orange">
-                <button className="btn user clear" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i className="fa fa-2x fa-user-circle-o mr-2"></i>
+                <button className="btn user clear" type="button" id={"dropdownMenuButton" + id} data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img className="mr-2" src={(companyId > 0) ? "image/compañia/" + companyId + "/logo.png" : "image/logo-standalone.png"} height="35" alt={company} />
                     <div className="d-flex flex-column align-items-baseline mr-2">
                         <span className="user-name">{name}</span>
-                        <span className="user-rol">{rol}</span>
+                        <span className="user-rol">{company + ", " +rol}</span>
                     </div>
                     <i className="fa fa-caret-down"></i>
                 </button>
-                <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <div className="dropdown-menu" style={{minWidth: "auto"}} aria-labelledby={"dropdownMenuButton" + id}>
                     <a className="dropdown-item" href="#"><i className="fa fa-cog"></i> Configurar cuenta</a>
                     <a className="dropdown-item" href="#"><i className="fa fa-unlock-alt"></i> Cambiar contraseña</a>
                     <a className="dropdown-item" href="#"><i className="fa fa-envelope"></i> Ver mensajes</a>
@@ -197,8 +199,8 @@ class Header extends React.Component{
                     <div className="header">
                         <User getData={this.getData} setInterval={this.setInterval} />
                         <div className="d-flex">
-                            <UserAlert icon="bell" getData={this.getData} setInterval={this.setInterval} url="./engine/usuario/get-data-alerta.php" />
-                            <UserAlert icon="envelope" getData={this.getData} setInterval={this.setInterval} url="./engine/usuario/get-data-mensaje.php" />
+                            <UserAlert icon="bell" id={1} getData={this.getData} setInterval={this.setInterval} url="./engine/usuario/get-data-alerta.php" />
+                            <UserAlert icon="envelope" id={2} getData={this.getData} setInterval={this.setInterval} url="./engine/usuario/get-data-mensaje.php" />
                         </div>
                     </div>
                 )

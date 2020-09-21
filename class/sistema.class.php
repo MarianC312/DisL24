@@ -7,6 +7,11 @@
             return Sistema::hashCreate($data);
         }
 
+        public static function reloadStaticData(){
+            Session::iniciar();
+            $_SESSION["usuario"]->reloadStaticData();
+        }
+
         public static function componenteEstado($idComponente){
             if(isset($idComponente) && is_numeric($idComponente) && $idComponente > 0){
                 $query = DataBase::select("sistema_componente", "*", "id = '".$idComponente."'", "");

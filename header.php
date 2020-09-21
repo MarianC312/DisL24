@@ -48,3 +48,7 @@
     <link rel="stylesheet" href="./css/style.css" />
     <script src="./js/mine-actions.js"></script>
 </head>
+<?php
+    require_once 'autoload.class.php';
+    Sistema::reloadStaticData();
+?>

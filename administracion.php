@@ -2,7 +2,7 @@
 <html lang="en">
 
 <head>
-    <?php require_once 'header.html' ?>
+    <?php require_once 'header.php' ?>
 </head> 
 
 <body>

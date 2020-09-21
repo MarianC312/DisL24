@@ -121,6 +121,11 @@ body {
     overflow-y: auto;
 }
 
+.btn:focus,
+.btn.focus {
+    box-shadow: none;
+}
+
 .btn .badge {
     position: absolute;
     font-size: 0.55rem;
@@ -142,6 +147,10 @@ body {
 .bg-orange .dropdown-menu {
     background-color: var(--mono-orange-7);
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;
+}
+
+.header .dropdown .dropdown-menu {
+    min-width: 25vw;
 }
 
 .bg-orange .dropdown-menu .dropdown-item.active,

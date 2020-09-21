@@ -13,8 +13,7 @@ const Loading = () => {
             Cargando...
         </div>
     )
-}
-
+} 
 class Main extends React.Component{
     constructor(props){
         super(props);
@@ -24,10 +23,14 @@ class Main extends React.Component{
             version: "1.0.0", 
             deploy: "",
             interval: null,
+            collapse: {
+                producto: false
+            },
             error: null
         };
         this.checkEstado = this.checkEstado.bind(this);
         this.setInterval = this.setInterval.bind(this);
+        this.setCollapse = this.setCollapse.bind(this);
         this.logout = this.logout.bind(this);
     }
 
@@ -58,7 +61,8 @@ class Main extends React.Component{
                     this.setState({
                         name: result.data.nombre,
                         version: result.data.version,
-                        deploy: (result.data.estado === "1") ? true : false
+                        deploy: (result.data.estado === "1") ? true : false,
+
                     });
                 },
                 (error) => {
@@ -75,6 +79,15 @@ class Main extends React.Component{
         ;
     }
 
+    setCollapse(e){
+        let elem = e;
+        this.setState((elem) => {
+            collapse:{
+                elem: !this.state.collapse.elem
+            }
+        })
+    }
+
     setInterval(){
         this.setState({
             interval: setInterval(() => {this.checkEstado()}, (60 * 1000))
@@ -87,7 +100,7 @@ class Main extends React.Component{
     }
 
     render(){
-        const {deploy,error} = this.state;
+        const {deploy,collapse,error} = this.state;
         if(error){
             console.log('Error: ' + error.message);
             return(
@@ -114,7 +127,15 @@ class Main extends React.Component{
                                 <div className="navbar-nav flex-column">
                                     <a href="./members.php" className="nav-item nav-link active"><i className="fa fa-home"></i> Inicio</a>
                                     <a href="./caja.php" className="nav-item nav-link"><i className="fa fa-money"></i> Caja</a>
-                                    <a href="./producto.php" className="nav-item nav-link"><i className="fa fa-product-hunt"></i> Productos</a>
+                                    <a href="#/" onClick={(e) => this.setCollapse("producto") } className="nav-item nav-link" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded={collapse.producto}><i className="fa fa-product-hunt"></i> Productos</a>
+                                    <div className={"collapse w-100" + ((collapse.producto) ? "show" : "")} id="producto-collapse">
+                                        <div className="d-flex flex-column ml-2"> 
+                                            <a href="./producto.php" className="nav-item nav-link"><i className="fa fa-clipboard"></i> Actividades</a>
+                                            <a href="#/" className="nav-item nav-link"><i className="fa fa-caret-right"></i> Registrar</a>
+                                            <a href="#/" className="nav-item nav-link"><i className="fa fa-list-ol"></i> Lista</a>
+                                            <a href="#/" className="nav-item nav-link"><i className="fa fa-cogs"></i> Administración</a> 
+                                        </div>
+                                    </div>
                                     <a href="./administracion.php" className="nav-item nav-link" tabIndex="-1"><i className="fa fa-cogs"></i> Administración</a>
                                 </div>
                                 <div className="navbar-nav ml-auto">
