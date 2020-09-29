@@ -7,13 +7,13 @@
 
 <body>
     <div id="main-body" class="d-flex">
-        <div id="left-menu" class="mr-2"></div>
+        <div id="left-content" class="d-flex"></div>
         <div id="right-content" class="flex-grow-1">
-            <?php require_once './includes/usuario/header.html' ?>
-            Members site
+                <?php require_once './includes/usuario/header.html'; ?>
+                <div id="right-content-data"></div>
+            </div>
         </div>
     </div>
 </body>
-<script type="text/babel" src="./js/component/menu.jsx"></script>
-
+<script type="text/babel" src="./js/component/Menu.jsx"></script> 
 </html>

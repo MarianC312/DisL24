@@ -98,21 +98,21 @@ body {
     max-height: 25vh;
 }
 
-#main-body #left-menu {
+#main-body #left-content {
     min-width: 18vw;
 }
 
-#main-body #left-menu>div nav {
+#main-body #left-content>div nav {
     min-height: 100%;
     background-color: var(--mono-orange-7) !important;
 }
 
-#main-body #left-menu>div>div {
+#main-body #left-content>div>div>div {
     padding: 0.5rem 1rem;
     text-align: center;
 }
 
-#main-body #left-menu>div nav .navbar-collapse {
+#main-body #left-content>div nav .navbar-collapse {
     align-items: flex-start;
 }
 

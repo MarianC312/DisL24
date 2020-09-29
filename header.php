@@ -39,10 +39,14 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     <!-- Router para React -->
+    <script src="https://unpkg.com/react-router/umd/react-router.min.js"></script>
     <script src="https://unpkg.com/react-router-dom/umd/react-router-dom.min.js"></script>
 
     <!-- Babel para JSX -->
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- Require for React -->
+    <script src="./js/require.js"></script>
 
     <!-- MiNe -->
     <link rel="stylesheet" href="./css/style.css" />
@@ -50,5 +54,8 @@
 </head>
 <?php
     require_once 'autoload.class.php';
-    Sistema::reloadStaticData();
+    Session::iniciar();
+    if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
+        Sistema::reloadStaticData();
+    }
 ?>
