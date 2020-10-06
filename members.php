@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<?php
+    require_once 'autoload.class.php';
+    if(!Sistema::usuarioLogueado()){
+        echo '<meta http-equiv="refresh" content="0;URL=./index.php" />';
+        exit;
+    }
+?>
 <html lang="en">
 
 <head>
@@ -7,13 +14,16 @@
 
 <body>
     <div id="main-body" class="d-flex">
-        <div id="left-content" class="d-flex"></div>
+        <div id="left-content" class="d-flex">
+            <?php Componente::menu(); ?>
+        </div>
         <div id="right-content" class="flex-grow-1">
-                <?php require_once './includes/usuario/header.html'; ?>
-                <div id="right-content-data"></div>
+                <?php Componente::headerUsuario() ?>
+                <div id="right-content-data">
+                    
+                </div>
             </div>
         </div>
     </div>
 </body>
-<script type="text/babel" src="./js/component/Menu.jsx"></script> 
 </html>

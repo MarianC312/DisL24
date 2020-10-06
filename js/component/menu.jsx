@@ -144,39 +144,7 @@ class Main extends React.Component{
         }else{
             if(deploy === true){
                 return(
-                    <div className="mr-2">
-                        <div className="d-flex flex-column align-items-stretch h-100">
-                            <nav className="navbar navbar-expand-md navbar-light bg-light flex-column">
-                                <a href="#" className="navbar-brand">
-                                    <img src="image/logo-standalone.png" height="75" alt="CoolBrand" />
-                                </a>
-                                <button type="button" className="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
-                                    <span className="navbar-toggler-icon"></span>
-                                </button>
-                            
-                                <div className="collapse navbar-collapse flex-column w-100" id="navbarCollapse">
-                                    <div className="navbar-nav flex-column">
-                                        <a href="#/" onClick={(e) => this.linkTo("./members-index.php", "right-content-data")} className="nav-item nav-link active"><i className="fa fa-home"></i> Inicio</a>
-                                        <a href="#/" onClick={(e) => this.linkTo("./caja.php", "right-content-data")} className="nav-item nav-link"><i className="fa fa-money"></i> Caja</a>
-                                        <a href="#/" onClick={(e) => this.setCollapse("producto"), this.linkTo("./caja.php", "right-content-data") } className="nav-item nav-link" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded={collapse.producto}><i className="fa fa-product-hunt"></i> Productos</a>
-                                        <div className={"collapse w-100" + ((collapse.producto) ? "show" : "")} id="producto-collapse">
-                                            <div className="d-flex flex-column ml-2"> 
-                                                <a href="./producto.php" className="nav-item nav-link"><i className="fa fa-clipboard"></i> Actividades</a>
-                                                <a href="#/" className="nav-item nav-link"><i className="fa fa-caret-right"></i> Registrar</a>
-                                                <a href="#/" className="nav-item nav-link"><i className="fa fa-list-ol"></i> Lista</a>
-                                                <a href="#/" className="nav-item nav-link"><i className="fa fa-cogs"></i> Administración</a> 
-                                            </div>
-                                        </div>
-                                        <a href="./administracion.php" className="nav-item nav-link" tabIndex="-1"><i className="fa fa-cogs"></i> Administración</a>
-                                    </div>
-                                    <div className="navbar-nav ml-auto">
-                                        <a href="#/" className="nav-item nav-link"><i className="fa fa-sign-out"></i> Salir</a>
-                                    </div>
-                                </div>
-                                <Copy />
-                            </nav>
-                        </div>
-                    </div>
+                    
                 )
             }else{
                 if(deploy === ""){

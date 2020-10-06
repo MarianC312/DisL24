@@ -51,7 +51,7 @@ const requestLogout = () => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: data,
+        data: {},
         complete: function() {
             me.data('requestRunning', false);
         },

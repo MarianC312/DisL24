@@ -3,16 +3,76 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
+        public static function usuarioLogueado(){
+            Session::iniciar();
+            return (isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()) ? true : false;
+        }
+
         public static function hashGet($data){
             return Sistema::hashCreate($data);
+        }
+
+        public static function alertGetData($tipo = null){
+            $query = DataBase::select("sistema_alerta", "*", ((is_numeric($tipo)) ? "tipo = '".$tipo."'" : "1")." AND (destinatario = '".$_SESSION["usuario"]->getId()."' OR destSucursal = '".$_SESSION["usuario"]->getSucursal()."')","");
+            if($query){
+                $data = [];
+                if(DataBase::getNumRows($query) > 0){
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    } 
+                }
+                return $data;
+            }else{
+                Sistema::debug("error", "sistema.class.php - alertGetData - Error en query.");
+                return false;
+            }
+        }
+
+        public static function debug($tipo, $text){
+            Session::iniciar();
+            if(!is_null($_SESSION["usuario"]->debug()) && $_SESSION["usuario"]->debug() != "no"){
+                if($_SESSION["usuario"]->debug() === "all"){
+                    echo '<script>console.log("'.mb_strtoupper($tipo).': \n'.$text.'")</script>';
+                    return;
+                }
+                switch($tipo){
+                    case "error":
+                        echo ($_SESSION["usuario"]->debug() == "error") ? '<script>console.log(Error: \n"'.$text.'")</script>' : '<script>console.log("Debug de errores inhabilitado.")</script>';
+                    break;
+                    case "info":
+                        echo ($_SESSION["usuario"]->debug() == "info") ? '<script>console.log(Info: \n"'.$text.'")</script>' : '<script>console.log("Debug de información inhabilitado.")</script>';
+                    break;
+                    case "alert":
+                        echo ($_SESSION["usuario"]->debug() == "alert") ? '<script>console.log(Alert: \n"'.$text.'")</script>' : '<script>console.log("Debug de alertas inhabilitado.")</script>';
+                    break;
+                    case "success":
+                        echo ($_SESSION["usuario"]->debug() == "success") ? '<script>console.log(Success: \n"'.$text.'")</script>' : '<script>console.log("Debug de succeded inhabilitado.")</script>';
+                    break;
+                    case "all":
+                        echo '<script>console.log('.mb_strtoupper($tipo).': \n"'.$text.'")</script>';
+                    break;
+                }
+            }
         }
 
         public static function reloadStaticData(){
             Session::iniciar();
             $_SESSION["usuario"]->reloadStaticData();
+            $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
+            $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
+            $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
+            $_SESSION["componente"]["menu"]["data"]["opcion"] = (isset($_SESSION["componente"]["menu"]["data"]["opcion"])) ? $_SESSION["componente"]["menu"]["data"]["opcion"] : [];
         }
 
         public static function componenteEstado($idComponente){
+            Session::iniciar();
             if(isset($idComponente) && is_numeric($idComponente) && $idComponente > 0){
                 $query = DataBase::select("sistema_componente", "*", "id = '".$idComponente."'", "");
                 if($query){
@@ -23,7 +83,7 @@
                                 unset($data[$key]);
                             }
                         }
-                        return Sistema::json_format($data);
+                        return $data;
                     }else{
                         return 0;
                     }

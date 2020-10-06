@@ -85,6 +85,7 @@
             if(DataBase::dbConnect())
             {
                 try {
+                    //echo "SELECT ".$cols." FROM ".$table." WHERE ".$claus." ".$ords."<br>";
                     DataBase::$query = mysqli_query(DataBase::$link, "SELECT ".$cols." FROM ".$table." WHERE ".$claus." ".$ords);
                 } catch (Exception $e) {
                     echo 'ERROR:'.$e->getMessage();

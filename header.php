@@ -1,3 +1,10 @@
+<?php
+    require_once 'autoload.class.php';
+    Session::iniciar();
+    if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
+        Sistema::reloadStaticData();
+    }
+?>
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -51,11 +58,4 @@
     <!-- MiNe -->
     <link rel="stylesheet" href="./css/style.css" />
     <script src="./js/mine-actions.js"></script>
-</head>
-<?php
-    require_once 'autoload.class.php';
-    Session::iniciar();
-    if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
-        Sistema::reloadStaticData();
-    }
-?>
+</head> 

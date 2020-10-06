@@ -28,6 +28,7 @@
 
 body {
     background-color: var(--gray);
+    background-image: url("../image/bg-general.png");
 }
 
 .bg-orange-1 {
@@ -99,7 +100,8 @@ body {
 }
 
 #main-body #left-content {
-    min-width: 18vw;
+    background-image: url("../image/bg-general.png");
+    min-width: 12vw;
 }
 
 #main-body #left-content>div nav {
@@ -185,7 +187,9 @@ body {
 .header .user-rol {
     font-size: x-small;
     color: darkgray;
-    margin-top: -5px;
+    margin-top: 0px;
+    line-height: 1em;
+    text-align: left;
 }
 
 @media screen and (max-width: 599px) {
