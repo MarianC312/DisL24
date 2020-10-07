@@ -3,7 +3,9 @@
     --orange: #e5781b;
     --red: #e51b23;
     --violet: #e51b88;
-    --white: #fdeeef;
+    --white: #FFFFFF;
+    --black: #000000;
+    --cream: #fdeeef;
     --mono-orange-1: #a15412;
     --mono-orange-2: #b86015;
     --mono-orange-3: #cf6c18;
@@ -26,7 +28,43 @@
     --mono-red-7-rgb: 93, 38, 40;
 }
 
+@font-face {
+    font-family: 'Tajawal-Black';
+    src: url('./font/Tajawal-Black.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: 'Tajawal-Bold';
+    src: url('./font/Tajawal-Bold.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: 'Tajawal-ExtraBold';
+    src: url('./font/Tajawal-ExtraBold.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: 'Tajawal-ExtraLight';
+    src: url('./font/Tajawal-ExtraLight.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: 'Tajawal-Light';
+    src: url('./font/Tajawal-Light.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: 'Tajawal-Medium';
+    src: url('./font/Tajawal-Medium.ttf') format('truetype')
+}
+
+@font-face {
+    font-family: 'Tajawal-Regular';
+    src: url('./font/Tajawal-Regular.ttf') format('truetype')
+}
+
 body {
+    font-family: "Tajawal-Regular", 'Courier New', Courier, monospace;
     background-color: var(--gray);
     background-image: url("../image/bg-general.png");
 }
@@ -151,8 +189,42 @@ body {
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;
 }
 
+.navbar {
+    padding: 0;
+    color: var(--black);
+}
+
+.navbar .navbar-nav {
+    width: 100%;
+}
+
+.titulo {
+    font-weight: bold;
+}
+
+.navbar-light .navbar-nav .nav-link {
+    color: var(--black);
+}
+
+.navbar-light .navbar-nav .nav-link:hover {
+    color: var(--mono-red-5);
+    font-weight: bold;
+}
+
+.navbar .navbar-nav .nav-link:active {
+    font-weight: bold;
+}
+
+.mine-container {
+    padding: 1em;
+    margin: 0.825em;
+    background-color: var(--white);
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;
+    border-radius: 0.375em;
+}
+
 .header .dropdown .dropdown-menu {
-    min-width: 25vw;
+    min-width: 30vw;
 }
 
 .bg-orange .dropdown-menu .dropdown-item.active,
@@ -190,6 +262,12 @@ body {
     margin-top: 0px;
     line-height: 1em;
     text-align: left;
+}
+
+.text-slice {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 @media screen and (max-width: 599px) {

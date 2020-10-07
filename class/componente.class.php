@@ -24,7 +24,7 @@
                             <div class="d-flex justify-content-between align-items-center p-2 w-100" style="min-height: 5em; cursor: pointer;">
                                 <i class="fa fa-square-o"></i>
                                 <div class="d-flex flex-column flex-grow-1 p-2">
-                                    <div class="h5 font-weight-bold"><?php echo $value["titulo"] ?></div>
+                                    <div class="font-weight-bold text-slice d-block w-75"><?php echo (strlen($value["titulo"]) > 0) ? $value["titulo"] : "Sin título" ?></div>
                                     <div class=""><?php echo $value["cuerpo"] ?></div>
                                     <div class="text-muted d-flex justify-content-between">
                                         <span>Operador</span>
@@ -187,12 +187,12 @@
                                     <div class="navbar-nav flex-column">
                                         <a href="#/" onclick="" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a>
                                         <a href="#/" onclick="" class="nav-item nav-link"><i class="fa fa-money"></i> Caja</a>
-                                        <a href="#/" onclick="setCollapse('producto-collapse')" class="nav-item nav-link" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
-                                        <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show' : ''; ?>" id="producto-collapse">
-                                            <div class="d-flex flex-column ml-2"> 
+                                        <a href="#/" onclick="setCollapse('producto-collapse'); swapClass('#menu-producto','bg-orange-6'); swapClass('#producto-collapse','bg-orange-6')" id="menu-producto" class="nav-item nav-link <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
+                                        <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="producto-collapse">
+                                            <div class="d-flex flex-column ml-3"> 
                                                 <a href="./producto.php" class="nav-item nav-link"><i class="fa fa-clipboard"></i> Actividades</a>
-                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Registrar</a>
-                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-list-ol"></i> Lista</a>
+                                                <a href="#/" onclick="productoRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Registrar</a>
+                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-list-ol"></i> Inventario</a>
                                                 <a href="#/" class="nav-item nav-link"><i class="fa fa-cogs"></i> Administración</a> 
                                             </div>
                                         </div>
@@ -215,12 +215,15 @@
                 ?>
             </div>
             <script>
+                const swapClass = (obj, cssClass) => {
+                    ($(obj).hasClass(cssClass)) ? $(obj).removeClass(cssClass) : $(obj).addClass(cssClass);
+                }
                 const setCollapse = (collapse) => {
                     var me = $(this);
                     if (me.data('requestRunning')) {
                         return;
                     }
-                    me.data('requestRunning', true);
+                    me.data('requestRunning', true); 
                     let divProcess = "#menu-<?php echo $data["id"] ?>-process";
                     let divForm = "";
                     $.ajax({
@@ -245,7 +248,7 @@
                         console.log(jqXHR.statusText);
                         me.data('requestRunning', false);
                     });
-                }
+                } 
             </script>
             <?php
         }

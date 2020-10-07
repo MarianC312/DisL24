@@ -49,6 +49,18 @@
 		],
 		"description": "Sniper para corroborar POST en includes y engine."
 	},
+	"if user logged": {
+		"scope": "php",
+		"prefix": "ulog",
+		"body": [
+			"if(Sistema::usuarioLogueado()){",
+			"	$3",
+			"}else{",
+			"	Sistema::debug('$1', '$2 - Usuario no logueado.');",
+			"}"
+		],
+		"description": "Sniper para corroborar POST en includes y engine."
+	},
 	"foreach POST": {
 		"scope": "php",
 		"prefix": "forpost",
