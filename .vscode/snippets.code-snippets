@@ -61,6 +61,22 @@
 		],
 		"description": "Sniper para corroborar POST en includes y engine."
 	},
+	"if var set": {
+		"scope": "php",
+		"prefix": "varset",
+		"body": [
+			"foreach($$data AS $$key => $$value){",
+			"	if($$key != '' && (!isset($$data[$$key]) || is_null($$data[$$key]))){",
+			"		Sistema::debug('alert', 'producto.class.php - registroFormulario - El parámetro '.$$key.' tiene un valor incorrecto o inexistente.');",
+			"		$$mensaje['tipo'] = 'warning';",
+			"		$$mensaje['cuerpo'] = 'Hubo un error con uno de los datos recibidos ['.$$key.']. <b>Intente nuevamente o contacte al administrador</b>.';",
+			"		Alert::mensaje($$mensaje);",
+			"		exit;",
+			"	}",
+			"}"
+		],
+		"description": "Sniper para corroborar POST en includes y engine."
+	},
 	"foreach POST": {
 		"scope": "php",
 		"prefix": "forpost",

@@ -65,6 +65,8 @@
         public static function reloadStaticData(){
             Session::iniciar();
             $_SESSION["usuario"]->reloadStaticData();
+            $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
+            $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
             $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
             $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
             $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);

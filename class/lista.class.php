@@ -1,5 +1,39 @@
 <?php
     class Lista{
+        public static function productoTipo(){
+            $query = DataBase::select("producto_tipo", "*", "1", "ORDER BY tipo ASC");
+            if($query){
+                if(DataBase::getNumRows($query) > 0){
+                    $data = [];
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery["tipo"];
+                    }
+                    return $data;
+                }else{
+                    return 0;
+                }
+            }else{
+                return false;
+            }
+        } 
+        
+        public static function productoCategoria(){
+            $query = DataBase::select("producto_categoria", "*", "1", "ORDER BY categoria ASC");
+            if($query){
+                if(DataBase::getNumRows($query) > 0){
+                    $data = [];
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery["categoria"];
+                    }
+                    return $data;
+                }else{
+                    return 0;
+                }
+            }else{
+                return false;
+            }
+        }
+
         public static function rol(){
             $query = DataBase::select("sistema_usuario_rol", "*", "1", "ORDER BY rol ASC");
             if($query){

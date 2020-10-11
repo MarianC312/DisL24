@@ -33,6 +33,81 @@
         function getRol(){ return $this->rol; }
         function debug(){ return $this->debug; }
 
+        function tarea($identificador, $data = null){
+            if(isset($identificador) && !is_null($identificador) && strlen($identificador) > 0){
+                Session::iniciar();
+                if(!isset($_SESSION["tarea"])){
+                    Sistema::debug("info", "usuario.class.php - tarea - Tarea no existente, ejecutando tareaCrear.");
+                    $this->tareaCrear();
+                }else{
+                    Sistema::debug("info", "usuario.class.php - tarea - Tarea existe, ejecutando tareaAgregar.");
+                    $this->tareaAgregar($identificador);
+                }
+                if(!is_null($data)){
+                    $this->tareaAgregarData($identificador, $data);
+                }
+            }else{
+                Sistema::debug("error", "usuario.class.php - tarea - Identificador erroneo.");
+            }
+        }
+
+        function tareaAgregarData($tarea, $data, $crearTarea = false){
+            if($this->tareaExiste($tarea)){
+                if(is_array($data) && count($data) > 0){
+                    foreach($data AS $key => $value){
+                        $_SESSION["tarea"][$tarea]["data"][$key] = $value;
+                    }
+                    Sistema::debug("success", "usuario.class.php - tareaAgregarData - Información agregada a la tarea satisfactoriamente.");
+                    return true;
+                }else{
+                    Sistema::debug("error", "usuario.class.php - tareaAgregarData - Información incorrecta.");
+                    return false;
+                }
+            }else{
+                if($crearTarea){
+                    if($this->tareaAgregar($tarea)){
+                        Sistema::debug("info", "usuario.class.php - tareaAgregarData - Callback.");
+                        $this->tareaAgregarData($tarea, $data);
+                    }else{
+                        Sistema::debug("error", "usuario.class.php - tareaAgregarData - Error al agregar tarea.");
+                        return false;
+                    }
+                }else{
+                    Sistema::debug("error", "usuario.class.php - tareaAgregarData - La tarea no existe, no se logró agregar la información.");
+                    return false;
+                }
+            }
+        }
+
+        function tareaAgregar($tarea){
+            Session::iniciar();
+            if(!$this->tareaExiste($tarea)){
+                $_SESSION["tarea"][$tarea] = [];
+                echo '<script>loadUsuarioTareasPendientes()</script>';
+                Sistema::debug("info", "usuario.class.php - tareaAgregar - Tarea creada satisfactoriamente.");
+                return true;
+            }else{
+                Sistema::debug("info", "usuario.class.php - tareaAgregar - Tarea existente.");
+                return null;
+            }
+        }
+
+        function tareaExiste($tarea){
+            Session::iniciar();
+            Sistema::debug("info", "usuario.class.php - tareaExiste - Ejecutado correctamente. Return -> '".((isset($_SESSION["tarea"][$tarea]) && is_array($_SESSION["tarea"][$tarea])) ? 1 : 0)."'");
+            return (isset($_SESSION["tarea"][$tarea]) && is_array($_SESSION["tarea"][$tarea])) ? true : false;
+        }
+
+        function tareaCrear(){
+            Session::iniciar();
+            if(!isset($_SESSION["tarea"])){
+                $_SESSION["tarea"] = [];
+                Sistema::debug("success", "usuario.class.php - tareaCrear - Registro de tareas creado satisfactoriamente.");
+            }else{
+                Sistema::debug("success", "usuario.class.php - tareaCrear - Registro de tareas existente.");
+            }
+        }
+
         function getInfoEstado(){
             $response = [
                 "estado" => $this->getEstado()

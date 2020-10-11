@@ -28,6 +28,28 @@
     --mono-red-7-rgb: 93, 38, 40;
 }
 
+
+/* width */
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+
+/* Track */
+
+ ::-webkit-scrollbar-track {
+    background-color: rgba(var(--mono-orange-7-rgb), 0.115);
+}
+
+
+/* Handle */
+
+ ::-webkit-scrollbar-thumb {
+    background: red;
+    border-radius: 10px;
+}
+
 @font-face {
     font-family: 'Tajawal-Black';
     src: url('./font/Tajawal-Black.ttf') format('truetype')
@@ -101,11 +123,67 @@ body {
     color: var(--red);
 }
 
+#container-tareas-pendientes {
+    max-width: 25vw;
+}
+
 .index-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+}
+
+.required::after {
+    content: "*Requerido";
+    font-size: small;
+    margin-left: 0.5em;
+    font-variant-caps: all-small-caps;
+    font-weight: bold;
+    color: var(--mono-orange-1);
+    opacity: 0.75;
+}
+
+.small-container {
+    font-size: 0.65em;
+    width: 10vw;
+    height: 2.75em;
+}
+
+.small-container #container-tareas-pendientes-header>.btn {
+    zoom: 70%;
+}
+
+.fly {
+    position: absolute;
+    top: 4rem;
+    right: 0;
+    z-index: 1000;
+    max-height: 15em;
+    overflow: auto;
+}
+
+#container-tareas-pendientes #container-tareas-pendientes-header {
+    position: absolute;
+    top: 0;
+    background-color: var(--mono-red-7);
+    left: 0;
+    width: 100%;
+    padding: 0.35em;
+    align-items: center;
+    color: var(--white);
+}
+
+#container-tareas-pendientes #container-tareas-pendientes-header>.btn-outline-white {
+    color: var(--white);
+}
+
+#container-tareas-pendientes #container-tareas-pendientes-header>.btn-outline-white:hover {
+    color: var(--mono-red-7);
+}
+
+#container-tareas-pendientes #container-tareas-pendientes-content {
+    margin-top: 2em;
 }
 
 .card .card-body .form-header {
@@ -268,6 +346,17 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
+}
+
+.btn-outline-white {
+    color: var(--white);
+    background-color: transparent;
+    border-color: var(--white);
+}
+
+.btn-outline-white:hover {
+    color: transparent;
+    background-color: var(--white);
 }
 
 @media screen and (max-width: 599px) {
