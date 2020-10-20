@@ -85,6 +85,108 @@
     src: url('./font/Tajawal-Regular.ttf') format('truetype')
 }
 
+.loader {
+    width: 30px;
+    height: 30px;
+    display: block;
+    margin: auto;
+    position: relative;
+    color: var(--mono-red-1);
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+.loader::after,
+.loader::before {
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    top: 50%;
+    left: 50%;
+    transform: scale(0.5) translate(0, 0);
+    background-color: var(--mono-red-1);
+    border-radius: 50%;
+    animation: animloader 1s infinite ease-in-out;
+}
+
+.loader::before {
+    background-color: var(--mono-orange-4);
+    transform: scale(0.5) translate(-48px, -48px);
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes animloader {
+    50% {
+        transform: scale(1) translate(-50%, -50%);
+    }
+}
+
+.loader-circle-1 {
+    width: 2em;
+    height: 2em;
+    border: 5px solid var(--cream);
+    border-bottom-color: var(--orange);
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation-circle-1 1s linear infinite;
+}
+
+@keyframes rotation-circle-1 {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loader-pulse {
+    width: 48px;
+    height: 48px;
+    display: inline-block;
+    position: relative;
+}
+
+.loader-pulse::after,
+.loader-pulse::before {
+    content: '';
+    box-sizing: border-box;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--mono-red-5);
+    position: absolute;
+    left: 0;
+    top: 0;
+    animation: animloader-pulse 2s linear infinite;
+}
+
+.loader-pulse::after {
+    animation-delay: 1s;
+}
+
+@keyframes animloader-pulse {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
 body {
     font-family: "Tajawal-Regular", 'Courier New', Courier, monospace;
     background-color: var(--gray);
@@ -274,6 +376,10 @@ body {
 
 .navbar .navbar-nav {
     width: 100%;
+}
+
+.mine-container>.titulo {
+    margin-bottom: 1rem !important;
 }
 
 .titulo {

@@ -1,7 +1,7 @@
 <?php
     class Usuario{
 
-        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $debug = false, $auth = false;
+        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $debug = false, $auth = false;
         private $debugTipo = [
             0 => "all",
             1 => "success",
@@ -19,6 +19,7 @@
             $this->rol = $data["rol"];
             $this->email = $data["email"];
             $this->estado = $data["estado"];
+            $this->admin = $data["admin"];
             $this->debug = $this->debugTipo[$data["debug"]];
             $this->auth = $auth;
         }
@@ -31,6 +32,7 @@
         function getEmail(){ return $this->email; }
         function getEstado(){ return $this->estado; }
         function getRol(){ return $this->rol; }
+        function isAdmin(){ return $this->admin; }
         function debug(){ return $this->debug; }
 
         function tarea($identificador, $data = null){
@@ -38,7 +40,7 @@
                 Session::iniciar();
                 if(!isset($_SESSION["tarea"])){
                     Sistema::debug("info", "usuario.class.php - tarea - Tarea no existente, ejecutando tareaCrear.");
-                    $this->tareaCrear();
+                    $this->tareaCrear($identificador);
                 }else{
                     Sistema::debug("info", "usuario.class.php - tarea - Tarea existe, ejecutando tareaAgregar.");
                     $this->tareaAgregar($identificador);
@@ -51,7 +53,7 @@
             }
         }
 
-        function tareaAgregarData($tarea, $data, $crearTarea = false){
+        function tareaAgregarData($tarea, $data, $crearTarea = true){
             if($this->tareaExiste($tarea)){
                 if(is_array($data) && count($data) > 0){
                     foreach($data AS $key => $value){
@@ -85,6 +87,7 @@
                 $_SESSION["tarea"][$tarea] = [];
                 echo '<script>loadUsuarioTareasPendientes()</script>';
                 Sistema::debug("info", "usuario.class.php - tareaAgregar - Tarea creada satisfactoriamente.");
+                echo '<script>tareasPendientesLoadHeader(true);</script>';
                 return true;
             }else{
                 Sistema::debug("info", "usuario.class.php - tareaAgregar - Tarea existente.");
@@ -98,10 +101,25 @@
             return (isset($_SESSION["tarea"][$tarea]) && is_array($_SESSION["tarea"][$tarea])) ? true : false;
         }
 
-        function tareaCrear(){
+        function tareaEliminar($tarea, $refresh = true){
+            Session::iniciar();
+            if($this->tareaExiste($tarea)){ 
+                Sistema::debug("info", "usuario.class.php - tareaEliminar - Ejecutando eliminación de tarea pendiente.");
+                unset($_SESSION["tarea"][$tarea]);
+                echo ($refresh) ? '<script>tareasPendientesLoadHeader(true);</script>' : '';
+                return true;
+            }else{ 
+                Sistema::debug("info", "usuario.class.php - tareaEliminar - No se encontró la tarea <b>".$tarea."</b>."); 
+                return false;
+            }
+            
+        }
+
+        function tareaCrear($tarea){
             Session::iniciar();
             if(!isset($_SESSION["tarea"])){
                 $_SESSION["tarea"] = [];
+                $_SESSION["tarea"][$tarea] = [];
                 Sistema::debug("success", "usuario.class.php - tareaCrear - Registro de tareas creado satisfactoriamente.");
             }else{
                 Sistema::debug("success", "usuario.class.php - tareaCrear - Registro de tareas existente.");
@@ -134,6 +152,7 @@
                 "sucursalId" => $this->getSucursal(),
                 "rol" => $rol[$this->getRol()],
                 "rolId" => $this->getRol(),
+                "admin" => $this->isAdmin(),
                 "email" => $this->getEmail(),
                 "estado" => $this->getEstado(),
                 "auth" => $this->getAuth(),

@@ -1,3 +1,5 @@
+const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
+
 const swapClass = (obj, cssClass) => {
     ($(obj).hasClass(cssClass)) ? $(obj).removeClass(cssClass): $(obj).addClass(cssClass);
 }
@@ -18,9 +20,27 @@ const loadUsuarioTareasPendientes = () => {
     }
 }
 
+const loadUsuarioAlerta1 = () => {
+    headerUsuarioAlerta(1);
+}
+
+const loadUsuarioAlerta2 = () => {
+    headerUsuarioAlerta(2);
+}
+
+const loadUsuarioAlerta = () => {
+    loadUsuarioAlerta1();
+    loadUsuarioAlerta2();
+}
+
 const unloadUsuarioTareasPendientes = () => {
     tareasPendientesListaOption();
     removeElement("#container-tareas-pendientes");
+}
+
+const retry = (func, secs = 5) => {
+    console.log('function ' + arguments.callee.caller.toString() + ' delayed...');
+    setTimeout(func(), (secs * 1000));
 }
 
 const appendElement = (objUrl, objToAppend, data = []) => {
@@ -36,7 +56,7 @@ const appendElement = (objUrl, objToAppend, data = []) => {
         url: objUrl,
         timeout: 45000,
         beforeSend: function() {
-            //$(divProcess).load("./includes/loading.php");
+            //$(divProcess).html(loading());
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
@@ -72,7 +92,7 @@ const requestLogin = () => {
         url: form.attr("action"),
         timeout: 45000,
         beforeSend: function() {
-            $(divProcess).load("./includes/loading.php");
+            $(divProcess).html(loading());
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
@@ -82,7 +102,7 @@ const requestLogin = () => {
         },
         success: function(data) {
             setTimeout(function() {
-                $(divProcess).html(data);
+                $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
         }
     }).fail(function(jqXHR) {
@@ -104,7 +124,7 @@ const requestLogout = () => {
         url: "./engine/logout.php",
         timeout: 45000,
         beforeSend: function() {
-            $(divProcess).load("./includes/loading.php");
+            $(divProcess).html(loading());
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
@@ -114,7 +134,7 @@ const requestLogout = () => {
         },
         success: function(data) {
             setTimeout(function() {
-                $(divProcess).html(data);
+                $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
         }
     }).fail(function(jqXHR) {
@@ -129,6 +149,12 @@ const tareaAgregarData = (tarea, input, value, div) => {
         return;
     }
     me.data('requestRunning', true);
+    let inputType = $("#" + input).attr("type");
+    if ($("#" + input).attr("type") === "checkbox") {
+        if (!$("#" + input).is(":checked")) {
+            value = 0;
+        }
+    }
     let divProcess = div;
     let divForm = "";
     $.ajax({
@@ -136,17 +162,93 @@ const tareaAgregarData = (tarea, input, value, div) => {
         url: "./engine/usuario/tarea-agregar-data.php",
         timeout: 45000,
         beforeSend: function() {
-            $(divProcess).load("./includes/loading.php");
+            //$(divProcess).html(loading());
             //$(divForm).hide(350);
             //$(divProcess).show(350);
         },
-        data: { tarea: tarea, input: input, value: value },
+        data: { tarea: tarea, input: input, value: value, inputType: inputType },
         complete: function() {
             me.data('requestRunning', false);
         },
         success: function(data) {
             setTimeout(function() {
-                $(divProcess).html(data);
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoInventarioEditarContenido = () => {
+    console.log("execute");
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#producto-registro-formulario-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "exceptions", value: ["sucursal", "subcategoria", "fabricante", "venta", "compra", "proveedor"] });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoRegistro = () => {
+    console.log("execute");
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#producto-registro-formulario-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "exceptions", value: ["sucursal", "subcategoria", "fabricante", "venta", "compra", "proveedor"] });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
         }
     }).fail(function(jqXHR) {
@@ -168,7 +270,7 @@ const productoRegistroFormulario = (corroborar = true, codigo = 0, tarea = null)
         url: "./includes/producto/registrar-formulario.php",
         timeout: 45000,
         beforeSend: function() {
-            $(divProcess).load("./includes/loading.php");
+            $(divProcess).html(loading());
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
@@ -178,7 +280,104 @@ const productoRegistroFormulario = (corroborar = true, codigo = 0, tarea = null)
         },
         success: function(data) {
             setTimeout(function() {
-                $(divProcess).html(data);
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoEditarFormulario = (idProducto) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/editar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idProducto: idProducto },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoInventario = (idSucursal = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/inventario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idSucursal: idSucursal },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoInventarioEditarContenidoFormulario = (producto, tipo, cantidad = 0) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#producto-" + producto + " #" + tipo;
+    let divForm = "";
+    console.log(divProcess);
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/inventario-editar-contenido-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading("loader-circle-1"));
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { producto: producto, tipo: tipo, cantidad: cantidad },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
         }
     }).fail(function(jqXHR) {
@@ -204,7 +403,7 @@ const productoCorroboraExistencia = () => {
         url: form.attr("action"),
         timeout: 45000,
         beforeSend: function() {
-            $(divProcess).load("./includes/loading.php");
+            $(divProcess).html(loading());
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
@@ -214,7 +413,7 @@ const productoCorroboraExistencia = () => {
         },
         success: function(data) {
             setTimeout(function() {
-                $(divProcess).html(data);
+                $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
         }
     }).fail(function(jqXHR) {

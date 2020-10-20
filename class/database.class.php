@@ -50,6 +50,7 @@
         {
             if(DataBase::dbConnect())
             {
+                //echo "INSERT INTO ".$table." (".$cols.") VALUES (".$values.")";
                 try {
                     DataBase::$query = mysqli_query(DataBase::$link, "INSERT INTO ".$table." (".$cols.") VALUES (".$values.")");
                 } catch (Exception $e) {

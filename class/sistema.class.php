@@ -67,6 +67,11 @@
             $_SESSION["usuario"]->reloadStaticData();
             $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
             $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
+            $_SESSION["lista"]["producto"]["subcategoria"] = Lista::productoSubCategoria();
+            $_SESSION["lista"]["fabricante"] = Lista::fabricante();
+            $_SESSION["lista"]["proveedor"] = Lista::proveedor();
+            $_SESSION["lista"]["sucursal"] = Lista::sucursal();
+            $_SESSION["lista"]["compañia"] = Lista::compañia();
             $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
             $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
             $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);

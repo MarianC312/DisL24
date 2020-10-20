@@ -126,7 +126,7 @@
                 return null;
             }
             ?>
-            <div id="container-tareas-pendientes" class="mine-container fly d-flex flex-column <?php echo (isset($opcion["container"]) && $opcion["container"]) ? "" : "small-container"; ?>">
+            <div id="container-tareas-pendientes" class="mine-container fly ui-widget-content d-flex flex-column <?php echo (isset($opcion["container"]) && $opcion["container"]) ? "" : "small-container"; ?>">
                 <div id="container-tareas-pendientes-header">
                     <?php Componente::usuarioTareasPendientesHeader() ?>
                 </div>
@@ -337,11 +337,6 @@
                     });
                 }
                 const headerUsuarioAlerta = (id) => {
-                    let me = {id: $(this)};
-                    if (me.id.data('requestRunning')) {
-                        return;
-                    }
-                    me.id.data('requestRunning', true);
                     let divProcess = "#container-header-usuario-alerta-" + id;
                     let divForm = "";
                     $.ajax({
@@ -355,22 +350,35 @@
                         },
                         data: {id:id},
                         complete: function() {
-                            me.id.data('requestRunning', false);
                         },
                         success: function(data) {
                             setTimeout(function() {
                                 $(divProcess).html(data);
                             }, 1000);
-                            setTimeout(() => { headerUsuarioAlerta(id); }, (1 * 60 * 1000));
                         }
                     }).fail(function(jqXHR) {
                         console.log(jqXHR.statusText);
-                        me.id.data('requestRunning', false);
                     });
                 }
+
+                
+
                 setTimeout(() => { headerUsuarioMainData(); }, (2 * 60 * 1000));
-                setTimeout(() => { headerUsuarioAlerta(1); }, (1 * 10 * 1000));
-                setTimeout(() => { headerUsuarioAlerta(2); }, (1 * 5 * 1000));
+                let alertFuncHelper = function (input) {
+                    return new Promise(function resolver(resolve, reject) {
+                        setTimeout(() => {
+                            headerUsuarioAlerta(input);
+                            console.log("Info: Promise set index " + input);
+                        }, 0);
+                    });
+                };
+                setInterval(() => {
+                    let promise1 = alertFuncHelper(1);
+                    let promise2 = alertFuncHelper(2);
+                    Promise.all([promise1, promise2]).catch(function (err) { 
+                        console.log("Promise error: " + err);
+                    });
+                }, 60000);
                 loadUsuarioTareasPendientes();
             </script>
             <?php
@@ -403,7 +411,7 @@
                                             <div class="d-flex flex-column ml-3"> 
                                                 <a href="./producto.php" class="nav-item nav-link"><i class="fa fa-clipboard"></i> Actividades</a>
                                                 <a href="#/" onclick="productoRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Registrar</a>
-                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-list-ol"></i> Inventario</a>
+                                                <a href="#/" onclick="productoInventario()" class="nav-item nav-link"><i class="fa fa-list-ol"></i> Inventario</a>
                                                 <a href="#/" class="nav-item nav-link"><i class="fa fa-cogs"></i> Administración</a> 
                                             </div>
                                         </div>
