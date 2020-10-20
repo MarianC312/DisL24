@@ -143,6 +143,71 @@ const requestLogout = () => {
     });
 }
 
+const productoInventarioContenidoData = (idProducto, tipo) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    console.log("exe test");
+    let divProcess = "#producto-" + idProducto + " #" + tipo;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/inventario-contenido.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idProducto: idProducto, tipo: tipo },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const successAction = (div, callback = null, loader = "loader") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading(loader));
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                callback();
+            }, 750);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const tareaAgregarData = (tarea, input, value, div) => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -181,18 +246,19 @@ const tareaAgregarData = (tarea, input, value, div) => {
     });
 }
 
-const productoInventarioEditarContenido = () => {
-    console.log("execute");
+const productoInventarioEditarContenido = (idProducto, tipo) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#producto-registro-formulario-form");
+    let form = $("#producto-" + idProducto + "-inventario-editar-" + tipo + "-form");
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
-    data.push({ name: "exceptions", value: ["sucursal", "subcategoria", "fabricante", "venta", "compra", "proveedor"] });
+    data.push({ name: "idProducto2", value: idProducto });
+    data.push({ name: "tipo2", value: tipo });
+    data.push({ name: "exceptions", value: ["exceptions"] });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
     $.ajax({

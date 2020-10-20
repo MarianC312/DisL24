@@ -1,21 +1,177 @@
 <?php
     class Producto{
+        public static function stockCorroboraExistencia($idProducto, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("producto_stock", "id", "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        return (DataBase::getNumRows($query) == 1) ? true : 0;
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - stockCorroboraExistencia - Error al comprobar la existencia del stock.');
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - stockCorroboraExistencia - Identificador de producto incorrecto. Ref.: '.$idProducto); 
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - stockCorroboraExistencia - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function stockGetId($idProducto, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
+                    $query = DataBase::select("producto_stock", "id", "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["id"];
+                        }else{
+                            Sistema::debug('info', 'producto.class.php - stockGetId - No se encontró el producto en stock.');
+                        }
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - stockGetId - Error al comprobar la existencia del stock.');
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - stockGetId - Identificador de producto incorrecto. Ref.: '.$idProducto);
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - stockGetId - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function stockGetData($idProducto, $tipo, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0 && isset($tipo) && strlen($tipo) > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("producto_stock", $tipo, "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery[$tipo];
+                        }else{
+                            Sistema::debug('error', 'producto.class.php - stockGetData - No se encontró la información del stock del producto. Ref.: '.$idProducto);
+                            return 0;
+                        }
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - stockGetData - Hubo un error al buscar la información del stock del producto. Ref.: '.$idProducto);
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - stockGetData - Error en el identificador de producto o tipo de dato. Ref.: [ID => '.$idProducto.', TIPO => '.$tipo.']');
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - stockGetData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function inventarioContenido($idProducto, $tipo){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0 && isset($tipo) && strlen($tipo) > 0){
+                    $data = Producto::stockGetData($idProducto, $tipo);
+                    if(is_numeric($data)){
+                        echo '<button type="button" class="btn btn-sm btn-link btn-iconed p-0"><span class="spn">'.$data.'</span> <i class="fa fa-pencil"></i></button>';
+                        ?>
+                        <script>
+                            $(document).ready(() => {
+                                $('#producto-<?php echo $idProducto ?> #<?php echo $tipo ?> button').on('click', (e) => {
+                                    productoInventarioEditarContenidoFormulario(<?php echo $idProducto ?>,e.currentTarget.parentNode.getAttribute("id"),<?php echo $data ?>);
+                                });
+                            })
+                        </script>
+                        <?php
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - inventarioContenido - Información de stock erronea. Ref.: '.$data);
+                        echo '<button onclick="successAction("#producto-'.$idProducto.' #'.$tipo.'", null, "loader-ok")" class="btn btn-info"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - inventarioContenido - Error en el identificador de producto o tipo de dato. Ref.: [ID => '.$idProducto.', TIPO => '.$tipo.']');
+                    echo '<button onclick="successAction("#producto-'.$idProducto.' #'.$tipo.'", null, "loader-ok")" class="btn btn-danger"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - inventarioContenido - Usuario no logueado.');
+            }
+        }
+
+        public static function inventarioEditarContenido($data){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    echo Sistema::loading();
+                    $codigoProducto = Producto::getCodigo($data["idProducto"]);
+                    if(is_numeric($codigoProducto) && !is_bool($codigoProducto)){
+                        if(Producto::corroboraExistencia(["codigo" => $codigoProducto])){
+                            $productoEnStock = Producto::stockCorroboraExistencia($data["idProducto"]);
+                            Session::iniciar();
+                            if(is_bool($productoEnStock) && $productoEnStock){
+                                $idProductoStock = Producto::stockGetId($data["idProducto"]);
+                                if(is_numeric($idProductoStock) && $idProductoStock > 0){
+                                    $query = DataBase::update("producto_stock", $data["tipo"]." = ".$data["cantidad"], "id = '".$idProductoStock."' AND producto = '".$data["idProducto"]."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                    if($query){
+                                        echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return productoInventarioContenidoData('.$data["idProducto"].', "'.$data["tipo"].'"); }, "loader-ok")</script>';
+                                    }else{
+                                        Sistema::debug('error', 'producto.class.php - inventarioEditarContenido - Hubo un error al editar el contenido del stock. Ref.: '.$idProductoStock);
+                                    }
+                                }else{
+                                    Sistema::debug('error', 'producto.class.php - inventarioEditarContenido - Hubo un error al recibir el identificador del stock del producto. Ref.: '.$idProductoStock);
+                                }
+                            }elseif(is_numeric($productoEnStock) && $productoEnStock == 0){
+                                $query = DataBase::insert("producto_stock", "producto,sucursal,compañia,".$data["tipo"], "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."','".$data["cantidad"]."'");
+                                if($query){
+                                    echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return productoInventarioContenidoData('.$data["idProducto"].', "'.$data["tipo"].'"); }, "loader-ok")</script>';
+                                }else{
+                                    Sistema::debug('error', 'producto.class.php - inventarioEditarContenido - Hubo un error al registrar '.$data["tipo"].' del producto. Ref.: '.$codigoProducto);
+                                }
+                            }else{
+                                Sistema::debug('info', 'producto.class.php - inventarioEditarContenido - No se pudo comprobar la existencia de stock del producto. Ref.: '.$codigoProducto);
+                                echo '<button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-info"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                            }
+                        }else{
+                            Sistema::debug('info', 'producto.class.php - inventarioEditarContenido - Producto inexistente. Ref.: '.$codigoProducto);
+                            echo '<button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-info"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                        }
+                    }else{ 
+                        Sistema::debug('error', 'producto.class.php - inventarioEditarContenido - Código de producto incorrecto. Ref.: '.$codigoProducto);
+                        echo '<button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - inventarioEditarContenido - Arreglo de datos incorrecto.');
+                    echo '<button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - inventarioEditarContenido - Usuario no logueado.');
+            }
+        }
+
         public static function inventarioEditarContenidoFormulario($data){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) == 3){
                     ?>
-                    <div id="producto-<?php echo $data["producto"] ?>-inventario-editar-contenido-process" style="display: none"></div>
-                    <form id="producto-<?php echo $data["producto"] ?>-inventario-editar-contenido-form" action="./engine/producto/inventario-editar-contenido.php" form="#producto-<?php echo $data["producto"] ?>-inventario-editar-contenido-form" process="#producto-<?php echo $data["producto"] ?>-inventario-editar-contenido-process"> 
+                    <div id="producto-<?php echo $data["producto"] ?>-inventario-editar-<?php echo $data["tipo"] ?>-process" style="display: none"></div>
+                    <form id="producto-<?php echo $data["producto"] ?>-inventario-editar-<?php echo $data["tipo"] ?>-form" action="./engine/producto/inventario-editar-contenido.php" form="#producto-<?php echo $data["producto"] ?>-inventario-editar-<?php echo $data["tipo"] ?>-form" process="#producto-<?php echo $data["producto"] ?>-inventario-editar-<?php echo $data["tipo"] ?>-process"> 
                         <div class="form-group mb-0"> 
                             <div class="input-group">
-                                <input class="form-control form-control-sm" type="number" id="cantidad" min="0" value="<?php echo $data["cantidad"] ?>">
-                                <input class="form-control form-control-sm d-none" type="text" id="tipo" value="<?php echo $data["tipo"] ?>" readonly>
+                                <input class="form-control form-control-sm" type="number" id="cantidad" name="cantidad" min="0" max="32767" value="<?php echo $data["cantidad"] ?>">
+                                <input class="form-control form-control-sm d-none" type="text" id="tipo" name="tipo" value="<?php echo $data["tipo"] ?>" readonly>
+                                <input class="form-control form-control-sm d-none" type="text" id="idProducto" name="idProducto" value="<?php echo $data["producto"] ?>" readonly>
                                 <div class="input-group-append">
                                     <button type="button" onclick="productoInventarioEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>')" class="btn btn-sm btn-outline-success"><i class="fa fa-check"></i></button>
                                 </div>
                             </div>
                         </div>
                     </form>
+                    <script>
+                        $(document).ready(() => {
+                            $("#producto-<?php echo $data["producto"] ?>-inventario-editar-<?php echo $data["tipo"] ?>-form #cantidad").focus();
+                            $("#producto-<?php echo $data["producto"] ?>-inventario-editar-<?php echo $data["tipo"] ?>-form #cantidad").keypress((e) => {
+                                var keycode = (e.keyCode ? e.keyCode : e.which);
+                                if(keycode == '13'){
+                                    productoInventarioEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>') 
+                                }
+                            });
+                        })
+                    </script>
                     <?php
                 }else{
                     Sistema::debug('error', 'producto.class.php - inventarioEditarContenidoFormulario - Error en arreglo de datos.');
@@ -54,14 +210,14 @@
                                             foreach($data AS $key => $value){
                                                 $productoTipo = $_SESSION["lista"]["producto"]["tipo"];
                                                 $productoCategoria = $_SESSION["lista"]["producto"]["categoria"];
-                                                $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"];
+                                                $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"]; 
                                                 ?>
                                                 <tr id="producto-<?php echo $key ?>" data-key="<?php echo $key ?>">
                                                     <th scope="row"><?php echo $value["codigoBarra"] ?></th>
                                                     <td><?php echo $value["nombre"] ?></td>
-                                                    <td id="stock" class="text-center"><?php echo (!isset($data["sucursal"]) || $_SESSION["usuario"]->getSucursal() != $data["sucursal"]) ? "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" : ((is_numeric($value["stock"])) ? $value["stock"] : "0") ?></td>
-                                                    <td id="minimo" class="text-center"><?php echo (is_numeric($value["minimo"])) ? $value["minimo"] : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
-                                                    <td id="maximo" class="text-center"><?php echo (is_numeric($value["maximo"])) ? $value["maximo"] : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
+                                                    <td id="stock" data-value="<?php echo (is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
+                                                    <td id="minimo" data-value="<?php echo (is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
+                                                    <td id="maximo" data-value="<?php echo (is_numeric($value["maximo"])) ? $value["maximo"] : 0 ?>" class="text-center"><?php echo (is_numeric($value["maximo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["maximo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td><?php echo $productoTipo[$value["tipo"]]; ?></td>
                                                     <td><?php echo $productoCategoria[$value["categoria"]] ?></td>
                                                     <td><?php echo (is_numeric($value["subcategoria"])) ? $productoSubcategoria[$value["subcategoria"]] : "<span class='text-muted'>No categorizado</span>" ?></td>
@@ -72,7 +228,7 @@
                                         }else{
                                             ?> 
                                             <tr>
-                                                <td colspan="10" class="text-center">
+                                                <td colspan="9" class="text-center">
                                                     No se encontraron productos registrados en la compañia. Para cargar un nuevo producto clickee en el siguiente <a href="#/" onclick="productoRegistroFormulario()">link</a>.
                                                 </td>
                                                 <td></td>
@@ -94,7 +250,7 @@
                                         }
                                         ?> 
                                         <tr>
-                                            <td colspan="10" class="text-center">
+                                            <td colspan="9" class="text-center">
                                                 Hubo un error al encontrar los productos de la compañía. <b>Intente nuevamente o contacte al administrador.</b>
                                             </td>
                                             <td></td>
@@ -115,7 +271,10 @@
                     <script> 
                         $(document).ready(function() {
                             $('td a').on('click', (e) => {
-                                productoInventarioEditarContenidoFormulario(e.currentTarget.parentNode.parentNode.getAttribute("data-key"),e.currentTarget.parentNode.getAttribute("id"));
+                                productoInventarioEditarContenidoFormulario(e.currentTarget.parentNode.parentNode.getAttribute("data-key"),e.currentTarget.parentNode.getAttribute("id"),e.currentTarget.parentNode.getAttribute("data-value"));
+                            });
+                            $('td>button').on('click', (e) => {
+                                productoInventarioEditarContenidoFormulario(e.currentTarget.parentNode.parentNode.getAttribute("data-key"),e.currentTarget.parentNode.getAttribute("id"),e.currentTarget.parentNode.getAttribute("data-value"));
                             });
                             tippy('td a', {
                                 content: 'Click para agregar un nuevo valor.',
@@ -190,6 +349,29 @@
             }else{
                 Sistema::debug('error', 'producto.class.php - data - Usuario no logueado.');
             }
+        }
+
+        public static function getCodigo($idProducto){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
+                    $query = DataBase::select("producto", "codigoBarra", "id = '".$idProducto."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["codigoBarra"];
+                        }else{
+                            Sistema::debug('error', 'producto.class.php - getCodigo - No se encontró el producto. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - getCodigo - Hubo un error al buscar la información del producto. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - getCodigo - Hubo un error con el valor del identificador recibido. Ref.: '.$idProducto);
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - getCodigo - Usuario no logueado.');
+            }
+            return false;
         }
 
         public static function corroboraExistencia($data, $cargaFormularioRegistro = false){

@@ -3,6 +3,10 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
+        public static function loading($tipo = "loader"){
+            return ('<span class="'.$tipo.'"></span>');
+        }
+
         public static function usuarioLogueado(){
             Session::iniciar();
             return (isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()) ? true : false;

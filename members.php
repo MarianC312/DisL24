@@ -20,12 +20,6 @@
         <div id="right-content" class="flex-grow-1">
                 <?php Componente::headerUsuario() ?>
                 <div id="right-content-data">
-                    <?php
-                        Session::iniciar();
-                        echo '<pre>';
-                        print_r($_SESSION["tarea"]);
-                        echo '</pre>';
-                    ?>
                 </div>
             </div>
         </div>

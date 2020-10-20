@@ -6,7 +6,6 @@
             foreach($_POST AS $key => $value){ 
                 $distinto = true;
                 foreach($excepciones AS $iKey => $iValue){
-                    echo '<script>console.log("Check: '.$iValue.' = '.$key.'")</script>';
                     if($iValue == $key){
                         $distinto = false;
                         break;
