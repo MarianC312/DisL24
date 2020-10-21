@@ -29,14 +29,8 @@
     </div>
 </body>
 </html>
-<script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'UA-128995379-1');
-    
-    $(document).ready(function(){
+<script> 
+   $(document).ready(function(){
         $(window).bind('scroll', function()
         {
             if($(this).scrollTop() > 0 ){
