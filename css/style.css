@@ -426,6 +426,7 @@ body {
 
 .titulo {
     font-weight: bold;
+    border-bottom: var(--gray) 0.5px groove;
 }
 
 .navbar-light .navbar-nav .nav-link {

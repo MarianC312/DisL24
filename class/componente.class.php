@@ -400,8 +400,7 @@
                                 </a>
                                 <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
                                     <span class="navbar-toggler-icon"></span>
-                                </button>
-                            
+                                </button> 
                                 <div class="collapse navbar-collapse flex-column w-100" id="navbarCollapse">
                                     <div class="navbar-nav flex-column">
                                         <a href="#/" onclick="" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a>
@@ -423,6 +422,7 @@
                                                 <a href="#/" class="nav-item nav-link"><i class="fa fa-cogs"></i> Administración</a> 
                                             </div>
                                         </div>
+                                        <a href="#/" onclick="clienteRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-user"></i> Clientes</a>
                                         <a href="./administracion.php" class="nav-item nav-link" tabIndex="-1"><i class="fa fa-cogs"></i> Administración</a>
                                     </div>
                                     <div class="navbar-nav ml-auto">
