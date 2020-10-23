@@ -1,5 +1,40 @@
 const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
 
+const barCode = (div, input) => {
+    const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
+    switch (true) {
+        case (input.length <= 2):
+            setFormat = format[5];
+            break;
+        case (input.length > 2 && input.length <= 5):
+            setFormat = format[4];
+            break;
+        case (input.length > 5 && input.length <= 8):
+            setFormat = format[3];
+            break;
+        case (input.length > 8 && input.length < 13):
+            setFormat = format[6];
+            break;
+        case (input.length == 13):
+            setFormat = format[2];
+            break;
+        default:
+            setFormat = format[0];
+            break;
+    }
+    if ((input.length == 3) || (input.length == 5) || (input.length == 8)) {
+        appendElement("./engine/producto/cantidad-por-prefijo.php", "#producto-corrobora-cantidad", { 'prefijo': input }, true, true);
+    }
+    JsBarcode(div, input, {
+        format: setFormat,
+        lineColor: "#000",
+        width: 1,
+        height: 45,
+        displayValue: true,
+        fontSize: 11
+    });
+}
+
 const swapClass = (obj, cssClass) => {
     ($(obj).hasClass(cssClass)) ? $(obj).removeClass(cssClass): $(obj).addClass(cssClass);
 }
@@ -43,7 +78,7 @@ const retry = (func, secs = 5) => {
     setTimeout(func(), (secs * 1000));
 }
 
-const appendElement = (objUrl, objToAppend, data = []) => {
+const appendElement = (objUrl, objToAppend, data = {}, clear = false, loadingBar = false) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -56,7 +91,7 @@ const appendElement = (objUrl, objToAppend, data = []) => {
         url: objUrl,
         timeout: 45000,
         beforeSend: function() {
-            //$(divProcess).html(loading());
+            if (loadingBar) { $(divProcess).html(loading()) }
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
@@ -66,6 +101,7 @@ const appendElement = (objUrl, objToAppend, data = []) => {
         },
         success: function(data) {
             setTimeout(function() {
+                if (clear) { $(divProcess).html(""); }
                 $(divProcess).append(data);
             }, 1000);
         }
@@ -505,6 +541,40 @@ const ventaRegistroFormulario = () => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaStock = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    console.log(divProcess);
+    $.ajax({
+        type: "POST",
+        url: "./includes/compañia/stock.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
         complete: function() {
             me.data('requestRunning', false);
         },

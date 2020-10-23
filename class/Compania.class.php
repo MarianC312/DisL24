@@ -1,5 +1,17 @@
 <?php
     class Compania{
+        public static function stockFormulario(){
+            if(Sistema::usuarioLogueado()){
+                $data = Compania::stockData();
+            }else{
+                Sistema::debug('error', 'compania.class.php - stockFormulario - Usuario no logueado.');
+            }
+        }
+
+        public static function stockData($idCompañia = null, $idSucursal = null){
+            
+        }
+
         public static function sucursalGetNombre($idSucursal){
             if(isset($idSucursal) && is_numeric($idSucursal) && $idSucursal > 0){
                 $query = DataBase::select("compañia_sucursal", "nombre", "id = '".$idSucursal."'", "");

@@ -1,5 +1,29 @@
 <?php
     class Lista{
+        public static function producto(){
+            $query = DataBase::select("producto", "*", "1", "ORDER BY nombre ASC");
+            if($query){
+                if(DataBase::getNumRows($query) > 0){
+                    $data = [];
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    return 0;
+                }
+            }else{
+                return false;
+            }
+        } 
+
         public static function productoTipo(){
             $query = DataBase::select("producto_tipo", "*", "1", "ORDER BY tipo ASC");
             if($query){

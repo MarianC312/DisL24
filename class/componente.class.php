@@ -418,6 +418,7 @@
                                             <div class="d-flex flex-column ml-3"> 
                                                 <a href="./producto.php" class="nav-item nav-link"><i class="fa fa-clipboard"></i> Actividades</a>
                                                 <a href="#/" onclick="productoRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Registrar</a>
+                                                <a href="#/" onclick="compañiaStock()" class="nav-item nav-link"><i class="fa fa-truck"></i> Mi stock</a>
                                                 <a href="#/" onclick="productoInventario()" class="nav-item nav-link"><i class="fa fa-list-ol"></i> Inventario</a>
                                                 <a href="#/" class="nav-item nav-link"><i class="fa fa-cogs"></i> Administración</a> 
                                             </div>

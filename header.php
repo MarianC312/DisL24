@@ -63,6 +63,9 @@
     <!-- Require for React -->
     <script src="./js/require.js"></script>
 
+    <!-- BarcodeJS -->
+    <script src="./js/JsBarcode.all.min.js"></script>
+
     <!-- MiNe -->
     <link rel="stylesheet" href="./css/style.css" />
     <script src="./js/mine-actions.js"></script>

@@ -23,6 +23,9 @@
         <div id="right-content" class="flex-grow-1">
                 <?php Componente::headerUsuario() ?>
                 <div id="right-content-data">
+                    <?php
+                        
+                    ?>
                 </div>
             </div>
         </div>

@@ -19,6 +19,36 @@
             return false;
         }
 
+        
+
+        public static function stockCompañiaGetData($idSucursal = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $query = DataBase::select("producto_stock", "*", "compañia = '".$_SESSION["usuario"]->getCompañia()."' ".((is_numeric($idSucursal)) ? "AND sucursal = '".$idSucursal."'" : "")."", "");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'producto.class.php - stockCompañia - Error al buscar información de stock de compañía. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('', ' - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function stockGetId($idProducto, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
@@ -42,15 +72,24 @@
             return false;
         }
 
-        public static function stockGetData($idProducto, $tipo, $sucursal = null, $compañia = null){
+        public static function stockGetData($idProducto, $tipo = null, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
-                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0 && isset($tipo) && strlen($tipo) > 0){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
                     Session::iniciar();
-                    $query = DataBase::select("producto_stock", $tipo, "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    $query = DataBase::select("producto_stock", ((!is_null($tipo)) ? $tipo : "*"), "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
                     if($query){
                         if(DataBase::getNumRows($query) == 1){
                             $dataQuery = DataBase::getArray($query);
-                            return $dataQuery[$tipo];
+                            if(!is_null($tipo) && count(explode(",", $tipo)) < 1){
+                                return $dataQuery[$tipo];
+                            }else{
+                                foreach($dataQuery AS $key => $value){
+                                    if(is_int($key)){
+                                        unset($dataQuery[$key]);
+                                    }
+                                }
+                                return $dataQuery;
+                            }
                         }else{
                             Sistema::debug('error', 'producto.class.php - stockGetData - No se encontró la información del stock del producto. Ref.: '.$idProducto);
                             return 0;
@@ -207,23 +246,43 @@
                                 <?php
                                     if(is_array($data)){
                                         if(count($data) > 0){
+                                            $productoTipo = $_SESSION["lista"]["producto"]["tipo"];
+                                            $productoCategoria = $_SESSION["lista"]["producto"]["categoria"];
+                                            $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"]; 
+                                            $counter = 0;
                                             foreach($data AS $key => $value){
-                                                $productoTipo = $_SESSION["lista"]["producto"]["tipo"];
-                                                $productoCategoria = $_SESSION["lista"]["producto"]["categoria"];
-                                                $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"]; 
                                                 ?>
                                                 <tr id="producto-<?php echo $key ?>" data-key="<?php echo $key ?>">
                                                     <th scope="row"><?php echo $value["codigoBarra"] ?></th>
                                                     <td><?php echo $value["nombre"] ?></td>
-                                                    <td id="stock" data-value="<?php echo (is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
-                                                    <td id="minimo" data-value="<?php echo (is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
-                                                    <td id="maximo" data-value="<?php echo (is_numeric($value["maximo"])) ? $value["maximo"] : 0 ?>" class="text-center"><?php echo (is_numeric($value["maximo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["maximo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
+                                                    <td id="stock" data-value="<?php echo (isset($value["stock"]) && is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
+                                                    <td id="minimo" data-value="<?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
+                                                    <td id="maximo" data-value="<?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? $value["maximo"] : 0 ?>" class="text-center"><?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["maximo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td><?php echo $productoTipo[$value["tipo"]]; ?></td>
                                                     <td><?php echo $productoCategoria[$value["categoria"]] ?></td>
                                                     <td><?php echo (is_numeric($value["subcategoria"])) ? $productoSubcategoria[$value["subcategoria"]] : "<span class='text-muted'>No categorizado</span>" ?></td>
                                                     <td></td>
                                                 </tr>
                                                 <?php
+                                                $counter++;
+                                                if($counter == 500){
+                                                    ?>
+                                                    <tr>
+                                                        <td colspan="9" class="text-center">
+                                                            Cargar más
+                                                        </td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                    </tr>
+                                                    <?php
+                                                    break;
+                                                }
                                             } 
                                         }else{
                                             ?> 
@@ -231,14 +290,14 @@
                                                 <td colspan="9" class="text-center">
                                                     No se encontraron productos registrados en la compañia. Para cargar un nuevo producto clickee en el siguiente <a href="#/" onclick="productoRegistroFormulario()">link</a>.
                                                 </td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
-                                                <td></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
                                             </tr>
                                             <?php
                                         }
@@ -319,33 +378,47 @@
             }
         }
 
-        public static function data($idSucursal = null){
+        public static function getData($idProducto, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
-                Session::iniciar();
-                $query = DataBase::select("producto p LEFT JOIN producto_stock ps ON ps.producto = p.id", "p.id AS 'idProducto',p.nombre, p.tipo, p.codigoBarra,p.categoria,p.subcategoria,ps.*", "p.compañia = '".$_SESSION["usuario"]->getCompañia()."' AND '".((is_numeric($idSucursal) && $idSucursal > 0) ? " AND ps.sucursal = ".$idSucursal."" : "1")."' AND estado = 1", "ORDER BY p.nombre ASC");
-                if($query){
-                    if(DataBase::getNumRows($query) > 0){
-                        $data = [];
-                        while($dataQuery = DataBase::getArray($query)){
-                            $data[$dataQuery["idProducto"]] = $dataQuery;
-                        }
-                        foreach($data AS $key => $value){
-                            foreach($value AS $iKey => $iValue){
-                                if(is_int($iKey)){
-                                    unset($data[$key][$iKey]);
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("producto", "*", "id = '".$idProducto."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $data = DataBase::getArray($query);
+                            $stock = Producto::stockGetData($idProducto, "stock,minimo,maximo");
+                            if(is_array($stock)){
+                                foreach($stock AS $key => $value){
+                                    $data[$key] = $value;
+                                }
+                            }else{
+                                Sistema::debug('error', 'producto.class.php - getData - Error al recibir la información de stock del producto. Ref.: '.$idProducto);
+                            }
+                            foreach($data AS $key => $value){
+                                if(is_int($key)){
+                                    unset($data[$key]);
                                 }
                             }
+                            return $data;
+                        }else{
+                            Sistema::debug('error', 'producto.class.php - getData - No se encontraron productos relacionados al identificador. Ref.: '.$idProducto);
                         }
-                        Sistema::debug('success', 'producto.class.php - data - Información encontrada satisfactoriamente. Prod. encontrados:'.DataBase::getNumRows($query));
-                        return $data;
                     }else{
-                        Sistema::debug('info', 'producto.class.php - data - No se encontraron productos registrados. Inf.:'.DataBase::getNumRows($query));
-                        return [];
+                        Sistema::debug('error', 'producto.class.php - getData - Error al consultar la información del producto. Ref.: '.DataBase::getError());
                     }
                 }else{
-                    Sistema::debug('error', 'producto.class.php - data - Error en la consulta de base de datos. Inf.:'.DataBase::getError());
-                    return false;
+                    Sistema::debug('error', 'producto.class.php - getData - Identificador de producto erroneo. Ref.: '.$idProducto);
                 }
+            }else{
+                Sistema::debug('error', 'producto.class.php - getData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function data(){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                return $_SESSION["lista"]["producto"];
             }else{
                 Sistema::debug('error', 'producto.class.php - data - Usuario no logueado.');
             }
@@ -378,13 +451,14 @@
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && (count($data) == 4 || count($data) == 1)){
                     if(isset($data["codigo"]) && is_numeric($data["codigo"]) && $data["codigo"] > 0){
-                        $query = DataBase::select("producto", "id", "codigoBarra = '".$data["codigo"]."'", "");
+                        Session::iniciar();
+                        $query = DataBase::select("producto", "id", "codigoBarra = '".$data["codigo"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
                         if($query){
                             if(DataBase::getNumRows($query) == 1){
                                 $dataQuery = DataBase::getArray($query);
                                 if($cargaFormularioRegistro){
                                     Sistema::debug("success", "producto.class.php - corroboraExistencia - Producto encontrado, carga de formulario de edición para producto ID: ".$dataQuery["id"].".");
-                                    Producto::editarFormulario($dataQuery["id"]);
+                                    echo '<script>productoEditarFormulario('.$dataQuery["id"].')</script>';
                                 }else{
                                     Sistema::debug("success", "producto.class.php - corroboraExistencia - Producto encontrado ID: ".$dataQuery["id"].".");
                                     return true;
@@ -428,6 +502,9 @@
                 ?>
                 <div class="mine-container">
                     <div class="titulo">Corroborar existencia</div>
+                    <div class="d-flex justify-content-center align-items-center">
+                        <img id="barcode" />
+                    </div>
                     <div id="producto-corrobora-existencia-process" style="display: none"></div>
                     <form id="producto-corrobora-existencia-form" action="./engine/producto/corrobora-existencia.php" form="#producto-corrobora-existencia-form" process="#producto-corrobora-existencia-process"> 
                         <div class="form-group">
@@ -439,10 +516,15 @@
                             <input type="text" class="form-control" placeholder="Ingrese código del producto" id="formulario" name="formulario" value="1" readonly>
                         </div>
                         <div class="form-group">
-                            <button type="button" onclick="productoCorroboraExistencia()" class="btn btn-success">Corroborar</button>
+                            <button type="button" onclick="productoCorroboraExistencia()" class="btn btn-success">Corroborar <span class="d-inline" style="color: inherit" id="producto-corrobora-cantidad"></span></button>
                         </div>
                     </form>
                 </div>
+                <script>
+                    $("#codigo").on('keyup', () => {
+                        barCode("#barcode", $("#codigo").val());
+                    })
+                </script>
                 <?php
             }else{
                 Sistema::debug('error', 'producto.class.php - corroboraExistenciaFormulario - Usuario no logueado.');
@@ -458,7 +540,7 @@
                         $mensaje['tipo'] = 'info';
                         $mensaje['cuerpo'] = 'El producto ya se encuentra registrado.';
                         $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
-                            <button type="button" onclick="productoEditarFormulario()" class="btn btn-info">Editar producto</button>
+                            <button type="button" onclick="productoEditarFormulario('.$data[""].')" class="btn btn-info">Editar producto</button>
                             <button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-outline-info">Regresar</button>
                         </div>';
                         Alert::mensaje($mensaje);
@@ -500,7 +582,359 @@
         public static function editarFormulario($idProducto){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
-                    $data = [];
+                    $codigoProducto = Producto::getCodigo($idProducto);
+                    if(is_numeric($codigoProducto) && $codigoProducto > 0){
+                        $data = Producto::getData($idProducto);
+                        echo '<pre>';
+                        print_r($data);
+                        echo '</pre>';
+                        ?>
+                        <div class="mine-container">
+                            <div class="titulo">Edición de producto: <?php echo $data["nombre"] ?></div>
+                            <div id="producto-registro-debug"></div>
+                            <div id="producto-registro-stepper-1" class="bs-stepper">
+                                <div class="bs-stepper-header" role="tablist">
+                                    <div class="step <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 1) ? "active" : ""; ?>" data-target="#producto-registro-p-1">
+                                        <button type="button" class="step-trigger" role="tab" aria-controls="producto-registro-p-1" id="producto-registro-p-1-trigger" aria-selected="<?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 1) ? "true" : "false"; ?>">
+                                            <span class="bs-stepper-circle">1</span>
+                                            <span class="bs-stepper-label">Datos básicos</span>
+                                        </button>
+                                    </div>
+                                    <div class="line"></div>
+                                    <div class="step <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 2) ? "active" : ""; ?>" data-target="#producto-registro-p-2">
+                                        <button type="button" class="step-trigger" role="tab" aria-controls="producto-registro-p-2" id="producto-registro-p-2-trigger" aria-selected="<?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 2) ? "true" : "false"; ?>">
+                                            <span class="bs-stepper-circle">2</span>
+                                            <span class="bs-stepper-label">Datos opcionales</span>
+                                        </button>
+                                    </div>
+                                    <div class="line"></div>
+                                    <div class="step <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 3) ? "active" : ""; ?>" data-target="#producto-registro-p-3">
+                                        <button type="button" class="step-trigger" role="tab" aria-controls="producto-registro-p-2" id="producto-registro-p-2-trigger" aria-selected="<?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 3) ? "true" : "false"; ?>">
+                                            <span class="bs-stepper-circle">2</span>
+                                            <span class="bs-stepper-label">Stock</span>
+                                        </button>
+                                    </div>
+                                    <div class="line"></div>
+                                    <div class="step <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 4) ? "active" : ""; ?>" data-target="#producto-registro-p-4">
+                                        <button type="button" class="step-trigger" role="tab" aria-controls="producto-registro-p-4" id="producto-registro-p-4-trigger" aria-selected="<?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 4) ? "true" : "false"; ?>">
+                                            <span class="bs-stepper-circle">4</span>
+                                            <span class="bs-stepper-label">Completar modificación</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="bs-stepper-content"> 
+                                    <div id="producto-registro-formulario-process" style="display: none;"></div>
+                                    <form id="producto-registro-formulario-form" onsubmit="return false" action="./engine/producto/editar.php" form="#producto-editar-formulario-form" process="#producto-registro-formulario-process"> 
+                                        <div id="producto-registro-p-1" class="content <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 1) ? "dstepper-block active" : ""; ?>" role="tabpanel" aria-labelledby="producto-registro-p-1-trigger">
+                                            <div class="form-group">
+                                                <label class="col-form-label required" for="codigo"><i class="fa fa-barcode"></i> Código</label>
+                                                <input type="text" class="form-control" required placeholder="Código comercial del producto" id="codigo" name="codigo" value="<?php echo (isset($data["codigo"])) ? $data["codigo"] : ''; ?>">
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="col-form-label required" for="tipo"><i class="fa fa-list"></i> Tipo</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" required id="tipo" name="tipo">
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["producto"]["tipo"]) && count($_SESSION["lista"]["producto"]["tipo"]) > 0){
+                                                                foreach($_SESSION["lista"]["producto"]["tipo"] AS $key => $value){
+                                                                    $selected = (isset($data["tipo"]) && $data["tipo"] == $key) ? "selected" : "";
+                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
+                                                                }
+                                                            }else{
+                                                                switch(true){
+                                                                    case ($_SESSION["lista"]["producto"]["tipo"] < 1):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de tipos de producto es menor a 1.");
+                                                                    break;
+                                                                    case(is_bool($_SESSION["lista"]["producto"]["tipo"]) && !$_SESSION["lista"]["producto"]["tipo"]):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de tipos de producto es FALSE.");
+                                                                    break;
+                                                                    default:
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de tipos de producto es desconocido.");
+                                                                    break;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="producto-tipo-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
+                                                    </div> 
+                                                </div>
+                                            </div> 
+                                            <div class="form-group">
+                                                <label class="col-form-label required" for="categoria"><i class="fa fa-list"></i> Categoría</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" required id="categoria" name="categoria">
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["producto"]["categoria"]) && count($_SESSION["lista"]["producto"]["categoria"]) > 0){
+                                                                foreach($_SESSION["lista"]["producto"]["categoria"] AS $key => $value){
+                                                                    $selected = (isset($data["categoria"]) && $data["categoria"] == $key) ? "selected" : "";
+                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
+                                                                }
+                                                            }else{
+                                                                switch(true){
+                                                                    case ($_SESSION["lista"]["producto"]["categoria"] < 1):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de categorías de producto es menor a 1.");
+                                                                    break;
+                                                                    case(is_bool($_SESSION["lista"]["producto"]["categoria"]) && !$_SESSION["lista"]["producto"]["categoria"]):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de categorías de producto es FALSE.");
+                                                                    break;
+                                                                    default:
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de categorías de producto es desconocido.");
+                                                                    break;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="producto-categoria-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="col-form-label required" for="nombre"><i class="fa fa-pencil-square-o"></i> Nombre</label>
+                                                <input type="text" class="form-control" required placeholder="Nombre del producto" id="nombre" name="nombre" value="<?php echo (isset($data["nombre"])) ? $data["nombre"] : ""; ?>">
+                                            </div>
+                                            <div class="form-group d-flex justify-content-end">
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="2" onclick="stepper1.next()">Siguiente</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div id="producto-registro-p-2" class="content <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 2) ? "dstepper-block active" : ""; ?>" role="tabpanel" aria-labelledby="producto-registro-p-2-trigger"> 
+                                            <div class="form-group">
+                                                <label class="col-form-label" for="subcategoria"><i class="fa fa-list"></i> Sub-Categoría</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" id="subcategoria" name="subcategoria">
+                                                        <option value=""> -- </option>
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["producto"]["subcategoria"]) && count($_SESSION["lista"]["producto"]["subcategoria"]) > 0){
+                                                                foreach($_SESSION["lista"]["producto"]["subcategoria"] AS $key => $value){
+                                                                    $selected = (isset($data["subcategoria"]) && $data["subcategoria"] == $key) ? "selected" : "";
+                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
+                                                                }
+                                                            }else{
+                                                                switch(true){
+                                                                    case ($_SESSION["lista"]["producto"]["fabricante"] < 1):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de subcagetorias de producto es menor a 1.");
+                                                                    break;
+                                                                    case(is_bool($_SESSION["lista"]["producto"]["fabricante"]) && !$_SESSION["lista"]["producto"]["fabricante"]):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de subcagetorias de producto es FALSE.");
+                                                                    break;
+                                                                    default:
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de subcagetorias de producto es desconocido.");
+                                                                    break;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="producto-subcategoria-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="col-form-label" for="fabricante"><i class="fa fa-list"></i> Fabricante</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" id="fabricante" name="fabricante">
+                                                        <option value=""> -- </option>
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["fabricante"]) && count($_SESSION["lista"]["fabricante"]) > 0){
+                                                                foreach($_SESSION["lista"]["fabricante"] AS $key => $value){
+                                                                    $selected = (isset($data["fabricante"]) && $data["fabricante"] == $key) ? "selected" : "";
+                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
+                                                                }
+                                                            }else{
+                                                                switch(true){
+                                                                    case ($_SESSION["lista"]["fabricante"] < 1):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de fabricantes es menor a 1.");
+                                                                    break;
+                                                                    case(is_bool($_SESSION["lista"]["fabricante"]) && !$_SESSION["lista"]["fabricante"]):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de fabricantes es FALSE.");
+                                                                    break;
+                                                                    default:
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de fabricantes es desconocido.");
+                                                                    break;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="producto-categoria-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-around"> 
+                                                <div class="form-group">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="venta" name="venta" value="1" <?php echo (isset($data["venta"]) && $data["venta"] == 1) ? "checked" : ""; ?>>
+                                                        <label class="custom-control-label" for="venta">Producto para Venta</label>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input" id="compra" name="compra" value="1" <?php echo (isset($data["compra"]) && $data["compra"] == 1) ? "checked" : ""; ?>>
+                                                        <label class="custom-control-label" for="compra">Producto para Compra</label>
+                                                    </div>
+                                                </div>
+                                            </div> 
+                                            <div class="form-group">
+                                                <label class="col-form-label" for="proveedor"><i class="fa fa-list"></i> Proveedor</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" id="proveedor" name="proveedor">
+                                                        <option value=""> -- </option>
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["proveedor"]) && count($_SESSION["lista"]["proveedor"]) > 0){
+                                                                foreach($_SESSION["lista"]["proveedor"] AS $key => $value){
+                                                                    $selected = (isset($data["proveedor"]) && $data["proveedor"] == $key) ? "selected" : "";
+                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
+                                                                }
+                                                            }else{
+                                                                switch(true){
+                                                                    case ($_SESSION["lista"]["proveedor"] < 1):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de proveedores es menor a 1.");
+                                                                    break;
+                                                                    case(is_bool($_SESSION["lista"]["proveedor"]) && !$_SESSION["lista"]["proveedor"]):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de proveedores es FALSE.");
+                                                                    break;
+                                                                    default:
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de proveedores es desconocido.");
+                                                                    break;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="producto-proveedor-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                            <div class="form-group d-flex justify-content-between"> 
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="1"  onclick="stepper1.previous()">Anterior</button>
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="3"  onclick="stepper1.next()">Siguiente</button>
+                                            </div>
+                                        </div> 
+                                        
+                                        <div id="producto-registro-p-3" class="content <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 3) ? "dstepper-block active" : ""; ?>" role="tabpanel" aria-labelledby="producto-registro-p-3-trigger"> 
+                                            
+                                            <div class="form-group d-flex justify-content-between"> 
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="1"  onclick="stepper1.previous()">Anterior</button>
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="3"  onclick="stepper1.next()">Siguiente</button>
+                                            </div>
+                                        </div>
+
+                                        <div id="producto-registro-p-4" class="content <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 4) ? "dstepper-block active" : ""; ?>" role="tabpanel" aria-labelledby="producto-registro-p-4-trigger"> 
+                                            <div class="form-group">
+                                                <label class="col-form-label" for="compañia"><i class="fa fa-list"></i> Compañía</label>
+                                                <select class="form-control" id="compañia" name="compañia">
+                                                    <?php
+                                                        if(is_array($_SESSION["lista"]["compañia"]) && count($_SESSION["lista"]["compañia"]) > 0){
+                                                            foreach($_SESSION["lista"]["compañia"] AS $key => $value){
+                                                                $selected = ((isset($data["compañia"]) && $data["compañia"] == $key) || $_SESSION["usuario"]->getCompañia() == $key) ? "selected" : "";
+                                                                echo '<option value="'.$key.'" '.$selected.'>'.$value["nombre"].'</option>';
+                                                            }
+                                                        }else{
+                                                            switch(true){
+                                                                case ($_SESSION["lista"]["compañia"] < 1):
+                                                                    Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de compañías es menor a 1.");
+                                                                break;
+                                                                case(is_bool($_SESSION["lista"]["compañia"]) && !$_SESSION["lista"]["compañia"]):
+                                                                    Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de compañías es FALSE.");
+                                                                break;
+                                                                default:
+                                                                    Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de compañías es desconocido.");
+                                                                break;
+                                                            }
+                                                        }
+                                                    ?>
+                                                </select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label class="col-form-label" for="sucursal"><i class="fa fa-list"></i> Sucursal</label>
+                                                <div class="input-group">
+                                                    <select class="form-control" id="sucursal" name="sucursal">
+                                                        <option value=""> -- </option>
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["sucursal"]) && count($_SESSION["lista"]["sucursal"]) > 0){
+                                                                foreach($_SESSION["lista"]["sucursal"] AS $key => $value){
+                                                                    $selected = ((isset($data["sucursal"]) && $data["sucursal"] == $key) || $_SESSION["usuario"]->getSucursal() == $key) ? "selected" : "";
+                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value["nombre"].'</option>';
+                                                                }
+                                                            }else{
+                                                                switch(true){
+                                                                    case ($_SESSION["lista"]["sucursal"] < 1):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de sucursales es menor a 1.");
+                                                                    break;
+                                                                    case(is_bool($_SESSION["lista"]["sucursal"]) && !$_SESSION["lista"]["sucursal"]):
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de sucursales es FALSE.");
+                                                                    break;
+                                                                    default:
+                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de sucursales es desconocido.");
+                                                                    break;
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                    <div class="input-group-append">
+                                                        <button type="button" id="producto-proveedor-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
+                                                    </div> 
+                                                </div>
+                                            </div>
+                                            <div class="form-group d-flex justify-content-between"> 
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="2"  onclick="stepper1.previous()">Anterior</button>
+                                                <button class="btn btn-outline-success" id="producto-form-registro" value="1" onclick="productoRegistro()">Registrar producto</button>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                            <script> 
+                                $("#producto-registro-formulario-form input").on('focusout', (e) => {
+                                    tareaAgregarData('Registro de producto [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
+                                });
+                                $("#producto-registro-formulario-form select").on('change', (e) => {
+                                    tareaAgregarData('Registro de producto [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
+                                });
+                                tail.select('#categoria', {
+                                    search: true,
+                                    classNames: ["flex-grow-1"]
+                                });
+                                tail.select('#tipo', {
+                                    search: true,
+                                    classNames: ["flex-grow-1"]
+                                });
+                                tippy('#producto-tipo-get-form', {
+                                    content: 'Agregar un nuevo tipo de producto a la lista.',
+                                    delay: [0,500],
+                                    animation: 'fade'
+                                });
+                                tippy('#producto-proveedor-get-form', {
+                                    content: 'Agregar un nuevo proveedor de producto a la lista.',
+                                    delay: [0,500],
+                                    animation: 'fade'
+                                });
+                                tippy('#producto-categoria-get-form', {
+                                    content: 'Agregar una nueva categoría de producto a la lista.',
+                                    delay: [0,500],
+                                    animation: 'fade'
+                                });
+                                tippy('#producto-subcategoria-get-form', {
+                                    content: 'Agregar una nueva subcategoría de producto a la lista.',
+                                    delay: [0,500],
+                                    animation: 'fade'
+                                });
+                                var stepper1Node = document.querySelector('#producto-registro-stepper-1')
+                                var stepper1 = new Stepper(document.querySelector('#producto-registro-stepper-1'),{
+                                    linear: false,
+                                    animation: true
+                                });
+                            </script>
+                        </div>
+                        <?php
+                    }else{
+                        $mensaje['tipo'] = 'warning';
+                        $mensaje['cuerpo'] = 'No se pudo comprobar la existencia del producto. <b>Intente nuevamente o contacte al administrador.</b>';
+                        Alert::mensaje($mensaje);
+                        Sistema::debug('error', 'producto.class.php - editarFormulario - Error en cpodigo de producto.');
+                    }
                 }else{
                     $mensaje['tipo'] = 'danger';
                     $mensaje['cuerpo'] = 'Hubo un error con los datos recibidos. <b>Intente nuevamente o contacte al administrador.</b>';

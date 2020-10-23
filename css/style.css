@@ -266,6 +266,7 @@ body {
 }
 
 #container-tareas-pendientes {
+    min-width: 10vw;
     max-width: 25vw;
 }
 
@@ -498,10 +499,17 @@ body {
 
 .btn-iconed>.fa {
     display: none;
+    animation: animloader-ok 0.75s;
 }
 
 .btn-iconed:hover>.fa {
     display: inline-block;
+    animation: animloader-ok 0.75s;
+}
+
+.btn-iconed:hover>span {
+    transform: translateX(-5px);
+    transition: transform 1s ease-in;
 }
 
 .btn-outline-white {

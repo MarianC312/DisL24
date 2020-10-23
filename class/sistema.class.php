@@ -3,6 +3,101 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
+        public static function dbGetCantidadProductoPorPrefijo($prefijo){
+            if(Sistema::usuarioLogueado()){
+                $buscar = false;
+                switch(strlen($prefijo)){
+                    case 3:
+                        $buscar = true;
+                    break;
+                    case 5:
+                        $buscar = true;
+                    break;
+                    case 8:
+                        $buscar = true;
+                    break;
+                }
+                if($buscar){
+                    $query = DataBase::select("producto", "SUBSTRING(codigoBarra, 1, ".strlen($prefijo).") AS 'prefijo', COUNT(SUBSTRING(codigoBarra, 1 ,".strlen($prefijo).")) AS 'cantidad'", "codigoBarra LIKE '".$prefijo."%'", "GROUP BY SUBSTRING(codigoBarra, 1, ".strlen($prefijo).")");
+                    if($query){
+                        $data = [];
+                        if(DataBase::getNumRows($query) > 0){
+                            while($dataQuery = DataBase::getArray($query)){
+                                $data[] = $dataQuery;
+                            }
+                            foreach($data AS $key => $value){
+                                foreach($value AS $iKey => $iValue){
+                                    if(is_int($iKey)){
+                                        unset($data[$key][$iKey]);
+                                    }
+                                }
+                            }
+                        }
+                        return $data;
+                    }else{
+                        Sistema::debug('error', 'sistema.class.php - dbGetCantidadProductoPorPrefijo - Error en consulta. Ref.: '.DataBase::getError());
+                    }
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - dbGetCantidadProductoPorPrefijo - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function dbGetTamañoCodigoBarra(){ //cantidad de productos por cantidad de char en codigo de barra
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                if($_SESSION["usuario"]->isAdmin()){
+                    $query = DataBase::select("producto", "CHAR_LENGTH(codigoBarra) AS 'Tamaño código', COUNT(CHAR_LENGTH(codigoBarra)) AS 'cantidad'", "1", "GROUP BY CHAR_LENGTH(codigoBarra)");
+                    if($query){
+                        $data = [];
+                        if(DataBase::getNumRows($query) > 0){
+                            while($dataQuery = DataBase::getArray($query)){
+                                $data[] = $dataQuery;
+                            }
+                            foreach($data AS $key => $value){
+                                foreach($value AS $iKey => $iValue){
+                                    if(is_int($iKey)){
+                                        unset($data[$key][$iKey]);
+                                    }
+                                }
+                            }
+                        }
+                        return $data;
+                    }else{
+                        Sistema::debug('error', 'sistema.class.php - dbGetTamañoCodigoBarra - Error en consulta. Ref.: '.DataBase::getError());
+                    }
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - dbGetTamañoCodigoBarra - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function getDigitoControl($codigo){
+            $digitos = strlen($codigo);
+            switch($digitos){
+                case 11:
+
+                break;
+                case 12:
+
+                break;
+                case 14:
+
+                break;
+            }
+        }
+
+        public static function in_array_r($needle, $haystack, $strict = false) {
+            foreach ($haystack as $item) {
+                if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && Sistema::in_array_r($needle, $item, $strict))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public static function loading($tipo = "loader"){
             return ('<span class="'.$tipo.'"></span>');
         }
@@ -69,6 +164,7 @@
         public static function reloadStaticData(){
             Session::iniciar();
             $_SESSION["usuario"]->reloadStaticData();
+            $_SESSION["lista"]["producto"] = Lista::producto();
             $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
             $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
             $_SESSION["lista"]["producto"]["subcategoria"] = Lista::productoSubCategoria();
@@ -190,6 +286,114 @@
             $context = hash_init(Sistema::$alg, HASH_HMAC, Sistema::$key);
             hash_update($context, $data); 
             return hash_final($context);
+        }
+
+        public static function getFileData($tipo, $url){
+            if(Sistema::usuarioLogueado()){
+                switch($tipo){
+                    case 'csv':
+                        return Sistema::fileCSV($url);
+                    break;
+                    case 'json':
+                        return Sistema::fileJSON($url);
+                    break;
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - openFile - Usuario no logueado.');
+            }
+        }
+
+        private static function fileCSV($url){
+            if(Sistema::usuarioLogueado()){
+                $data = [];
+                if (($h = fopen($url, "r")) !== FALSE){
+                    while (($fileData = fgetcsv($h, 1000, ",")) !== FALSE){	
+                        $data[] = $fileData;
+                    }
+                    fclose($h);
+                }
+                return $data;
+            }else{
+                Sistema::debug('error', 'sistema.class.php - fileCSV - Usuario no logueado.');
+            }
+        }
+
+        private static function fileJSON($url){
+            if(Sistema::usuarioLogueado()){
+                $str = file_get_contents($url);
+                $data = json_decode($str, true);
+                return $data;
+            }else{
+                Sistema::debug('error', 'sistema.class.php - fileJSON - Usuario no logueado.');
+            }
+        }
+
+        private static function accionesConDatos(){
+            if (($h = fopen('./data/pcuidados/productos.csv', "r")) !== FALSE){
+                while (($data = fgetcsv($h, 1000, ",")) !== FALSE){	
+                    echo '<pre>';
+                    print_r($data);
+                    echo '</pre>';
+                }
+                // Close the file
+                fclose($h);
+            }
+
+            if(1 == 2){
+                $_SESSION["producto"] = [];
+                $dif = [0,4,6,20,30,15];
+                $exc = [0,8,17,21,33,40];
+                if (($h = fopen('./data/productos2.csv', "r")) !== FALSE){
+                    while (($data = fgetcsv($h, 1000, ",")) !== FALSE){	
+                        $cat = array_keys($_SESSION["lista"]["producto"]["categoria"], $data[2]);
+                        if(count($cat) > 0){
+                            $categoria = $cat[0];
+                        }else{
+                            $aFlag = array_keys($_SESSION["categoria"], $data[2]);
+                            $flag = array_keys($exc, $aFlag[0]);
+                            $categoria = $dif[$flag[0]];
+                        } 
+                        if($data[1] != "Descripcion"){ 
+                            
+                        }
+                    }
+                    // Close the file
+                    fclose($h);
+                }
+                echo '<pre>';
+                print_r($_SESSION["producto"]);
+                echo '</pre>';
+                exit;
+                
+                $start = 45449;
+                foreach($_SESSION["producto"] AS $key => $value){
+                    if($key >= $start){
+                        $query = DataBase::insert("producto", "nombre,tipo,codigoBarra,categoria", "'".$value["nombre"]."','".$value["tipo"]."','".$value["codigo"]."','".$value["categoria"]."'");
+                        if($query){
+                            echo DataBase::getLastId()." | ".$value["nombre"]." OK. <br>";
+                        }else{
+                            echo $value["nombre"]." ERROR.<br> ".DataBase::getError()." <br><br>";
+                        }
+                    }
+                }
+            }
+
+            if(1 == 2){
+                $str = file_get_contents('./data/pmaximos/tucuman.json');
+                $data = json_decode($str, true);
+                foreach($data AS $key => $value){
+                    foreach($value AS $iKey => $iValue){
+                        if(Sistema::in_array_r($iValue["id_producto"], $_SESSION["lista"]["producto"])){
+                            $query = DataBase::update("producto", "subcategoria = 1", "codigoBarra = '".$iValue["id_producto"]."'");
+                            if($query){
+                                echo $iValue["Producto"]." registro modificado.<br>";
+                            }else{
+                                echo $iValue["Producto"]." ERROR.<br> ".DataBase::getError()." <br><br>";
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 ?>
