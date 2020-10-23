@@ -23,6 +23,13 @@
         <div id="right-content" class="flex-grow-1">
                 <?php Componente::headerUsuario() ?>
                 <div id="right-content-data">
+                <?php
+                    $str = file_get_contents('./data/pmaximos/buenos-aires.json');
+                    $data = json_decode($str, true);
+                    echo '<pre>';
+                        print_r($data);
+                    echo '</pre>';
+                ?>
                 </div>
             </div>
         </div>
