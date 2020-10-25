@@ -12,12 +12,12 @@
                 }
                 $data[$key] = $value;
             }
-            Producto::inventarioEditarContenidoFormulario($data);
-            Sistema::debug("success", "includes > producto > inventario-editar-contenido-formulario.php - Información recibida correctamente.");
+            Compania::stockEditarContenidoFormulario($data);
+            Sistema::debug("success", "includes > compania > stock-editar-contenido-formulario.php - Información recibida correctamente.");
         }else{
-            Sistema::debug("error", "includes > producto > inventario-editar-contenido-formulario.php - No se recibió información del formulario.");
+            Sistema::debug("error", "includes > compania > stock-editar-contenido-formulario.php - No se recibió información del formulario.");
         }
     }else{
-        Sistema::debug("error", "includes > producto > inventario-editar-contenido-formulario.php - Usuario no logueado.");
+        Sistema::debug("error", "includes > compania > stock-editar-contenido-formulario.php - Usuario no logueado.");
     }
 ?>

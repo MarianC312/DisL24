@@ -415,6 +415,58 @@
             return false;
         }
 
+        public static function buscadorData($data, $max = 500){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    if($data["filtroOpcion"] == 1 || $data["filtroOpcion"] == 2){
+                        switch($data["filtroOpcion"]){
+                            case 1:
+                                $cond = "";
+                                if(is_array($data["tag"]) && count($data["tag"]) > 0){
+                                    foreach($data["tag"] AS $key => $value){
+                                        $value = preg_replace( '/[\W]/', '', $value);
+                                        if($key > 0 && $key < count($data["tag"])){
+                                            $cond .= " AND ";
+                                        }
+                                        $cond .= "nombre LIKE '%".$value."%'";
+                                    }
+                                }
+                                $query = DataBase::select("producto", "*", $cond, "ORDER BY codigoBarra ASC, nombre ASC LIMIT ".$max);
+                            break;
+                            case 2:
+                                $query = DataBase::select("producto", "*", "codigoBarra LIKE '".$data["codigo"]."%'", "ORDER BY codigoBarra ASC, nombre ASC LIMIT ".$max);
+                            break;
+                        }
+                        if($query){
+                            $data = [];
+                            if(DataBase::getNumRows($query) > 0){
+                                while($dataQuery = DataBase::getArray($query)){
+                                    $data[] = $dataQuery;
+                                }
+                                foreach($data AS $key => $value){
+                                    foreach($value AS $iKey => $iValue){
+                                        if(is_int($iKey)){
+                                            unset($data[$key][$iKey]);
+                                        }
+                                    }
+                                }
+                            }
+                            return $data;
+                        }else{
+                            Sistema::debug('error', 'compania.class.php - stockRegistroProductoListaFormulario - Error al buscar los productos. Ref.: '.DataBase::getError());
+                        }
+                    }else{
+                        Sistema::debug('error', 'compania.class.php - stockRegistroProductoListaFormulario - Error en el dato de búsqueda recibido. Ref.: '.$data["busqueda"]);
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - stockRegistroProductoListaFormulario - Error al recibir el arreglo de datos.');
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - buscadorData - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function data(){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
@@ -452,7 +504,7 @@
                 if(isset($data) && is_array($data) && (count($data) == 4 || count($data) == 1)){
                     if(isset($data["codigo"]) && is_numeric($data["codigo"]) && $data["codigo"] > 0){
                         Session::iniciar();
-                        $query = DataBase::select("producto", "id", "codigoBarra = '".$data["codigo"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                        $query = DataBase::select("producto", "id", "codigoBarra = '".$data["codigo"]."'", "");
                         if($query){
                             if(DataBase::getNumRows($query) == 1){
                                 $dataQuery = DataBase::getArray($query);

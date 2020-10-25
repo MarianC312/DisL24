@@ -1,5 +1,80 @@
 const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
 
+const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo']) => {
+    tipo.map((data) => {
+        console.log("#producto-" + idProducto + " #" + data);
+        replaceClass("#producto-" + idProducto + " #" + data, "opacity-0", "");
+    })
+}
+
+function agregarInput(idParent, value, placeholder = null) {
+    let data = value.split(",");
+    data = data.map((input) => { return input.trim().replace(/\W/g, '') });
+    data = data.filter((input) => { return input.length > 0 });
+    let cantidad = document.getElementById(idParent + "-agregadas").childElementCount;
+    data.map((input, i) => {
+        var field = document.createElement("input")
+        field.className = "form-control d-none";
+        field.value = input.trim();
+        field.type = "text";
+        field.setAttribute("readonly", true);
+        field.id = idParent + "-" + (cantidad + i) + input;
+        field.name = idParent + "[]";
+        field.placeholder = (placeholder != null) ? placeholder : "";
+        document.getElementById(idParent + "-agregadas").appendChild(field);
+    });
+    data.map((input, i) => {
+        var icon = document.createElement("i");
+        icon.className = "fa fa-times";
+
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = "btn-act-" + (cantidad + i);
+        btn.onclick = () => {
+            $("#badge-" + (cantidad + i) + input).remove();
+            $("#" + idParent + "-" + (cantidad + i) + input).remove();
+        };
+        btn.setAttribute("key", (cantidad + i));
+        btn.className = "btn btn-sm btn-outline-danger border-0 ml-2";
+        btn.style['zoom'] = "70%";
+        btn.appendChild(icon);
+
+        var span = document.createElement("span");
+        span.id = "badge-" + (cantidad + i) + input;
+        span.className = "badge border p-2 mr-2";
+        span.innerHTML = input;
+        span.appendChild(btn);
+
+        document.getElementById(idParent + "-badge").appendChild(span);
+    });
+}
+
+const clienteBuscarFormularioUpdateBusqueda = () => {
+    if ($('#filtroOpcion1').is(':checked')) {
+        $("#container-nombre").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#container-documento").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#cliente-buscar-form #nombre").focus();
+    }
+    if ($('#filtroOpcion2').is(':checked')) {
+        $("#container-nombre").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#container-documento").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#cliente-buscar-form #documento").focus();
+    }
+}
+
+const compañiaRegistroProductoUpdateBusqueda = () => {
+    if ($('#filtroOpcion1').is(':checked')) {
+        $("#container-tag").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#container-codigo").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#compania-stock-registro-producto-form #tag").focus();
+    }
+    if ($('#filtroOpcion2').is(':checked')) {
+        $("#container-tag").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#container-codigo").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#compania-stock-registro-producto-form #codigo").focus();
+    }
+}
+
 const barCode = (div, input) => {
     const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
     switch (true) {
@@ -179,7 +254,76 @@ const requestLogout = () => {
     });
 }
 
-const productoInventarioContenidoData = (idProducto, tipo) => {
+const compañiaStockRegistroProductoListaFormulario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#compania-stock-registro-producto-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+            $(divProcess).html(loading());
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaStockRegistroProductoFormulario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    console.log("exe test");
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/stock-registro-producto-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaStockContenidoData = (idProducto, tipo) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -190,7 +334,7 @@ const productoInventarioContenidoData = (idProducto, tipo) => {
     let divForm = "";
     $.ajax({
         type: "POST",
-        url: "./includes/producto/inventario-contenido.php",
+        url: "./includes/compania/stock-contenido.php",
         timeout: 45000,
         beforeSend: function() {
             //$(divProcess).html(loading());
@@ -282,13 +426,13 @@ const tareaAgregarData = (tarea, input, value, div) => {
     });
 }
 
-const productoInventarioEditarContenido = (idProducto, tipo) => {
+const compañiaStockEditarContenido = (idProducto, tipo) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#producto-" + idProducto + "-inventario-editar-" + tipo + "-form");
+    let form = $("#producto-" + idProducto + "-stock-editar-" + tipo + "-form");
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
@@ -322,7 +466,7 @@ const productoInventarioEditarContenido = (idProducto, tipo) => {
 }
 
 const productoRegistro = () => {
-    console.log("execute");
+
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -455,6 +599,39 @@ const productoInventario = (idSucursal = null) => {
     });
 }
 
+const compañiaStockEditarContenidoFormulario = (producto, tipo, cantidad = 0) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#producto-" + producto + " #" + tipo;
+    let divForm = "";
+    console.log(divProcess);
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/stock-editar-contenido-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading("loader-circle-1"));
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { producto: producto, tipo: tipo, cantidad: cantidad },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const productoInventarioEditarContenidoFormulario = (producto, tipo, cantidad = 0) => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -466,7 +643,7 @@ const productoInventarioEditarContenidoFormulario = (producto, tipo, cantidad = 
     console.log(divProcess);
     $.ajax({
         type: "POST",
-        url: "./includes/producto/inventario-editar-contenido-formulario.php",
+        url: "./includes/compania/stock-editar-contenido-formulario.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading("loader-circle-1"));
@@ -556,6 +733,38 @@ const ventaRegistroFormulario = () => {
     });
 }
 
+const clienteBuscarFormulario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/cliente/buscar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const clienteRegistroFormulario = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -566,7 +775,7 @@ const clienteRegistroFormulario = () => {
     let divForm = "";
     $.ajax({
         type: "POST",
-        url: "./includes/cliente/registro.php",
+        url: "./includes/cliente/registro-formulario.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());
@@ -589,17 +798,16 @@ const clienteRegistroFormulario = () => {
 }
 
 const clienteRegistro = () => {
-    console.log("execute");
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#cliente-registro-form");
+    let form = $("#cliente-registrar-form");
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
-    data.push({ name: "exceptions", value: ["domicilio", "email"] });
+    data.push({ name: "exceptions", value: ["telefono", "domicilio", "email"] });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
     $.ajax({
@@ -627,7 +835,6 @@ const clienteRegistro = () => {
 }
 
 const compañiaStock = () => {
-    console.log("execute");
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -638,7 +845,7 @@ const compañiaStock = () => {
     console.log(divProcess);
     $.ajax({
         type: "POST",
-        url: "./includes/compañia/stock.php",
+        url: "./includes/compania/stock.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());
@@ -660,8 +867,76 @@ const compañiaStock = () => {
     });
 }
 
-const clienteEditarFormulario = () => {
-    console.log("execute");
+const clienteBuscar = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#cliente-buscar-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const gotoClienteLegajo = (idCliente) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    console.log(divProcess);
+    $.ajax({
+        type: "POST",
+        url: "./includes/cliente/legajo.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { idCliente: idCliente },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const clienteEditarFormulario = (idCliente = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -695,18 +970,18 @@ const clienteEditarFormulario = () => {
     });
 }
 
-const clienteEdicion = () => {
-    console.log("execute");
+const clienteEditar = (idCliente) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#cliente-edicion-form");
+    let form = $("#cliente-editar-form");
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
-    data.push({ name: "exceptions", value: ["domicilio", "email"] });
+    data.push({ name: "idCliente2", value: idCliente });
+    data.push({ name: "exceptions", value: ["telefono", "domicilio", "email"] });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
     $.ajax({

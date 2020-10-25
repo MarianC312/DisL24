@@ -404,7 +404,7 @@
                                 <div class="collapse navbar-collapse flex-column w-100" id="navbarCollapse">
                                     <div class="navbar-nav flex-column">
                                         <a href="#/" onclick="" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a>
-                                        <a href="#/" onclick="setCollapse('venta-collapse'); swapClass('#menu-venta','bg-orange-6'); swapClass('#venta-collapse','bg-orange-6')" id="menu-venta" class="nav-item nav-link <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#venta-collapse" aria-controls="venta-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-shopping-basket" aria-hidden="true"></i> Ventas</a>
+                                        <a href="#/" onclick="setCollapse('venta-collapse'); swapClass('#menu-venta','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#venta-collapse','bg-orange-6')" id="menu-venta" class="nav-item nav-link <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#venta-collapse" aria-controls="venta-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-shopping-basket" aria-hidden="true"></i> Ventas</a>
                                         <div class="collapse w-100 <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="venta-collapse">
                                             <div class="d-flex flex-column ml-3"> 
                                                 <a href="./producto.php" class="nav-item nav-link"><i class="fa fa-money" aria-hidden="true"></i> Caja</a>
@@ -412,17 +412,20 @@
                                                 <a href="#/" onclick="ventaCargaCliente()" class="nav-item nav-link"><i class="fa fa-list-alt" aria-hidden="true"></i> Cargar Cliente</a>
                                             </div>
                                         </div>
-                                        <a href="#/" onclick="setCollapse('producto-collapse'); swapClass('#menu-producto','bg-orange-6'); swapClass('#producto-collapse','bg-orange-6')" id="menu-producto" class="nav-item nav-link <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
+                                        <a href="#/" onclick="setCollapse('producto-collapse'); swapClass('#menu-producto','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#producto-collapse','bg-orange-6')" id="menu-producto" class="nav-item nav-link <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
                                         <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="producto-collapse">
                                             <div class="d-flex flex-column ml-3"> 
-                                                <a href="./producto.php" class="nav-item nav-link"><i class="fa fa-clipboard"></i> Actividades</a>
-                                                <a href="#/" onclick="productoRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Registrar</a>
+                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-clipboard"></i> Actividades</a>
                                                 <a href="#/" onclick="compañiaStock()" class="nav-item nav-link"><i class="fa fa-truck"></i> Mi stock</a>
-                                                <a href="#/" onclick="productoInventario()" class="nav-item nav-link"><i class="fa fa-list-ol"></i> Inventario</a>
-                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-cogs"></i> Administración</a> 
                                             </div>
                                         </div>
-                                        <a href="#/" onclick="clienteRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-user"></i> Clientes</a>
+                                        <a href="#/" onclick="setCollapse('clientes-collapse'); swapClass('#menu-clientes','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#clientes-collapse','bg-orange-6')" id="menu-clientes" class="nav-item nav-link <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#clientes-collapse" aria-controls="clientes-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-user"></i> Clientes</a>
+                                        <div class="collapse w-100 <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="clientes-collapse">
+                                            <div class="d-flex flex-column ml-3"> 
+                                                <a href="#/" onclick="clienteRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-user-plus"></i> Nuevo cliente</a>
+                                                <a href="#/" onclick="clienteBuscarFormulario()" class="nav-item nav-link"><i class="fa fa-search"></i> Buscar cliente</a>
+                                            </div>
+                                        </div>
                                         <a href="./administracion.php" class="nav-item nav-link" tabIndex="-1"><i class="fa fa-cogs"></i> Administración</a>
                                     </div>
                                     <div class="navbar-nav ml-auto">

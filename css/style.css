@@ -171,6 +171,27 @@
     }
 }
 
+.opacity-0 {
+    opacity: 0;
+}
+
+.dataTables_wrapper {
+    overflow-x: auto;
+}
+
+table.dataTable {
+    border-collapse: collapse !important;
+}
+
+.table th,
+.table td {
+    border-top: none !important;
+}
+
+.table tr {
+    border-top: 1px solid #dee2e6 !important;
+}
+
 .loader-circle-1 {
     width: 2em;
     height: 2em;
@@ -263,6 +284,10 @@ body {
 
 .text-red {
     color: var(--red);
+}
+
+.text-red-5 {
+    color: var(--mono-red-5) !important;
 }
 
 #container-tareas-pendientes {
@@ -426,6 +451,7 @@ body {
 
 .titulo {
     font-weight: bold;
+    width: 100%;
     border-bottom: var(--gray) 0.5px groove;
 }
 
@@ -443,12 +469,12 @@ body {
 }
 
 .mine-container {
+    position: relative;
     padding: 1em;
     margin: 0.825em;
     background-color: var(--white);
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;
     border-radius: 0.375em;
-    width: fit-content;
 }
 
 .header .dropdown .dropdown-menu {

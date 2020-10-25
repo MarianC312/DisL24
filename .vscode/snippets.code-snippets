@@ -25,6 +25,16 @@
 		],
 		"description": "Mensaje de alerta."
 	},
+	"alerta mensaje small": {
+		"scope": "php",
+		"prefix": "smen",
+		"body": [
+			"$$mensaje['tipo'] = '$1';",
+			"$$mensaje['cuerpo'] = '$2';",
+			"Alert::mensajeSmall($$mensaje);"
+		],
+		"description": "Mensaje de alerta."
+	},
 	"print lindo": {
 		"scope": "php",
 		"prefix": "epre",

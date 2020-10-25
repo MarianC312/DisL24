@@ -21,14 +21,22 @@
                 }
                 $data[$key] = $value;
             } 
-            Cliente::edicion($data);
+            if($data["idCliente"] === $data["idCliente2"]){
+                Cliente::editar($data);
+            }else{
+                $mensaje['tipo'] = 'danger';
+                $mensaje['cuerpo'] = 'Hubo un error al comprobar la información recibida. <b>Intente nuevamente o contacte al administrador.</b>';
+                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                Alert::mensaje($mensaje);
+                Sistema::debug('Error', 'engine > cliente > editar.php - Hubo un error al comprobar el identificador del cliente.');
+            }
         }else{
             $mensaje['tipo'] = 'danger';
             $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';
             Alert::mensaje($mensaje);
-            Sistema::debug('Error', 'engine > cliente > edicion.php - Hubo un error al recibir la información del formulario.');
+            Sistema::debug('Error', 'engine > cliente > editar.php - Hubo un error al recibir la información del formulario.');
         }
     }else{
-        Sistema::debug('Error', 'engine > cliente > edicion.php - Usuario no logueado.');
+        Sistema::debug('Error', 'engine > cliente > editar.php - Usuario no logueado.');
     }
 ?>

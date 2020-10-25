@@ -1,66 +1,365 @@
 <?php
-class Cliente
-    {
-        public static function registroFormulario()
-        { 
-            if(Sistema::usuarioLogueado())
-            {
-            ?>
-                <div class="mine-container">
-                    <div id="cliente-registro-process"></div>
-                    <div > 
-                        <div class="titulo">Registro de Clientes Nuevos</div> 
-                        <form id="cliente-registro-form" action="./engine/cliente/registro.php" form="#cliente-registro-form" process="#cliente-registro-process">
-                            <div class="form-group">
-                                <label class="col-form-label required" required for="nombre"><i class="fa fa-user-circle"></i> Nombre y Apellido</label>
-                                <input type="nombre" class="form-control" required placeholder="Nombre cliente" id="nombre" name="nombre"> 
-                                <label class="col-form-label required" required for="documento"><i class="fa fa-address-card"></i> Documento</label>
-                                <input type="documento" class="form-control" required placeholder="Documento cliente" id="documento" name="documento">  
-                                <label class="col-form-label required" required for="telefono"><i class="fa fa-phone-square"></i> Teléfono</label>
-                                <input type="telefono" class="form-control" required placeholder="Telefono cliente" id="telefono" name="telefono">
-                                <label class="col-form-label" required for="domicilio"><i class="fa fa-home"></i> Domicilio</label>
-                                <input type="domicilio" class="form-control" placeholder="Domicilio cliente" id="domilicio" name="domicilio"> 
-                                <label class="col-form-label" for="email"><i class="fa fa-envelope-square"></i> Email</label>
-                                <input type="email" class="form-control" placeholder="Email cliente" id="email" name="email"> 
-                                <input type="estado" class="form-control" style="display: none;" id="estado" value="1" name="estado">
-                            </div>
-                            <div class="form-group">
-                                <button type="button" class="btn btn-success" onclick="clienteRegistro()">Guardar Cliente</button>
-                            </div>
-                        </form>
-                        <div> 
-                            <div class="titulo">Edición de Clientes ya cargados</div>
-                            <div id="cliente-edita-process"></div>
-                            <form id="cliente-edita-form" action="./includes/cliente/edicion.php" form="#cliente-edita-form" process="#cliente-edita-process"> 
-                            <label class="col-form-label required" required for="documento"><i class="fa fa-address-card"></i> Documento</label>
-                            <input type="documento" class="form-control" required placeholder="Documento cliente" id="documento" name="documento"> 
-                            <button type="button" onclick="clienteEditarFormulario()" class="btn btn-success">Editar cliente</button>
-                            </form>
-                        </div> 
-                    </div>
-                </div>
-            <?php     
+    class Cliente{ 
+        public static function data($data, $columnas = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    if(isset($data["filtroOpcion"]) && is_numeric($data["filtroOpcion"]) && ($data["filtroOpcion"] >= 1 && $data["filtroOpcion"] <= 3)){
+                        $query = false; 
+                        Session::iniciar();
+                        if((is_array($columnas) && count($columnas) > 0)){
+                            $cols = "";
+                            foreach($columnas AS $key => $value){
+                                if($key > 0) $cols .= ",";
+                                $cols .= $value;
+                            }
+                        }else{
+                            $cols = "*";
+                        }
+                        switch($data["filtroOpcion"]){
+                            case 1:
+                                $nombre = preg_replace( '/[\W]/', '', $data["nombre"]);
+                                $query = DataBase::select("cliente", $cols, "nombre LIKE '%".$nombre."%' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                            break;
+                            case 2:
+                                if(isset($data["documento"]) && is_numeric($data["documento"]) && $data["documento"] > 0){ 
+                                    $query = DataBase::select("cliente", $cols, "documento = '".$data["documento"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                                }else{
+                                    Sistema::debug('error', 'cliente.class.php - corroboraExistencia - El n° de documento tiene un formato incorrecto. Ref.: '.$data["documento"]);
+                                }
+                            break;
+                            case 3:
+                                if(isset($data["id"]) && is_numeric($data["id"]) && $data["id"] > 0){ 
+                                    $query = DataBase::select("cliente", $cols, "id = '".$data["id"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                                }else{
+                                    Sistema::debug('error', 'cliente.class.php - corroboraExistencia - El identificador del cliente tiene un formato incorrecto. Ref.: '.$data["id"]);
+                                }
+                            break;
+                        }
+                        if($query){
+                            $data = [];
+                            if(DataBase::getNumRows($query) > 0){
+                                while($dataQuery = DataBase::getArray($query)){
+                                    $data[] = $dataQuery;
+                                }
+                                foreach($data AS $key => $value){
+                                    foreach($value AS $iKey => $iValue){
+                                        if(is_int($iKey)){
+                                            unset($data[$key][$iKey]);
+                                        }
+                                    }
+                                }
+                            }
+                            return $data;
+                        }else{
+                            Sistema::debug("error", "cliente.class.php - corroboraExistencia - Error al comprobar la información del cliente. Ref.: ".DataBase::getError());
+                        }
+                    }else{
+                        Sistema::debug('error', 'cliente.class.php - corroboraExistencia - No se recibió una opción de filtro válida. Ref.: '.$data["filtroOpcion"]);
+                    }
+                }else{
+                    Sistema::debug('error', 'cliente.class.php - data - Error en el arreglo de datos recibido.');
+                }
             }else{
-                Sistema::debug('', ' - Usuario no logueado.');
+                Sistema::debug('error', 'cliente.class.php - data - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function buscar($formData){
+            if(Sistema::usuarioLogueado()){
+                if(isset($formData) && is_array($formData) && count($formData) > 0){
+                    $clienteExiste = Cliente::corroboraExistencia($formData);
+                    if(is_bool($clienteExiste) && $clienteExiste){
+                        $data = Cliente::data($formData, ["id","nombre","documento"]);
+                        if(is_array($data)){
+                            if(count($data) > 0){
+                                switch($formData["filtroOpcion"]){
+                                    case 1:
+                                        ?>
+                                        <table id="tabla-clientes" class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <td>Documento</td>
+                                                    <td>Nombre y Apellido</td>
+                                                    <td>Acciones</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php
+                                                    foreach($data AS $key => $value){
+                                                        ?>
+                                                        <tr> 
+                                                            <td><?php echo $value["documento"] ?></td>
+                                                            <td><?php echo $value["nombre"] ?></td>
+                                                            <td><button type="button" onclick="gotoClienteLegajo(<?php echo $value['id'] ?>)" class="btn btn-primary">Ir a legajo</button></td>
+                                                        </tr>
+                                                        <?php
+                                                    }
+                                                ?>
+                                            </tbody>
+                                        </table>
+                                        <script> 
+                                            $('#tabla-clientestabla-producto-inventario').DataTable({
+                                                "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
+                                                "lengthMenu": [ [8, 25, 50, 100, -1], [8, 25, 50, 100, "Todos"] ],
+                                                "bSort": true,
+                                                "language": {
+                                                    "decimal":        "",
+                                                    "emptyTable":     "No hay información para mostrar.",
+                                                    "info":           "Mostrando página _PAGE_ de _PAGES_",
+                                                    "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
+                                                    "infoFiltered":   "(filtrado de _MAX_ total de registros)",
+                                                    "infoPostFix":    "",
+                                                    "thousands":      ",",
+                                                    "lengthMenu":     "Mostrar _MENU_ registros.",
+                                                    "loadingRecords": "Cargando...",
+                                                    "processing":     "Procesando...",
+                                                    "search":         "Buscar:",
+                                                    "zeroRecords":    "No se encontraron coincidencias.",
+                                                    "paginate": {
+                                                        "first":      "Primero",
+                                                        "last":       "Último",
+                                                        "next":       "Siguiente",
+                                                        "previous":   "Anterior"
+                                                    },
+                                                    "aria": {
+                                                        "sortAscending":  ": activar para ordenar ascendentemente",
+                                                        "sortDescending": ": activar para ordenar descendientemente"
+                                                    }
+                                                }
+                                            });
+                                        </script>
+                                        <?php
+                                    break;
+                                    case 2:
+                                        echo '<script>gotoClienteLegajo('.$data[0]["id"].')</script>';
+                                    break;
+                                }
+                            }else{
+                                $mensaje['tipo'] = 'info';
+                                $mensaje['cuerpo'] = 'No se encontraron clientes con los datos brindados.';
+                                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$formData['form'].'\').show(350);$(\''.$formData['process'].'\').hide(350);" class="btn btn-info">Volver a buscar</button></div>';
+                                Alert::mensaje($mensaje);
+                                Sistema::debug('info', 'cliente.class.php - buscar - No se encontraron registro de clientes. Ref.: '.count($data));
+                            }
+                        }else{
+                            $mensaje['tipo'] = 'danger';
+                            $mensaje['cuerpo'] = 'Hubo un error al buscar la información del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
+                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$formData['form'].'\').show(350);$(\''.$formData['process'].'\').hide(350);" class="btn btn-danger">Volver a buscar</button></div>';
+                            Alert::mensaje($mensaje);
+                        }
+                    }else{
+                        $mensaje['tipo'] = 'info';
+                        $mensaje['cuerpo'] = 'No se encontraron coincidencias con los datos ingresados. Intente con otra información...';
+                        $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$formData['form'].'\').show(350);$(\''.$formData['process'].'\').hide(350);" class="btn btn-info">Reintentar</button></div>';
+                        Alert::mensaje($mensaje);
+                        Sistema::debug('info', 'cliente.class.php - buscar - Cliente inexistente.');
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador</b>';
+                    Alert::mensaje($mensaje);
+                    Sistema::debug('error', 'cliente.class.php - buscar - Error en el arreglo de datos del formulario.');
+                }
+            }else{
+                Sistema::debug('error', 'cliente.class.php - buscar - Usuario no logueado.');
+            }
+        }
+
+        public static function registroFormulario(){ 
+            if(Sistema::usuarioLogueado()){
+                ?>
+                <div class="mine-container">
+                    <div class="titulo">Registro de cliente</div> 
+                    <div id="cliente-registrar-process"></div>
+                    <form id="cliente-registrar-form" action="./engine/cliente/registro.php" form="#cliente-registrar-form" process="#cliente-registrar-process">
+                        <div class="form-group">
+                            <label class="col-form-label required" for="nombre"><i class="fa fa-user-circle"></i> Nombre y Apellido</label>
+                            <input type="nombre" class="form-control" required id="nombre" name="nombre" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label required" for="documento"><i class="fa fa-address-card"></i> N° de Documento</label>
+                            <input type="documento" class="form-control" required id="documento" name="documento" autocomplete="off"> 
+                            <small class="text-muted">Ingrese el número sin puntos.</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="telefono"><i class="fa fa-phone-square"></i> Teléfono</label>
+                            <input type="telefono" class="form-control" id="telefono" name="telefono" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="domicilio"><i class="fa fa-home"></i> Domicilio</label>
+                            <input type="domicilio" class="form-control" id="domilicio" name="domicilio" autocomplete="off"> 
+                        </div>
+                        <div class="form-group">
+                            <label class="col-form-label" for="email"><i class="fa fa-envelope-square"></i> Email</label>
+                            <input type="email" class="form-control" id="email" name="email" autocomplete="off"> 
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-success" onclick="clienteRegistro()">Registrar</button>
+                        </div>
+                    </form>
+                    <script>
+                        $("#cliente-registrar-form input").on("keypress", (e) => {
+                            var keycode = (e.keyCode ? e.keyCode : e.which);
+                            if(keycode == '13'){
+                                clienteRegistro();
+                            }
+                        })
+                    </script>
+                </div>
+                <?php     
+            }else{
+                Sistema::debug('error', 'cliente.class.php - registroFormulario - Usuario no logueado.');
             } 
         }
 
-        public static function registro($data)
-        {
+        public static function buscarFormulario(){
+            if(Sistema::usuarioLogueado()){
+                ?> 
+                <div class="mine-container"> 
+                    <div class="titulo">Buscar un cliente</div>
+                    <div id="cliente-buscar-process" style="display: none"></div>
+                    <form id="cliente-buscar-form" action="./engine/cliente/buscar.php" form="#cliente-buscar-form" process="#cliente-buscar-process"> 
+                        <fieldset class="form-group">
+                            <div class="d-flex justify-content-around">
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" onchange="clienteBuscarFormularioUpdateBusqueda()" name="filtroOpcion" id="filtroOpcion1" value="1" checked="">
+                                        Por nombre <i class="fa fa-pencil-square-o"></i>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <label class="form-check-label">
+                                        <input type="radio" class="form-check-input" onchange="clienteBuscarFormularioUpdateBusqueda()" name="filtroOpcion" id="filtroOpcion2" value="2">
+                                        Por documento <i class="fa fa-address-card"></i>
+                                    </label>
+                                </div>
+                            </div>
+                        </fieldset>
+                        <div id="container-nombre" class="form-group" style="display: none">
+                            <label class="col-form-label required" for="nombre"><i class="fa fa-user"></i> Nombre</label>
+                            <input type="documento" class="form-control" required id="nombre" name="nombre" autocomplete="off">
+                        </div>
+                        <div id="container-documento" class="form-group" style="display: none">
+                            <label class="col-form-label required" for="documento"><i class="fa fa-address-card"></i> N° de Documento</label>
+                            <input type="documento" class="form-control" required id="documento" name="documento" autocomplete="off"> 
+                            <small class="text-muted">Ingrese el n° sin puntos.</small>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" onclick="clienteBuscar()" class="btn btn-success btn-iconed">Buscar <i class="fa fa-search"></i></button>
+                        </div>
+                    </form>
+                    <script>
+                        $("#cliente-buscar-form input").on("keypress", (e) => {
+                            let keycode = (e.keyCode ? e.keyCode : e.which);
+                            if(keycode == '13'){
+                                clienteBuscar()
+                            }
+                        })
+                        clienteBuscarFormularioUpdateBusqueda();
+                    </script>
+                </div> 
+                <?php
+            }else{
+                Sistema::debug('error', 'cliente.class.php - buscarFormulario - Usuario no logueado.');
+            }
+        }
+
+        public static function legajo($idCliente){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idCliente) && is_numeric($idCliente) && $idCliente > 0){
+                    $data = Cliente::data(["filtroOpcion" => 3, "id" => $idCliente], ["nombre","documento"]);
+                    if(is_array($data[0]) && count($data[0]) == 2){
+                        ?>
+                        <div class="mine-container">
+                            <div class="titulo">Legajo de <b><?php echo mb_strtoupper($data[0]["nombre"]) ?></b></div>
+                            <?php Cliente::editarFormulario($data[0]["documento"]) ?>
+                        </div>
+                        <?php
+                    }else{
+                        $mensaje['tipo'] = 'warning';
+                        $mensaje['cuerpo'] = 'Hubo un error con los datos del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
+                        $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
+                            <button type="button" onclick="gotoClienteLegajo('.$idCliente.')" class="btn btn-warning btn-iconed">Recargar legajo <i class="fa fa-retweet"></i></button>
+                            </div>';
+                        Alert::mensaje($mensaje);
+                        Sistema::debug('error', 'cliente.class.php - legajo - Error con los datos del cliente. Ref.: '.count($data));
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error con los datos recibidos del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
+                    $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
+                        <button type="button" onclick="gotoClienteLegajo('.$idCliente.')" class="btn btn-danger btn-iconed">Recargar legajo <i class="fa fa-retweet"></i></button>
+                        </div>';
+                    Alert::mensaje($mensaje);
+                    Sistema::debug('error', 'cliente.class.php - legajo - Error en identificador de cliente. Ref.: '.$idCliente);
+                }
+            }else{
+                Sistema::debug('error', 'cliente.class.php - legajo - Usuario no logueado.');
+            }
+        }
+
+        public static function getNombre($documento){
+            if(Sistema::usuarioLogueado()){
+                if(isset($documento) && is_numeric($documento) && $documento > 0){
+                    $data = Cliente::data(["filtroOpcion" => 2, "documento" => $documento], ["nombre"]);
+                    if(is_array($data)){
+                        if(count($data) == 1){
+                            return $data[0]["nombre"];
+                        }else{
+                            Sistema::debug('error', 'cliente.class.php - getId - No se encontró registro del cliente.');
+                        }
+                    }else{
+                        Sistema::debug('error', 'cliente.class.php - getId - Error al recibir la información del cliente.');
+                    }
+                }else{
+                    Sistema::debug('error', 'cliente.class.php - getId - El documento recibido tiene un formato incorrecto. Ref.: '.$documento);
+                }
+            }else{
+                Sistema::debug('error', 'cliente.class.php - getId - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function getId($documento){
+            if(Sistema::usuarioLogueado()){
+                if(isset($documento) && is_numeric($documento) && $documento > 0){
+                    $data = Cliente::data(["filtroOpcion" => 2, "documento" => $documento], ["id"]);
+                    if(is_array($data)){
+                        if(count($data) == 1){
+                            return $data[0]["id"];
+                        }else{
+                            Sistema::debug('error', 'cliente.class.php - getId - No se encontró registro del cliente.');
+                        }
+                    }else{
+                        Sistema::debug('error', 'cliente.class.php - getId - Error al recibir la información del cliente.');
+                    }
+                }else{
+                    Sistema::debug('error', 'cliente.class.php - getId - El documento recibido tiene un formato incorrecto. Ref.: '.$documento);
+                }
+            }else{
+                Sistema::debug('error', 'cliente.class.php - getId - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function registro($data){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
-                    $productoExiste = Cliente::corroboraExistencia(["documento" => $data["documento"]]);
-                    if($productoExiste){
-                        Sistema::debug("info", "cliente.class.php - registro - El cliente ya existe en la base de datos.");
+                    $clienteExiste = Cliente::corroboraExistencia(["documento" => $data["documento"], "filtroOpcion" => 2]);
+                    if($clienteExiste){
+                        $idCliente = Cliente::getId($data["documento"]);
+                        Sistema::debug("info", "cliente.class.php - registro - Cliente ya registrado.");
                         $mensaje['tipo'] = 'info';
                         $mensaje['cuerpo'] = 'El cliente ya se encuentra registrado.';
                         $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around"> 
-                            <button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-outline-info">Regresar</button>
-                        </div>';
+                        '.((is_numeric(($idCliente)) ? '<button type="button" onclick="gotoClienteLegajo('.$idCliente.')" class="btn btn-info">Ir a legajo</button>' : '')).'
+                        <button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-outline-info">Registrar otro cliente</button>
+                            </div>';
                         Alert::mensaje($mensaje);
                         return;
                     }else{
-                        $query = DataBase::insert("cliente", "nombre,documento,telefono,domicilio,email,sucursal,compañia,estado", "'".$data["nombre"]."','".$data["documento"]."','".$data["telefono"]."','".((isset($data["domicilio"])) ? $data["domicilio"] : "NULL")."','".((isset($data["email"])) ? $data["email"] : "NULL")."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."', '".$data["estado"]."'");
+                        $query = DataBase::insert("cliente", "nombre,documento,telefono,domicilio,email,sucursal,compañia", "'".$data["nombre"]."','".$data["documento"]."',".((isset($data["telefono"])) ? "'".$data["telefono"]."'" : "NULL").",".((isset($data["domicilio"])) ? "'".$data["domicilio"]."'" : "NULL").",".((isset($data["email"])) ? "'".$data["email"]."'" : "NULL").",'".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                         if($query){
                             Session::iniciar();
                             $_SESSION["usuario"]->tareaEliminar('Registro de cliente ['.$data["documento"].']');
@@ -68,7 +367,8 @@ class Cliente
                             $mensaje['tipo'] = 'success';
                             $mensaje['cuerpo'] = 'Se registró el cliente <b>'.$data["nombre"].'</b> satisfactoriamente.';
                             $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
-                                <button type="button" onclick="clienteRegistroFormulario()" class="btn btn-success">Registrar otro cliente</button> 
+                                <button type="button" onclick="gotoClienteLegajo('.DataBase::getLastId().')" class="btn btn-success">Ir a legajo</button> 
+                                <button type="button" onclick="clienteRegistroFormulario()" class="btn btn-outline-success">Registrar otro cliente</button> 
                             </div>';
                             Alert::mensaje($mensaje);
                             return true;
@@ -94,94 +394,85 @@ class Cliente
         
         public static function corroboraExistencia($data, $cargaFormularioRegistro = false){ 
             if(Sistema::usuarioLogueado()){
-                if(isset($data) && is_array($data) && (count($data) == 4 || count($data) == 1)){
-                    if(isset($data["documento"]) && is_numeric($data["documento"]) && $data["documento"] > 0){
-                        $query = DataBase::select("cliente", "nombre,documento", "documento = '".$data["documento"]."'", "");
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    if(isset($data["filtroOpcion"]) && is_numeric($data["filtroOpcion"]) && ($data["filtroOpcion"] >= 1 && $data["filtroOpcion"] <= 3)){
+                        $query = false;
+                        Session::iniciar();
+                        switch($data["filtroOpcion"]){
+                            case 1:
+                                $nombre = preg_replace( '/[\W]/', '', $data["nombre"]);
+                                $query = DataBase::select("cliente", "id", "nombre LIKE '%".$nombre."%' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                            break;
+                            case 2:
+                                if(isset($data["documento"]) && is_numeric($data["documento"]) && $data["documento"] > 0){ 
+                                    $query = DataBase::select("cliente", "id", "documento = '".$data["documento"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                                }else{
+                                    Sistema::debug('error', 'cliente.class.php - corroboraExistencia - El n° de documento tiene un formato incorrecto. Ref.: '.$data["documento"]);
+                                }
+                            break;
+                            case 3:
+                                return null;
+                            break;
+                        }
                         if($query){
-                            if(DataBase::getNumRows($query) == 1){
-                                $dataQuery = DataBase::getArray($query);
-                                if($cargaFormularioRegistro){
-                                    Sistema::debug("success", "cliente.class.php - corroboraExistencia - Cliente encontrado, carga de formulario de edición para cliente: ".$dataQuery["nombre"].".");
-                                    Cliente::editarFormulario($dataQuery["documento"]);
-                                }else{
-                                    Sistema::debug("success", "cliente.class.php - corroboraExistencia - Cliente encontrado: ".$dataQuery["nombre"].".");
-                                    return true;
-                                }
-                            }else{ 
-                                if($cargaFormularioRegistro){
-                                    echo '<script>clienteRegistroFormulario()</script>';
-                                    Sistema::debug("success", "cliente.class.php - corroboraExistencia - Cliente inexistente, cargando formulario de registro.");
-                                }else{
-                                    Sistema::debug("success", "cliente.class.php - corroboraExistencia - Cliente inexistente.");
-                                    return false;
-                                }
-                            }
+                            return (DataBase::getNumRows($query) >= 1) ? true : false;
                         }else{
-                            $mensaje['tipo'] = 'danger';
-                            $mensaje['cuerpo'] = 'Hubo un error al comprobar la información del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
-                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
-                            Alert::mensaje($mensaje);
-                            Sistema::debug("error", "cliente.class.php - corroboraExistencia - Error en query de comprobación de información.");
+                            Sistema::debug("error", "cliente.class.php - corroboraExistencia - Error al comprobar la información del cliente. Ref.: ".DataBase::getError());
                         }
                     }else{
-                        $mensaje['tipo'] = 'danger';
-                        $mensaje['cuerpo'] = 'El documento ingresado es incorrecto. Debe ser un número. <b>Intente nuevamente.</b>';
-                        $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
-                        Alert::mensaje($mensaje);
-                        Sistema::debug("error", "cliente.class.php - corroboraExistencia - Documento no numérico.");
+                        Sistema::debug('error', 'cliente.class.php - corroboraExistencia - No se recibió una opción de filtro válida. Ref.: '.$data["filtroOpcion"]);
                     }
                 }else{
-                    $mensaje['tipo'] = 'danger';
-                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
-                    Alert::mensaje($mensaje);
-                    Sistema::debug("error", "cliente.class.php - corroboraExistencia - No se recibió la data correcta.");
+                    Sistema::debug("error", "cliente.class.php - corroboraExistencia - El arreglo de datos recibido es incorrecto.");
                 }
             }else{
                 Sistema::debug('error', 'cliente.class.php - corroboraExistencia - Usuario no logueado.');
             }
+            return false;
         }
 
         public static function editarFormulario($documento){ 
             if(Sistema::usuarioLogueado()){
                 if(isset($documento) && is_numeric($documento) && $documento > 0){
-                    $query = DataBase::select("cliente","*","documento = '".$documento."'","");
-                        if($query){
-                            if(DataBase::getNumRows($query) == 1){
-                                $dataQuery = DataBase::getArray($query);
-                                ?>
-                                <div class="mine-container">  
-                                    <div id="cliente-edicion-process"></div>
-                                    <form id="cliente-edicion-form" action="./engine/cliente/edicion.php" form="#cliente-edicion-form" process="#cliente-edicion-process">
-                                        <div class="form-group">
-                                            <label class="col-form-label required" required for="nombre" ><i class="fa fa-user-circle"></i> Nombre y Apellido</label>
-                                            <input type="nombre" class="form-control" required value="<?php echo $dataQuery["nombre"]?>" id="nombre" name="nombre"> 
-                                            <label class="col-form-label required" required for="documento"><i class="fa fa-address-card"></i> Documento</label>
-                                            <input type="documento" class="form-control" required value="<?php echo $dataQuery["documento"]?>" id="documento" name="documento">  
-                                            <label class="col-form-label required" required for="telefono"><i class="fa fa-phone-square"></i> Teléfono</label>
-                                            <input type="telefono" class="form-control" required value="<?php echo $dataQuery["telefono"]?>" id="telefono" name="telefono">
-                                            <label class="col-form-label" required for="domicilio"><i class="fa fa-home"></i> Domicilio</label>
-                                            <input type="domicilio" class="form-control" value="<?php echo $dataQuery["domicilio"]?>" id="domilicio" name="domicilio"> 
-                                            <label class="col-form-label" for="email"><i class="fa fa-envelope-square"></i> Email</label>
-                                            <input type="email" class="form-control" value="<?php echo $dataQuery["email"]?>" id="email" name="email">
-                                            <label for="estado"><i class="fa fa-list-alt"></i> Dar de baja</label>
-                                            <select class="form-control" id="estado" name="estado">
-                                                <option value="1" selected> Activo </option>
-                                                <option value="0"> Desactivo </option>
-                                            </select> 
-                                            <input type="idCliente" class="form-control" value="<?php echo $dataQuery["id"]?>" id="idCliente" name="idCliente" style="display: none;">
-                                        </div>
-                                        <div class="form-group">
-                                            <button type="button" class="btn btn-success" onclick="clienteEdicion()">Editar Cliente</button>
-                                        </div>
-                                    </form> 
+                    $data = Cliente::data(["documento" => $documento, "filtroOpcion" => 2]);
+                    if(is_array($data) && count($data) == 1){
+                        ?>
+                        <div class="mine-container"> 
+                            <div class="titulo">Edición legajo <?php echo mb_strtoupper($data[0]["nombre"]) ?></div>
+                            <div id="cliente-editar-process"></div>
+                            <form id="cliente-editar-form" action="./engine/cliente/editar.php" form="#cliente-editar-form" process="#cliente-editar-process">
+                                <div class="form-group">
+                                    <label class="col-form-label required" for="nombre" ><i class="fa fa-user-circle"></i> Nombre y Apellido</label>
+                                    <input type="text" class="form-control" required value="<?php echo $data[0]["nombre"]?>" id="nombre" name="nombre"> 
                                 </div>
-                                <?php     
-                                }else{ 
-                                    Sistema::debug("error", "cliente.class.php - editaFormulario - Error en query de comprobación de información.");
-                                }
-                            }else{
-                                Sistema::debug("error", "cliente.class.php - editaFormulario - Error en consulta información de cliente. Ref.: ".DataBase::getError());
-                            }  
+                                <div class="form-group">
+                                    <label class="col-form-label required" for="documento"><i class="fa fa-address-card"></i> Documento</label>
+                                    <input type="text" class="form-control" required value="<?php echo $data[0]["documento"]?>" id="documento" name="documento">  
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-form-label" for="telefono"><i class="fa fa-phone-square"></i> Teléfono</label>
+                                    <input type="text" class="form-control" value="<?php echo $data[0]["telefono"]?>" id="telefono" name="telefono">
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-form-label" for="domicilio"><i class="fa fa-home"></i> Domicilio</label>
+                                    <input type="text" class="form-control" value="<?php echo $data[0]["domicilio"]?>" id="domilicio" name="domicilio"> 
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-form-label" for="email"><i class="fa fa-envelope-square"></i> Email</label>
+                                    <input type="text" class="form-control" value="<?php echo $data[0]["email"]?>" id="email" name="email">
+                                </div>
+                                <div class="form-group d-none">
+                                    <input type="text" class="form-control d-none" value="<?php echo $data[0]["id"]?>" id="idCliente" name="idCliente" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <button type="button" class="btn btn-success" onclick="clienteEditar(<?php echo $data[0]['id']?>)">Guardar cambios</button>
+                                </div>
+                            </form> 
+                        </div>
+                        <?php 
+                    }else{
+                        Sistema::debug("error", "cliente.class.php - editaFormulario - Error en consulta información de cliente. Ref.: ".DataBase::getError());
+                    }  
                     }else{
                         $mensaje['tipo'] = 'danger';
                         $mensaje['cuerpo'] = 'Hubo un error con los datos recibidos. <b>Intente nuevamente o contacte al administrador.</b>';
@@ -193,28 +484,32 @@ class Cliente
             }
         }
 
-        public static function edicion($data)
-        {
+        public static function editar($data){
             if(Sistema::usuarioLogueado()){
-                if(isset($data) && is_array($data) && count($data) > 0)
-                {
-                    $query = DataBase::update("cliente","nombre = '".$data["nombre"]."', documento = '".$data["documento"]."', telefono = '".$data["telefono"]."', domicilio = '".((isset($data["domicilio"])) ? $data["domicilio"] : "NULL")."', email = '".((isset($data["email"])) ? $data["email"] : "NULL")."', estado = '".$data["estado"]."'","id = '".$data["idCliente"]."'");
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    Session::iniciar();
+                    $clienteExiste = Cliente::corroboraExistencia(["documento" => $data["documento"], "filtroOpcion" => 2]);
+                    if($clienteExiste){
+                        $query = DataBase::update("cliente","nombre = '".$data["nombre"]."', documento = '".$data["documento"]."', telefono = ".((isset($data["telefono"]) && !is_null($data["telefono"]) && strlen($data["telefono"]) > 0) ? "'".$data["telefono"]."'" : "NULL").", domicilio = ".((isset($data["domicilio"]) && !is_null($data["domicilio"]) && strlen($data["domicilio"]) > 0) ? "'".$data["domicilio"]."'" : "NULL").", email = ".((isset($data["email"]) && !is_null($data["email"]) && strlen($data["email"]) > 0) ? "'".$data["email"]."'" : "NULL"), "id = '".$data["idCliente"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                         if($query){
                             Session::iniciar();
                             $_SESSION["usuario"]->tareaEliminar('Edición de cliente ['.$data["documento"].']');
-                            Sistema::debug("success", "cliente.class.php - edicion - cliente editado satisfactoriamente.");
                             $mensaje['tipo'] = 'success';
-                            $mensaje['cuerpo'] = 'Se editó el cliente <b>'.$data["nombre"].'</b> satisfactoriamente.'; 
+                            $mensaje['cuerpo'] = 'Información del cliente <b>'.$data["nombre"].'</b> actualizada satisfactoriamente.'; 
                             Alert::mensaje($mensaje);
-                            return true;
                         }else{
-                            Sistema::debug('error', 'cliente.class.php - edicion - Error en query de edición de cliente.');
+                            Sistema::debug('error', 'cliente.class.php - edicion - Error al actualizar la información del cliente. Ref.: '.DataBase::getError());
                             $mensaje['tipo'] = 'danger';
                             $mensaje['cuerpo'] = 'Hubo un error al editar el cliente. <b>Intente nuevamente o contacte al administrador.</b>';
                             $mensaje['cuerpo'] .= '<div class="d-block"><button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
                             Alert::mensaje($mensaje);
-                            return false;
                         }
+                    }else{
+                        $mensaje['tipo'] = 'danger';
+                        $mensaje['cuerpo'] = 'Hubo un error al modificar los datos del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
+                        Alert::mensaje($mensaje);
+                        Sistema::debug("error", "cliente.class.php - edicion - Error al comprobar la existencia del cliente.");
+                    }
                 }else{
                     $mensaje['tipo'] = 'danger';
                     $mensaje['cuerpo'] = 'Hubo un error con los datos recibidos. <b>Intente nuevamente o contacte al administrador.</b>';
@@ -222,7 +517,7 @@ class Cliente
                     Sistema::debug("error", "cliente.class.php - edicion - Arreglo de datos del formulario incorrecto.");
                 }
             }else{
-                Sistema::debug('', ' - Usuario no logueado.');
+                Sistema::debug('error', 'cliente.class.php - edicion - Usuario no logueado.');
             }
         }
     }

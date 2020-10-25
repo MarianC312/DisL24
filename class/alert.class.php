@@ -1,5 +1,39 @@
 <?php
     class Alert{
+        public static function mensajeSmall($data){
+            switch($data["tipo"])
+            {
+                case "danger":
+                    $titulo = "<i class=\"fa fa-circle\"></i>";
+                    break;
+                case "warning":
+                    $titulo = "<i class=\"fa fa-exclamation-circle\"></i>";
+                    break;
+                case "success":
+                    $titulo = "<i class=\"fa fa-check-circle\"></i>";
+                    break;
+                case "info":
+                    $titulo = "<i class=\"fa fa-info-circle\"></i>";
+                    break;
+                case "primary":
+                    $titulo = "";
+                    break;
+                case "secondary":
+                    $titulo = "";
+                    break;
+                case "light":
+                    $titulo = "";
+                    break;
+            }
+            ?>
+            <div class="alert alert-dismissible alert-<?php echo $data["tipo"] ?> text-left">
+                <button type="button" class="close" data-dismiss="alert">×</button>
+                <strong><?php echo $titulo ?></strong> 
+                <?php echo $data["cuerpo"] ?>
+            </div>
+            <?php
+        }
+
         public static function mensaje($data)
         {
             if(isset($data))
