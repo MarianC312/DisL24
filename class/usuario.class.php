@@ -139,7 +139,7 @@
             $_SESSION["usuario"] = New Usuario($response, $this->getEstado());
         }
 
-        function getInfo($idUsuario = null, $row = null){
+        function getInfo($idUsuario = null){
             $rol = Lista::rol();
             $compañia = Compania::getNombre($this->getCompañia());
             $sucursal = Compania::sucursalGetNombre($this->getSucursal());
@@ -158,7 +158,7 @@
                 "auth" => $this->getAuth(),
                 "debug" => $this->debug()
             ];
-            return (!is_null($row) && array_key_exists($row, $response)) ? $response[$row] : $response;
+            return $response;
         }
 
         public static function logout(){

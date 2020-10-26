@@ -183,10 +183,6 @@ table.dataTable {
     border-collapse: collapse !important;
 }
 
-.table th {
-    min-width: 80px;
-}
-
 .table th,
 .table td {
     border-top: none !important;
@@ -454,8 +450,6 @@ body {
 }
 
 .titulo {
-    padding-bottom: 1em;
-    margin-bottom: 1em;
     font-weight: bold;
     width: 100%;
     border-bottom: var(--gray) 0.5px groove;

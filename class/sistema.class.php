@@ -172,7 +172,6 @@
             $_SESSION["lista"]["proveedor"] = Lista::proveedor();
             $_SESSION["lista"]["sucursal"] = Lista::sucursal();
             $_SESSION["lista"]["compañia"] = Lista::compañia();
-            $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
             $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
             $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
             $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
