@@ -1,5 +1,116 @@
 const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
 
+const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo']) => {
+    tipo.map((data) => {
+        console.log("#producto-" + idProducto + " #" + data);
+        replaceClass("#producto-" + idProducto + " #" + data, "opacity-0", "");
+    })
+}
+
+const dataTableSet = (componente, sort = false, lengthMenu = [
+    [8, 25, 50, 100, -1],
+    [8, 25, 50, 100, "Todos"]
+], pageLength = 8) => {
+    $(componente).DataTable({
+        "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
+        "lengthMenu": lengthMenu,
+        "pageLength": parseInt(pageLength),
+        "bSort": sort,
+        "language": {
+            "decimal": "",
+            "emptyTable": "No hay información para mostrar.",
+            "info": "Mostrando página _PAGE_ de _PAGES_",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ total de registros)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ registros.",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "No se encontraron coincidencias.",
+            "paginate": {
+                "first": "Primero",
+                "last": "Último",
+                "next": "Siguiente",
+                "previous": "Anterior"
+            },
+            "aria": {
+                "sortAscending": ": activar para ordenar ascendentemente",
+                "sortDescending": ": activar para ordenar descendientemente"
+            }
+        }
+    });
+}
+
+function agregarInput(idParent, value, placeholder = null) {
+    let data = value.split(",");
+    data = data.map((input) => { return input.trim().replace(/\W/g, '') });
+    data = data.filter((input) => { return input.length > 0 });
+    let cantidad = document.getElementById(idParent + "-agregadas").childElementCount;
+    data.map((input, i) => {
+        var field = document.createElement("input")
+        field.className = "form-control d-none";
+        field.value = input.trim();
+        field.type = "text";
+        field.setAttribute("readonly", true);
+        field.id = idParent + "-" + (cantidad + i) + input;
+        field.name = idParent + "[]";
+        field.placeholder = (placeholder != null) ? placeholder : "";
+        document.getElementById(idParent + "-agregadas").appendChild(field);
+    });
+    data.map((input, i) => {
+        var icon = document.createElement("i");
+        icon.className = "fa fa-times";
+
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.id = "btn-act-" + (cantidad + i);
+        btn.onclick = () => {
+            $("#badge-" + (cantidad + i) + input).remove();
+            $("#" + idParent + "-" + (cantidad + i) + input).remove();
+        };
+        btn.setAttribute("key", (cantidad + i));
+        btn.className = "btn btn-sm btn-outline-danger border-0 ml-2";
+        btn.style['zoom'] = "70%";
+        btn.appendChild(icon);
+
+        var span = document.createElement("span");
+        span.id = "badge-" + (cantidad + i) + input;
+        span.className = "badge border p-2 mr-2";
+        span.innerHTML = input;
+        span.appendChild(btn);
+
+        document.getElementById(idParent + "-badge").appendChild(span);
+    });
+}
+
+const clienteBuscarFormularioUpdateBusqueda = () => {
+    if ($('#filtroOpcion1').is(':checked')) {
+        $("#container-nombre").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#container-documento").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#cliente-buscar-form #nombre").focus();
+    }
+    if ($('#filtroOpcion2').is(':checked')) {
+        $("#container-nombre").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#container-documento").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#cliente-buscar-form #documento").focus();
+    }
+}
+
+const compañiaRegistroProductoUpdateBusqueda = () => {
+    if ($('#filtroOpcion1').is(':checked')) {
+        $("#container-tag").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#container-codigo").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#compania-stock-registro-producto-form #tag").focus();
+    }
+    if ($('#filtroOpcion2').is(':checked')) {
+        $("#container-tag").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#container-codigo").val("").fadeIn("slow").find("*").prop("disabled", false);
+        $("#compania-stock-registro-producto-form #codigo").focus();
+    }
+}
+
 const barCode = (div, input) => {
     const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
     switch (true) {
@@ -695,8 +806,107 @@ const clienteEditarFormulario = () => {
     });
 }
 
-const clienteEdicion = () => {
-    console.log("execute");
+const cajaAccionRegistrar = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#caja-accion-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaAccionRegistrarFormulario = (div = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = (div !== null) ? div : "#container-caja-accion";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/accion-registrar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaGestion = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/gestion.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const clienteEditar = (idCliente) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;

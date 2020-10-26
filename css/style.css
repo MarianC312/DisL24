@@ -171,6 +171,31 @@
     }
 }
 
+.opacity-0 {
+    opacity: 0;
+}
+
+.dataTables_wrapper {
+    overflow-x: auto;
+}
+
+table.dataTable {
+    border-collapse: collapse !important;
+}
+
+.table th {
+    min-width: 80px;
+}
+
+.table th,
+.table td {
+    border-top: none !important;
+}
+
+.table tr {
+    border-top: 1px solid #dee2e6 !important;
+}
+
 .loader-circle-1 {
     width: 2em;
     height: 2em;
@@ -425,6 +450,8 @@ body {
 }
 
 .titulo {
+    padding-bottom: 1em;
+    margin-bottom: 1em;
     font-weight: bold;
     border-bottom: var(--gray) 0.5px groove;
 }
