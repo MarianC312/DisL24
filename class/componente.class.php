@@ -48,7 +48,7 @@
                     <img class="mr-2" src="<?php echo ($data["compañiaId"] > 0) ? "image/compañia/".$data["compañiaId"]."/logo.png" : "image/logo-standalone.png" ?>" height="35" alt="<?php echo $data["compañia"] ?>" />
                     <div class="d-flex flex-column align-items-baseline mr-2">
                         <span class="user-name"><?php echo $data["nombre"] ?></span>
-                        <span class="user-rol"><?php echo $data["compañia"]."<br>".$data["sucursal"]." - ".$data["rol"] ?></span>
+                        <span class="user-rol"><?php echo $data["compañia"]."<br>".$data["sucursal"]." - ".$data["rol"]["rol"] ?></span>
                     </div>
                     <i class="fa fa-caret-down"></i>
                 </button>
@@ -422,7 +422,18 @@
                                                 <a href="#/" class="nav-item nav-link"><i class="fa fa-cogs"></i> Administración</a> 
                                             </div>
                                         </div>
+<<<<<<< Updated upstream
                                         <a href="./administracion.php" class="nav-item nav-link" tabIndex="-1"><i class="fa fa-cogs"></i> Administración</a>
+=======
+                                        <a href="#/" onclick="clienteRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-user"></i> Clientes</a>
+                                        <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
+                                        <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="administracion-collapse">                                            
+                                        <div class="d-flex flex-column ml-3"> 
+                                                <a href="#/" onclick="gestionUsuario()" class="nav-item nav-link"><i class="fa fa-users"></i> Gestión Usuario</a>
+                                                <a href="#/" onclick="gestionProducto()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Gestión de Producto</a>
+                                                <a href="#/" onclick="gestionCliente()" class="nav-item nav-link"><i class="fa fa-user"></i> Gestión de Clientes</a>
+                                        </div>
+>>>>>>> Stashed changes
                                     </div>
                                     <div class="navbar-nav ml-auto">
                                         <a href="#/" onclick="requestLogout()" class="nav-item nav-link"><i class="fa fa-sign-out"></i> Salir</a>

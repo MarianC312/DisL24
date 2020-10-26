@@ -518,3 +518,169 @@ const ventaRegistroFormulario = () => {
         me.data('requestRunning', false);
     });
 }
+
+const gestionUsuario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/administracion/usuario/gestionUsuario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const gestionProducto = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/administracion/usuario/gestionProducto.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const gestionCliente = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/administracion/cliente/gestionCliente.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const buscarCompañiaFormulario = () => {
+    console.log("execute");
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#compania-buscar-form");
+    let data = form.serializeArray();
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const nuevaCompania = () => {
+    console.log("execute");
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#nueva-compania-form");
+    let data = form.serializeArray();
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
