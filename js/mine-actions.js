@@ -7,48 +7,41 @@ const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock
     })
 }
 
-<<
-<< << < HEAD
-    ===
-    === =
-    const dataTableSet = (componente, sort = false, lengthMenu = [
-        [8, 25, 50, 100, -1],
-        [8, 25, 50, 100, "Todos"]
-    ], pageLength = 8) => {
-        $(componente).DataTable({
-            "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
-            "lengthMenu": lengthMenu,
-            "pageLength": parseInt(pageLength),
-            "bSort": sort,
-            "language": {
-                "decimal": "",
-                "emptyTable": "No hay información para mostrar.",
-                "info": "Mostrando página _PAGE_ de _PAGES_",
-                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
-                "infoFiltered": "(filtrado de _MAX_ total de registros)",
-                "infoPostFix": "",
-                "thousands": ",",
-                "lengthMenu": "Mostrar _MENU_ registros.",
-                "loadingRecords": "Cargando...",
-                "processing": "Procesando...",
-                "search": "Buscar:",
-                "zeroRecords": "No se encontraron coincidencias.",
-                "paginate": {
-                    "first": "Primero",
-                    "last": "Último",
-                    "next": "Siguiente",
-                    "previous": "Anterior"
-                },
-                "aria": {
-                    "sortAscending": ": activar para ordenar ascendentemente",
-                    "sortDescending": ": activar para ordenar descendientemente"
-                }
+const dataTableSet = (componente, sort = false, lengthMenu = [
+    [8, 25, 50, 100, -1],
+    [8, 25, 50, 100, "Todos"]
+], pageLength = 8) => {
+    $(componente).DataTable({
+        "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
+        "lengthMenu": lengthMenu,
+        "pageLength": parseInt(pageLength),
+        "bSort": sort,
+        "language": {
+            "decimal": "",
+            "emptyTable": "No hay información para mostrar.",
+            "info": "Mostrando página _PAGE_ de _PAGES_",
+            "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+            "infoFiltered": "(filtrado de _MAX_ total de registros)",
+            "infoPostFix": "",
+            "thousands": ",",
+            "lengthMenu": "Mostrar _MENU_ registros.",
+            "loadingRecords": "Cargando...",
+            "processing": "Procesando...",
+            "search": "Buscar:",
+            "zeroRecords": "No se encontraron coincidencias.",
+            "paginate": {
+                "first": "Primero",
+                "last": "Último",
+                "next": "Siguiente",
+                "previous": "Anterior"
+            },
+            "aria": {
+                "sortAscending": ": activar para ordenar ascendentemente",
+                "sortDescending": ": activar para ordenar descendientemente"
             }
-        });
-    }
-
->>>
->>> > dungagnr - master
+        }
+    });
+}
 
 function agregarInput(idParent, value, placeholder = null) {
     let data = value.split(",");
