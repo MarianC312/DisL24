@@ -7,6 +7,49 @@ const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock
     })
 }
 
+<<
+<< << < HEAD
+    ===
+    === =
+    const dataTableSet = (componente, sort = false, lengthMenu = [
+        [8, 25, 50, 100, -1],
+        [8, 25, 50, 100, "Todos"]
+    ], pageLength = 8) => {
+        $(componente).DataTable({
+            "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
+            "lengthMenu": lengthMenu,
+            "pageLength": parseInt(pageLength),
+            "bSort": sort,
+            "language": {
+                "decimal": "",
+                "emptyTable": "No hay información para mostrar.",
+                "info": "Mostrando página _PAGE_ de _PAGES_",
+                "infoEmpty": "Mostrando 0 a 0 de 0 registros",
+                "infoFiltered": "(filtrado de _MAX_ total de registros)",
+                "infoPostFix": "",
+                "thousands": ",",
+                "lengthMenu": "Mostrar _MENU_ registros.",
+                "loadingRecords": "Cargando...",
+                "processing": "Procesando...",
+                "search": "Buscar:",
+                "zeroRecords": "No se encontraron coincidencias.",
+                "paginate": {
+                    "first": "Primero",
+                    "last": "Último",
+                    "next": "Siguiente",
+                    "previous": "Anterior"
+                },
+                "aria": {
+                    "sortAscending": ": activar para ordenar ascendentemente",
+                    "sortDescending": ": activar para ordenar descendientemente"
+                }
+            }
+        });
+    }
+
+>>>
+>>> > dungagnr - master
+
 function agregarInput(idParent, value, placeholder = null) {
     let data = value.split(",");
     data = data.map((input) => { return input.trim().replace(/\W/g, '') });
@@ -956,6 +999,106 @@ const clienteEditarFormulario = (idCliente = null) => {
             $(divProcess).show(350);
         },
         data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaAccionRegistrar = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#caja-accion-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaAccionRegistrarFormulario = (div = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = (div !== null) ? div : "#container-caja-accion";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/accion-registrar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaGestion = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/gestion.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
         complete: function() {
             me.data('requestRunning', false);
         },

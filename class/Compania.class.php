@@ -317,7 +317,7 @@
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0 && isset($tipo) && strlen($tipo) > 0){
                     $data = Compania::stockGetData($idProducto, $tipo);
                     if(is_numeric($data[$tipo])){
-                        echo '<button type="button" class="btn btn-sm btn-link btn-iconed p-0"><span class="spn">'.$data[$tipo].'</span> <i class="fa fa-pencil"></i></button>';
+                        echo '<button type="button" class="btn btn-sm btn-link btn-iconed p-0"><span class="spn">'.(($tipo === "precio") ? "$" : "").$data[$tipo].'</span> <i class="fa fa-pencil"></i></button>';
                         ?>
                         <script>
                             $(document).ready(() => {
@@ -479,15 +479,15 @@
                         <table id="tabla-producto-inventario" class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th scope="col">Código</th>
-                                    <th scope="col">Producto</th>
-                                    <th class="text-center" scope="col">Stock</th>
-                                    <th class="text-center" scope="col">Mínimo</th>
-                                    <th class="text-center" scope="col">Máximo</th>
-                                    <th scope="col">Tipo</th>
-                                    <th scope="col">Categoría</th>
-                                    <th scope="col">Sub-Categoría</th>
-                                    <th scope="col">Acciones</th>
+                                    <th id="tag-codigo" scope="col">Código</th>
+                                    <th id="tag-producto" scope="col">Producto</th>
+                                    <th id="tag-stock" class="text-center" scope="col">Stock</th>
+                                    <th id="tag-minimo" class="text-center" scope="col">S. Mínimo</th>
+                                    <th id="tag-maximo" class="text-center" scope="col">S. Máximo</th>
+                                    <th id="tag-preu" scope="col">Precio x U.</th>
+                                    <th id="tag-prem" scope="col">Precio May.</th>
+                                    <th id="tag-tipo" scope="col">Tipo</th>
+                                    <th id="tag-categoria" scope="col">Categoría</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -497,7 +497,6 @@
                                             $producto = $_SESSION["lista"]["producto"];
                                             $productoTipo = $_SESSION["lista"]["producto"]["tipo"];
                                             $productoCategoria = $_SESSION["lista"]["producto"]["categoria"];
-                                            $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"]; 
                                             $counter = 0;
                                             foreach($data AS $key => $value){
                                                 ?>
@@ -507,10 +506,10 @@
                                                     <td id="stock" data-value="<?php echo (isset($value["stock"]) && is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
                                                     <td id="minimo" data-value="<?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="maximo" data-value="<?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? $value["maximo"] : 0 ?>" class="text-center"><?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["maximo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
+                                                    <td id="precio" data-value="<?php echo (isset($value["precio"]) && is_numeric($value["precio"])) ? $value["precio"] : "$0" ?>" class="text-center"><?php echo (isset($value["precio"]) && is_numeric($value["precio"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precio"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
+                                                    <td id="precio_mayorista" data-value="<?php echo (isset($value["precio_mayorista"]) && is_numeric($value["precio_mayorista"])) ? $value["precio_mayorista"] : "$0" ?>" class="text-center"><i class='fa fa-circle text-muted'></i></td>
                                                     <td><?php echo $productoTipo[$producto[$value["producto"]]["tipo"]]; ?></td>
                                                     <td><?php echo $productoCategoria[$producto[$value["producto"]]["categoria"]] ?></td>
-                                                    <td><?php echo (is_numeric($producto[$value["producto"]]["subcategoria"])) ? $productoSubcategoria[$producto[$value["producto"]]["subcategoria"]] : "<span class='text-muted'>No categorizado</span>" ?></td>
-                                                    <td></td>
                                                 </tr>
                                                 <?php
                                                 $counter++;
@@ -588,6 +587,65 @@
                                 content: 'Click para agregar un nuevo valor.',
                                 delay: [150,150],
                                 animation: 'fade'
+                            });
+                            tippy('td button', {
+                                content: 'Click para modificar el valor.',
+                                delay: [150,150],
+                                animation: 'fade'
+                            });
+                            tippy('#tag-codigo', {
+                                content: '<i class="fa fa-barcode"></i> Código de barra del producto.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-producto', {
+                                content: 'Nombre y descripción del artículo.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-stock', {
+                                content: 'Cantidad de artículo en stock.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-minimo', {
+                                content: 'Stock mínimo es un parámetro definido para el sistema, con el cual se le dará una notificación cuando este artículo alcance valores inferios al guardado.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-maximo', {
+                                content: 'Stock máximo al contrario de "Stock Mínimo", dará una notificación cuando este artículo supere al valor guardado.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-preu', {
+                                content: 'Precio por unidad del artículo.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-prem', {
+                                content: 'Precio al por mayor del artículo. <b>No disponible</b>',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-tipo', {
+                                content: 'Tipo de producto',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-categoria', {
+                                content: 'Categoría de producto',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
                             });
                             $('#tabla-producto-inventario').DataTable({
                                 "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
