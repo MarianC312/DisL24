@@ -140,7 +140,7 @@
         }
 
         function getInfo($idUsuario = null){
-            $rol = $_SESSION["lista"]["usuario"]["rol"];
+            $rol = Lista::rol();
             $compañia = Compania::getNombre($this->getCompañia());
             $sucursal = Compania::sucursalGetNombre($this->getSucursal());
             $response = [
@@ -180,6 +180,8 @@
                 return $response;
             }
         } 
+
+
 
         private static function getData($email){
             if(isset($email) && !is_null($email) && strlen($email) >= 7 && $email != ""){

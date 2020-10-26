@@ -41,9 +41,9 @@
             }
         } 
         
-        public static function compañia($idCompañia = null){
+        public static function compañia(){
             Session::iniciar();
-            $query = DataBase::select("compañia", "*", (($_SESSION["usuario"]->isAdmin()) ? "1" : ((is_numeric($idCompañia)) ? "id = '".$idCompañia."'" : "id = '".$_SESSION["usuario"]->getCompañia()."'")), "ORDER BY nombre ASC");
+            $query = DataBase::select("compañia", "*", (($_SESSION["usuario"]->isAdmin()) ? "1" : "id = '".$_SESSION["usuario"]->getCompañia()."'"), "ORDER BY nombre ASC");
             if($query){
                 if(DataBase::getNumRows($query) > 0){
                     $data = [];
@@ -166,20 +166,13 @@
             }
         }
 
-        public static function usuarioRol(){
+        public static function rol(){
             $query = DataBase::select("sistema_usuario_rol", "*", "1", "ORDER BY rol ASC");
             if($query){
                 if(DataBase::getNumRows($query) > 0){
                     $data = [];
                     while($dataQuery = DataBase::getArray($query)){
-                        $data[$dataQuery["id"]] = $dataQuery;
-                    }
-                    foreach($data AS $key => $value){
-                        foreach($value AS $iKey => $iValue){
-                            if(is_int($iKey)){
-                                unset($data[$key][$iKey]);
-                            }
-                        }
+                        $data[$dataQuery["id"]] = $dataQuery["rol"];
                     }
                     return $data;
                 }else{
