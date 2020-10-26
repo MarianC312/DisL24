@@ -1,5 +1,30 @@
 <?php
     class Lista{
+        
+        public static function cajaAccionTipo(){
+            $query = DataBase::select("sistema_caja_accion_tipo", "*", "1", "ORDER BY accion ASC");
+            if($query){
+                if(DataBase::getNumRows($query) > 0){
+                    $data = [];
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    return 0;
+                }
+            }else{
+                return false;
+            }
+        } 
+
         public static function producto(){
             $query = DataBase::select("producto", "*", "1", "ORDER BY nombre ASC");
             if($query){
