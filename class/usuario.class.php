@@ -140,7 +140,7 @@
         }
 
         function getInfo($idUsuario = null, $row = null){
-            $rol = Lista::rol();
+            $rol = $_SESSION["lista"]["usuario"]["rol"];
             $compañia = Compania::getNombre($this->getCompañia());
             $sucursal = Compania::sucursalGetNombre($this->getSucursal());
             $response = [
