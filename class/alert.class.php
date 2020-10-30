@@ -1,5 +1,21 @@
 <?php
     class Alert{
+        public static function building(){
+            ?>
+            <div id="building" class="jumbotron">
+                <h1 class="display-3">Hola! <i class="fa fa-hand-paper-o text-primary"></i></h1>
+                <p class="lead">
+                    Esta sección se encuentra en desarrollo.
+                </p>
+                <hr class="my-4">
+                <p>Pronto tendrás novedades</p>
+                <p class="lead">
+                    <a class="btn btn-primary btn-lg" onclick="$('#building').remove()" href="#/" role="button">Ok</a>
+                </p>
+            </div>
+            <?php
+        }
+
         public static function mensajeSmall($data){
             switch($data["tipo"])
             {

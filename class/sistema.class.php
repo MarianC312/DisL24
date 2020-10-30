@@ -3,6 +3,8 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
+        public static $version = "alpha-1.0.0";
+
         public static function dbGetCantidadProductoPorPrefijo($prefijo){
             if(Sistema::usuarioLogueado()){
                 $buscar = false;
@@ -219,8 +221,9 @@
             $_SESSION["lista"]["proveedor"] = Lista::proveedor();
             $_SESSION["lista"]["sucursal"] = Lista::sucursal();
             $_SESSION["lista"]["compañia"] = Lista::compañia();
-            $_SESSION["lista"]["compañia"]["cliente"] = Lista::compañiaCliente();
-            $_SESSION["lista"]["compañia"]["sucursal"]["stock"] = Compania::stockData();
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"] = Compania::data();
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
             $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
             $_SESSION["lista"]["pago"] = Lista::pago();
             $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);

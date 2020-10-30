@@ -262,23 +262,42 @@
                                                     <td><?php echo date("d/m/Y", strtotime($value["fechaCarga"]))." ".date("H:i A", strtotime($value["fechaCarga"])) ?></td>
                                                     <td><?php echo ($_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["actividad"] == 1) ? '<i class="fa fa-plus text-success"></i>' : '<i class="fa fa-minus text-danger"></i>' ?></td>
                                                     <td><?php echo nl2br($value["observacion"]) ?></td>
-                                                    <td><?php echo (($_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["actividad"] == 1) ? '<span class="text-success">+$'.$value["monto"].'</span>' : '<span class="text-danger">-$'.$value["monto"].'</span>') ?></td>
+                                                    <td><?php echo (($_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["actividad"] == 1) ? '<span class="text-success">+$'.round($value["monto"], 2).'</span>' : '<span class="text-danger">-$'.round($value["monto"], 2).'</span>') ?></td>
                                                     <td><?php echo ($value["procesado"] == 1 && !is_null($value["fechaModificacion"])) ? '<i class="fa fa-check-square-o text-success"></i>' : '<i class="fa fa-square-o text-info"></i>' ?></td>
-                                                    <td class="text-right"><button type="button" class="btn btn-sm btn-outline-info"><i class="fa fa-expand"></i></button></td>
+                                                    <td class="btn-group text-right">
+                                                        <button type="button" class="btn btn-sm btn-outline-info"><i class="fa fa-expand"></i></button>
+                                                        <?php
+                                                            if(is_numeric($value["venta"]) && $value["venta"] > 0){
+                                                                echo '<button type="button" onclick="facturaVisualizar('.$value["venta"].')" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>';
+                                                            }
+                                                        ?>
+                                                    </td>
                                                 </tr>
                                                 <?php
                                             }
                                         }else{
                                             ?>
                                             <tr>
-                                                <td class="text-center">No se encontraron registros.</td>
+                                                <td colspan="7" class="text-center">No se encontraron registros.</td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
                                             </tr>
                                             <?php
                                         }
                                     }else{
                                         ?>
                                         <tr>
-                                            <td class="text-center">Hubo un error al recibir la información. <b>Intente nuevamente.</b></td>
+                                            <td colspan="7" class="text-center">Hubo un error al recibir la información. <b>Intente nuevamente.</b></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
                                         </tr>
                                         <?php
                                         Sistema::debug('error', 'caja.class.php - historial - Error en los datos recibidos de la caja.');

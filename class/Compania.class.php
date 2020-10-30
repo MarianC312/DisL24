@@ -40,15 +40,162 @@
             return false;
         }
 
+        public static function data($compañia = null){
+            if(Sistema::usuarioLogueado()){
+                $query = DataBase::select("compañia", "*", "id = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'compania.class.php - data - Error al buscar la información de la compañia. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - data - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function facturaVisualizar($idVenta, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){ 
                     $data = Compania::facturaData($idVenta, $sucursal, $compañia);
                     if(is_array($data)){
+                        Session::iniciar();
+                        $dataCompañia = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"][$_SESSION["usuario"]->getCompañia()];
+                        $dataCompañiaStock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"];
+                        $nComprobante = "";
+                        for($i = 12; $i >= strlen($idVenta); $i--){
+                            $nComprobante .= "0";
+                        }
                         if(count($data) > 0){
-                            echo '<pre>';
-                            print_r($data);
-                            echo '</pre>';
+                            $producto = explode(",", $data[$idVenta]["producto"]);
+                            $productoCantidad = explode(",", $data[$idVenta]["productoCantidad"]);
+                            $productoPrecio = explode(",", $data[$idVenta]["productoPrecio"]);
+                            ?>
+                            <div class="d-flex justify-content-end">
+                                <button type="button" onclick="printDiv()" class="btn btn-primary">Imprimir <i class="fa fa-print"></i></button>
+                            </div>
+                            <div id="comprobante" style="position: relative; padding: 1em; margin: 0.825em; background-color: var(--white); box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;">
+                                <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center">
+                                    <div style="display: flex; flex-direction: column; justify-content: space-around;">
+                                        <span style="font-size: 2em; font-weight-bold;"><?php echo $dataCompañia["nombre"] ?></span>
+                                        <span><?php echo $dataCompañia["direccion"] ?></span>
+                                        <span><?php echo $dataCompañia["telefono"] ?></span>
+                                    </div>
+                                    <img src="image/compañia/<?php echo $dataCompañia["id"] ?>/logo.png" height="150px" alt="<?php echo $dataCompañia["nombre"] ?>" />
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
+                                    <div style="display: flex; flex-direction: column; padding: 1.5em 0;">
+                                        <div style="font-size: 1.3em; font-weight: bold;">
+                                            Cliente
+                                        </div>
+                                        <?php
+                                            if(is_numeric($data[$idVenta]["cliente"]) && $data[$idVenta]["cliente"] > 0){
+                                                $dataCliente = Cliente::data(["filtroOpcion" => 3, "id" => $data[$idVenta]["cliente"]]);
+                                                ?>
+                                                <span><b>Nombre y apellido:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["nombre"] ?></span>
+                                                <span><b>N° Documento:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["documento"] ?></span>
+                                                <span><b>N° Teléfono:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["telefono"] ?></span>
+                                                <span><b>Domicilio:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["domicilio"] ?></span>
+                                                <span><b>Email:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["email"] ?></span>
+                                                <?php
+                                            }else{
+                                                ?>
+                                                <span>Cliente ocasional.</span>
+                                                <?php
+                                            }
+                                        ?>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; align-items: flex-end">
+                                        <span><b>Fecha: </b><?php echo date("d/m/Y", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
+                                        <span><b>Hora: </b><?php echo date("H:i A", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
+                                        <span><b>Comprobante N°:</b> #<?php echo $nComprobante.$idVenta ?></span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <table style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; width: 100%;">
+                                        <thead style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
+                                            <tr style="text-align: center; font-weight: bold; background-color: burlywood;">
+                                                <td style="width: 66%; padding: 1.1em;">Descripción</td>
+                                                <td style="width: 6%; padding: 1.1em">Cant.</td>
+                                                <td style="width: 12%; padding: 1.1em">Precio/U.</td>
+                                                <td style="width: 15%; padding: 1.1em; text-align: right">Total</td>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php
+                                                $total = 0;
+                                                foreach($producto AS $key => $value){
+                                                    ?>
+                                                    <tr style="border-bottom: 1px solid lightgray;">
+                                                        <td style="padding: 1.015em 0; "><?php echo $_SESSION["lista"]["producto"][$dataCompañiaStock[$value]["producto"]]["nombre"] ?></td>
+                                                        <td style="padding: 1.015em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
+                                                        <td style="padding: 1.015em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
+                                                        <td style="padding: 1.015em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
+                                                    </tr>
+                                                    <?php
+                                                    $total += $productoCantidad[$key] * $productoPrecio[$key];
+                                                }
+                                            ?>
+                                        </tbody>
+                                        <tfoot style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; ">
+                                            <tr>
+                                                <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
+                                                <td style="padding: 1.015em 0; text-align: right">$ <?php echo round($total - ($total / 100 * 21), 2); ?></td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
+                                                <td style="padding: 1.015em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
+                                            </tr>
+                                            <?php
+                                                if($data[$idVenta]["iva"] == 1){
+                                                    ?> 
+                                                    <tr>
+                                                        <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Iva :</td>
+                                                        <td style="padding: 1.015em 0; text-align: right">% 21</td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                            ?>
+                                            <tr>
+                                                <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
+                                                <td style="padding: 1.015em 0; text-align: right">$ <?php echo round($total - ($total / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["descuento"] / 100 * (($data[$idVenta]["iva"] == 1) ? 21 : 0)), 2) ?></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <script> 
+                                function printDiv(){
+                                    var divToPrint=document.getElementById('comprobante');
+                                    var newWin=window.open('','Print-Window');
+                                    newWin.document.open();
+                                    newWin.document.write('<html><style>body{ font-family: arial; font-size: 10.5px; }</style><body onload="window.print()">'+divToPrint.innerHTML+'</body></html>');
+                                    newWin.document.close();
+                                    setTimeout(function(){newWin.close();},10);
+
+                                }
+                                $("#print").click(function(){
+                                    w = window.open();
+                                    w.document.write($('#bonosUniq').html());
+                                    w.print();
+                                    w.close();
+                                })
+                            
+                            </script>
+                            <?php
                         }else{ 
                             $mensaje['tipo'] = 'info';
                             $mensaje['cuerpo'] = 'No se recibió información de la factura. <b>Intente nuevamente o contacte al administrador.</b>';
@@ -577,9 +724,11 @@
                 $data = Compania::stockData();
                 ?>
                 <div class="mine-container">
-                    <div class="titulo">Stock de productos de <?php echo mb_strtoupper(Compania::getNombre($_SESSION["usuario"]->getCompañia())) ?> - <?php echo Compania::sucursalGetNombre($_SESSION["usuario"]->getSucursal()) ?></div>
-                    <div class="p-1">
-                        <button type="button" class="btn btn-primary" onclick="compañiaStockRegistroProductoFormulario()" style="position: absolute; top: 5px; right: 5px;"><i class="fa fa-plus"></i> Agregar productos al stock</button>
+                    <div class="d-flex justify-content-between">
+                        <div class="titulo">Stock de productos de <?php echo mb_strtoupper(Compania::getNombre($_SESSION["usuario"]->getCompañia())) ?> - <?php echo Compania::sucursalGetNombre($_SESSION["usuario"]->getSucursal()) ?></div>
+                        <button type="button" class="btn btn-info" onclick="compañiaStockRegistroProductoFormulario()"><i class="fa fa-plus"></i> Agregar productos al stock</button>
+                    </div> 
+                    <div class="p-1"> 
                         <table id="tabla-producto-inventario" class="table table-hover">
                             <thead>
                                 <tr>
@@ -640,7 +789,7 @@
                                             ?> 
                                             <tr>
                                                 <td colspan="9" class="text-center">
-                                                    No se encontraron productos registrados en la compañia. Para cargar un nuevo producto clickee en el siguiente <a href="#/" onclick="productoRegistroFormulario()">link</a>.
+                                                    No se encontraron productos registrados en la compañia. Para agregar un nuevo producto clickee en el siguiente <a href="#/" onclick="compañiaStockRegistroProductoFormulario()">link</a>.
                                                 </td>
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>

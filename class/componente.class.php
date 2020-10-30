@@ -53,9 +53,9 @@
                     <i class="fa fa-caret-down"></i>
                 </button>
                 <div class="dropdown-menu" style="min-width: auto" aria-labelledby="dropdownMenuButton-<?php echo $data["id"] ?>">
-                    <a class="dropdown-item" href="#/"><i class="fa fa-cog"></i> Configurar cuenta</a>
-                    <a class="dropdown-item" href="#/"><i class="fa fa-unlock-alt"></i> Cambiar contraseña</a>
-                    <a class="dropdown-item" href="#/"><i class="fa fa-envelope"></i> Ver mensajes</a>
+                    <a class="dropdown-item" onclick="alert('Contenido en desarrollo...')" href="#/"><i class="fa fa-cog"></i> Configurar cuenta</a>
+                    <a class="dropdown-item" onclick="alert('Contenido en desarrollo...')" href="#/"><i class="fa fa-unlock-alt"></i> Cambiar contraseña</a>
+                    <a class="dropdown-item" onclick="alert('Contenido en desarrollo...')" href="#/"><i class="fa fa-envelope"></i> Ver mensajes</a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#/" onclick="requestLogout()"><i class="fa fa-sign-out"></i> Salir</a>
                 </div> 
@@ -395,7 +395,7 @@
                         ?>
                         <div class="d-flex flex-column align-items-stretch h-100">
                             <nav class="navbar navbar-expand-md navbar-light bg-light flex-column">
-                                <a href="#" class="navbar-brand">
+                                <a href="./members.php" class="navbar-brand">
                                     <img src="image/logo-standalone.png" height="75" alt="CoolBrand" />
                                 </a>
                                 <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
@@ -403,7 +403,7 @@
                                 </button> 
                                 <div class="collapse navbar-collapse flex-column w-100" id="navbarCollapse">
                                     <div class="navbar-nav flex-column">
-                                        <a href="#/" onclick="" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a>
+                                        <a href="./members.php" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a>
                                         <a href="#/" onclick="setCollapse('venta-collapse'); swapClass('#menu-venta','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#venta-collapse','bg-orange-6')" id="menu-venta" class="nav-item nav-link <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#venta-collapse" aria-controls="venta-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-shopping-basket" aria-hidden="true"></i> Ventas</a>
                                         <div class="collapse w-100 <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="venta-collapse">
                                             <div class="d-flex flex-column ml-3"> 
@@ -413,8 +413,7 @@
                                         </div>
                                         <a href="#/" onclick="setCollapse('producto-collapse'); swapClass('#menu-producto','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#producto-collapse','bg-orange-6')" id="menu-producto" class="nav-item nav-link <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
                                         <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="producto-collapse">
-                                            <div class="d-flex flex-column ml-3"> 
-                                                <a href="#/" class="nav-item nav-link"><i class="fa fa-clipboard"></i> Actividades</a>
+                                            <div class="d-flex flex-column ml-3">
                                                 <a href="#/" onclick="compañiaStock()" class="nav-item nav-link"><i class="fa fa-truck"></i> Mi stock</a>
                                             </div>
                                         </div>
@@ -425,19 +424,30 @@
                                                 <a href="#/" onclick="clienteBuscarFormulario()" class="nav-item nav-link"><i class="fa fa-search"></i> Buscar cliente</a>
                                             </div>
                                         </div>
-                                        <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
-                                        <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="administracion-collapse">                                            
-                                        <div class="d-flex flex-column ml-3"> 
-                                                <a href="#/" onclick="adminUsuarioGestionar()" class="nav-item nav-link"><i class="fa fa-users"></i> Gestión Usuario</a>
-                                                <a href="#/" onclick="adminProductoGestionar()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Gestión de Producto</a>
-                                                <a href="#/" onclick="adminClienteGestionar()" class="nav-item nav-link"><i class="fa fa-user"></i> Gestión de Clientes</a>
-                                        </div>
+                                        <?php
+                                            if($_SESSION["usuario"]->isAdmin()){
+                                                ?>
+                                                <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
+                                                <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="administracion-collapse">                                            
+                                                <div class="d-flex flex-column ml-3"> 
+                                                        <a href="#/" onclick="adminUsuarioGestionar()" class="nav-item nav-link"><i class="fa fa-users"></i> Gestión Usuario</a>
+                                                        <a href="#/" onclick="adminProductoGestionar()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Gestión de Producto</a>
+                                                        <a href="#/" onclick="adminClienteGestionar()" class="nav-item nav-link"><i class="fa fa-user"></i> Gestión de Clientes</a>
+                                                </div>
+                                                <?php
+                                            }
+                                        ?>
                                     </div>
-                                    <div class="navbar-nav ml-auto">
+                                    <div class="navbar-nav mt-4 justify-content-end">
                                         <a href="#/" onclick="requestLogout()" class="nav-item nav-link"><i class="fa fa-sign-out"></i> Salir</a>
                                     </div>
                                 </div>
-                                <Copy />
+                                <div class="mt-auto w-100 text-center mb-2" style="font-size: 12.5px; line-height: 1em;">
+                                    <div class="dropdown-divider border-danger"></div>
+                                    <strong>2020 <i class="fa fa-copyright"></i> EFECE</strong><br>
+                                    Soluciones Informáticas<br>
+                                    Versión <?php echo Sistema::$version ?>
+                                </div>
                             </nav>
                         </div>
                         <div id="menu-<?php echo $data["id"] ?>-process"></div>

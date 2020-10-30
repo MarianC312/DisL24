@@ -25,16 +25,7 @@
                 <div id="right-content-process"></div>
                 <div id="right-content-data">
                     <?php
-                        $p1 = explode(",", "1,2,4,5");
-                        $p2 = explode(",", "45");
-                        echo '<pre>';
-                        print_r($p1);
-                        echo '</pre>';
-                        echo '<pre>';
-                        print_r($p2);
-                        echo '</pre>';
-                        echo "p1: ".count($p1)."<br>";
-                        echo "p2: ".count($p2);
+                        Alert::building();
                     ?>
                 </div>
             </div>

@@ -11,9 +11,11 @@
                         $dataCaja["pago"] = $data["pago"];
                         $dataCaja["subtotal"] = 0;
                         $dataCaja["iva"] = (isset($data["iva"])) ? true : false;
+                        $dataCaja["cliente"] = (isset($data["cliente"])) ? $data["cliente"] : null;
                         $dataCaja["descuento"] = $data["descuento"]; 
                         $dataCaja["producto"] = "";
                         $dataCaja["productoCantidad"] = "";
+                        $dataCaja["productoPrecio"] = "";
                         foreach($data["producto-identificador"] AS $key => $value){
                             $dataProducto[$key]["id"] = $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["producto"];
                             $dataProducto[$key]["idStock"] = $value;
@@ -30,6 +32,10 @@
                             if(strlen($dataCaja["productoCantidad"]) > 0){
                                 $dataCaja["productoCantidad"] .= ",";
                             }
+                            if(strlen($dataCaja["productoPrecio"]) > 0){
+                                $dataCaja["productoPrecio"] .= ",";
+                            }
+                            $dataCaja["productoPrecio"] .= $dataProducto[$key]["precio"];
                             $dataCaja["productoCantidad"] .= $data["producto-cantidad"][$key];
                         }
 
@@ -51,7 +57,7 @@
 
                         echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-info">Regresar</button></div>'; 
 
-                        $query = DataBase::insert("compañia_sucursal_venta", "producto,productoCantidad,pago,descuento,iva,subtotal,total,operador,sucursal,compañia", "'".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."','".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
+                        $query = DataBase::insert("compañia_sucursal_venta", "producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                         if($query){
                             $idVenta = DataBase::getLastId();
                             $stockRestar = Compania::stockRestar($dataCaja["producto"], $dataCaja["productoCantidad"]);
@@ -111,9 +117,9 @@
 
         public static function registrarFormulario(){ 
             if(Sistema::usuarioLogueado()){
-                $dataCliente = $_SESSION["lista"]["compañia"]["cliente"];
+                $dataCliente = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"];
                 $baseProductos = $_SESSION["lista"]["producto"];
-                $dataStock = $_SESSION["lista"]["compañia"]["sucursal"]["stock"];
+                $dataStock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"];
                 ?>
                 <div id="container-venta-formulario" class="mine-container">
                     <div class="d-flex justify-content-between">

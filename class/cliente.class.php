@@ -39,7 +39,7 @@
                             $data = [];
                             if(DataBase::getNumRows($query) > 0){
                                 while($dataQuery = DataBase::getArray($query)){
-                                    $data[] = $dataQuery;
+                                    $data[$dataQuery["id"]] = $dataQuery;
                                 }
                                 foreach($data AS $key => $value){
                                     foreach($value AS $iKey => $iValue){
