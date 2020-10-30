@@ -192,6 +192,29 @@ table.dataTable {
     border-top: none !important;
 }
 
+.tableFixHead {
+    overflow-y: auto;
+    height: 50vh;
+}
+
+.tableFixHead thead th,
+.tableFixHead thead td {
+    background-color: var(--white);
+    z-index: 10;
+    border-bottom: 1px solid var(--gray);
+    box-shadow: 0 1px 0px 0 rgba(0, 0, 0, 0.16), 0 1px 12px 0 rgba(0, 0, 0, 0.12) !important;
+    position: sticky;
+    top: 0;
+}
+
+.table td.fit,
+.table th.fit,
+table.dataTable td,
+table.dataTable th {
+    white-space: nowrap !important;
+    width: 1%;
+}
+
 .table tr {
     border-top: 1px solid #dee2e6 !important;
 }
@@ -410,11 +433,6 @@ body {
     min-height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
-}
-
-.btn:focus,
-.btn.focus {
-    box-shadow: none;
 }
 
 .btn .badge {

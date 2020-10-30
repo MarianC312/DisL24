@@ -14,17 +14,27 @@
 
 <body>
     <div id="main-body" class="d-flex">
-    <div class="d-inline-flex flex-row-reverse fixed-bottom" style="width: fit-content; left: 85%; bottom: 10%">
-        <button type="button" id="backToTop" class="btn btn-outline-primary" style="display: none"><i class="fa fa-chevron-up fa-2x"></i></button>
-    </div>
+        <div class="d-inline-flex flex-row-reverse fixed-bottom" style="width: fit-content; left: 85%; bottom: 10%">
+            <button type="button" id="backToTop" class="btn btn-outline-primary" style="display: none"><i class="fa fa-chevron-up fa-2x"></i></button>
+        </div>
         <div id="left-content" class="d-flex">
             <?php Componente::menu(); ?>
         </div>
         <div id="right-content" class="flex-grow-1">
                 <?php Componente::headerUsuario() ?>
+                <div id="right-content-process"></div>
                 <div id="right-content-data">
                     <?php
-                        
+                        $p1 = explode(",", "1,2,4,5");
+                        $p2 = explode(",", "45");
+                        echo '<pre>';
+                        print_r($p1);
+                        echo '</pre>';
+                        echo '<pre>';
+                        print_r($p2);
+                        echo '</pre>';
+                        echo "p1: ".count($p1)."<br>";
+                        echo "p2: ".count($p2);
                     ?>
                 </div>
             </div>

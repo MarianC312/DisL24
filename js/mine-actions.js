@@ -1,5 +1,7 @@
 const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
 
+const beep1 = new Audio("./sound/scanner-beep.mp3");
+
 const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo']) => {
     tipo.map((data) => {
         console.log("#producto-" + idProducto + " #" + data);
@@ -7,15 +9,61 @@ const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock
     })
 }
 
+const cajaCalculaTotal = () => {
+    let data = document.getElementById("lista-productos-agregados").childNodes;
+    let subtotal = 0.00;
+    let descuento = $("#descuento").val();
+    for (let i = 1; i <= (data.length - 1); i++) {
+        let idProducto = data[i].dataset.idProducto;
+        let pos = data[i].dataset.pos;
+        let cantidad = $("#producto-" + pos + "-" + idProducto + "-cantidad").val();
+        subtotal += cantidad * data[i].dataset.precio;
+    }
+    if (!$("#iva").is(":checked")) {
+        subtotal = subtotal - (subtotal / 100 * 21);
+    }
+    subtotal = subtotal - (subtotal / 100 * descuento);
+    $('#total').html(subtotal.toFixed(2));
+}
+
+const cajaCalculaTotalBruto = () => {
+    let data = document.getElementById("lista-productos-agregados").childNodes;
+    let prodsubtotal = 0.00;
+    let iva = 21;
+    for (let i = 1; i <= (data.length - 1); i++) {
+        let idProducto = data[i].dataset.idProducto;
+        let pos = data[i].dataset.pos;
+        let cantidad = $("#producto-" + pos + "-" + idProducto + "-cantidad").val();
+        prodsubtotal += cantidad * data[i].dataset.precio;
+    }
+    prodsubtotal = parseFloat(prodsubtotal);
+    let subtotal = prodsubtotal - ((prodsubtotal / 100) * iva);
+    $("#subtotal").html(subtotal.toFixed(2));
+    cajaCalculaTotal();
+}
+
+const cajaCalculaProductoPrecioBruto = (pos, idProducto) => {
+    let newValue = ($('#producto-' + pos + '-' + idProducto + '-cantidad').val() * parseFloat($('#producto-' + pos + '-' + idProducto + '-precio').text())).toFixed(2);
+    $('#producto-' + pos + '-' + idProducto + '-total-bruto').html(newValue);
+}
+
+const tailSelectSet = (componente, search = true, classNames = ["flex-grow-1, w-100"]) => {
+    tail.select(componente, {
+        search: search,
+        classNames: classNames
+    });
+}
+
 const dataTableSet = (componente, sort = false, lengthMenu = [
     [8, 25, 50, 100, -1],
     [8, 25, 50, 100, "Todos"]
-], pageLength = 8) => {
+], pageLength = 8, order = [0, "desc"]) => {
     $(componente).DataTable({
         "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
         "lengthMenu": lengthMenu,
         "pageLength": parseInt(pageLength),
         "bSort": sort,
+        "order": [order],
         "language": {
             "decimal": "",
             "emptyTable": "No hay información para mostrar.",
@@ -41,6 +89,173 @@ const dataTableSet = (componente, sort = false, lengthMenu = [
             }
         }
     });
+}
+
+function ventaProductoAgregarInput(idParent, dataset) {
+    if (dataset.stock <= 0) {
+        alert("El producto " + dataset.producto + " se encuentra sin stock.");
+        return;
+    }
+
+    if (dataset.precio <= 0 || dataset.precio === null || dataset.precio == "") {
+        alert("El producto " + dataset.producto + " no tiene un precio registrado.");
+        return;
+    }
+
+    let cantidad = document.getElementById(idParent + "-agregados").childElementCount;
+    let container = document.createElement("tr");
+    container.id = "producto-" + cantidad + "-" + dataset.idProducto;
+    container.setAttribute("data-id-producto", dataset.idProducto);
+    container.setAttribute("data-producto", dataset.producto);
+    container.setAttribute("data-stock", dataset.stock);
+    container.setAttribute("data-precio", dataset.precio);
+    container.setAttribute("data-bar-code", dataset.barCode);
+    container.setAttribute("data-pos", cantidad);
+
+    var icon = document.createElement("i");
+    icon.className = "fa fa-trash-o";
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "btn-acc-" + dataset.idProducto;
+    btn.onclick = () => {
+        $("#producto-" + cantidad + "-" + dataset.idProducto).remove();
+        cajaCalculaTotalBruto();
+    };
+    btn.className = "btn btn-outline-danger";
+    btn.appendChild(icon);
+
+    let inputContainer0 = document.createElement("td");
+    inputContainer0.className = "align-middle";
+    inputContainer0.appendChild(btn);
+
+    let inputContainer1 = document.createElement("td");
+    inputContainer1.id = "producto-" + cantidad + "-" + dataset.idProducto + "-barcode";
+
+    let inputContainer2 = document.createElement("td");
+    inputContainer2.className = "align-middle";
+    inputContainer2.innerHTML = dataset.producto;
+
+    let inputContainer3 = document.createElement("td");
+    inputContainer3.className = "text-center align-middle";
+    inputContainer3.innerHTML = '$<span id="producto-' + cantidad + '-' + dataset.idProducto + '-precio">' + dataset.precio + '</span>';
+
+    let input1 = document.createElement("input");
+    input1.type = "number";
+    input1.className = "form-control";
+    input1.id = "producto-" + cantidad + "-" + dataset.idProducto + "-cantidad";
+    input1.name = "producto-cantidad[]";
+    input1.max = dataset.stock;
+    input1.min = 0;
+    input1.value = 1;
+    input1.onchange = () => {
+        cajaCalculaProductoPrecioBruto();
+        cajaCalculaTotalBruto();
+        cajaCalculaTotal();
+    }
+    input1.onkeyup = (e) => {
+        console.log(e.keyCode);
+        //cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
+        if ((document.activeElement === document.getElementById(e.currentTarget.id))) {
+            var keycode = (e.keyCode ? e.keyCode : e.which);
+            if (keycode == '9' || keycode == '17' || keycode == '39') {
+                $("#container-producto #producto").focus();
+            } else if (keycode == '32') {
+                ventaRegistrar();
+            } else if (!isNaN(e.key)) {
+                let inputVal = parseInt(e.currentTarget.value),
+                    min = 0,
+                    max = dataset.stock;
+                let totalBruto = (inputVal * dataset.precio).toFixed(2);
+                if (inputVal < min) {
+                    totalBruto = (min * dataset.precio).toFixed(2);
+                    console.log(totalBruto);
+                    $("#" + e.currentTarget.id).val(min);
+                    alert("El valor ingresado es incorrecto.");
+                } else if (inputVal > max) {
+                    totalBruto = (max * dataset.precio).toFixed(2);
+                    console.log(totalBruto);
+                    $("#" + e.currentTarget.id).val(max);
+                    alert("El valor ingresado supera el stock del producto. Stock disponible: " + max);
+                }
+                $('#producto-' + cantidad + '-' + dataset.idProducto + '-total-bruto').html(totalBruto);
+                setTimeout(cajaCalculaTotalBruto(), 1000);
+            }
+        } else {
+            console.log(document.activeElement);
+            console.log(document.getElementById(e.currentTarget.id));
+        }
+    };
+
+    let input2 = document.createElement("input");
+    input2.type = "number";
+    input2.className = "form-control d-none";
+    input2.setAttribute("readonly", true);
+    input2.id = "producto-" + cantidad + "-" + dataset.idProducto + "-identificador";
+    input2.name = "producto-identificador[]";
+    input2.value = dataset.idProducto;
+
+    let inputContainer4 = document.createElement("td");
+    inputContainer4.className = "align-middle";
+    inputContainer4.appendChild(input1);
+
+    let inputContainer5 = document.createElement("td");
+    inputContainer5.className = "align-middle";
+    inputContainer5.innerHTML = '$<span id="producto-' + cantidad + '-' + dataset.idProducto + '-total-bruto">' + dataset.precio + '</span>';
+
+    container.appendChild(inputContainer0);
+    container.appendChild(input2);
+    container.appendChild(inputContainer1);
+    container.appendChild(inputContainer2);
+    container.appendChild(inputContainer3);
+    container.appendChild(inputContainer4);
+    container.appendChild(inputContainer5);
+
+    document.getElementById(idParent + "-agregados").appendChild(container);
+
+    const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
+    switch (true) {
+        case (dataset.barCode.length <= 2):
+            setFormat = format[5];
+            break;
+        case (dataset.barCode.length > 2 && dataset.barCode.length <= 5):
+            setFormat = format[4];
+            break;
+        case (dataset.barCode.length > 5 && dataset.barCode.length <= 8):
+            setFormat = format[3];
+            break;
+        case (dataset.barCode.length > 8 && dataset.barCode.length < 13):
+            setFormat = format[6];
+            break;
+        case (dataset.barCode.length == 13):
+            setFormat = format[2];
+            break;
+        default:
+            setFormat = format[2];
+            break;
+    }
+
+    let divDOM = document.getElementById("producto-" + cantidad + "-" + dataset.idProducto + "-barcode");
+    let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute('jsbarcode-format', setFormat);
+    svg.setAttribute('jsbarcode-value', dataset.barCode);
+    svg.setAttribute('jsbarcode-width', 1);
+    svg.setAttribute('jsbarcode-height', 45);
+    svg.setAttribute('jsbarcode-fontSize', 11);
+    svg.className.baseVal = "barcode";
+    divDOM.appendChild(svg);
+
+    JsBarcode(".barcode").init();
+
+    beep1.volume = 0.5;
+    beep1.play();
+
+    let containerGeneral = document.getElementById("tabla-venta-productos");
+    containerGeneral.scrollTop = containerGeneral.scrollHeight;
+
+    setTimeout($("#producto-" + cantidad + "-" + dataset.idProducto + "-cantidad").focus(), 1000);
+
+    return cantidad;
 }
 
 function agregarInput(idParent, value, placeholder = null) {
@@ -83,6 +298,15 @@ function agregarInput(idParent, value, placeholder = null) {
 
         document.getElementById(idParent + "-badge").appendChild(span);
     });
+}
+
+const ventaRegistrarFormularioUpdateBusqueda = () => {
+    if ($('#tipoCliente1').is(':checked')) {
+        $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeOut(100).find("*").prop("disabled", true);
+    }
+    if ($('#tipoCliente2').is(':checked')) {
+        $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeIn("slow").find("*").prop("disabled", false);
+    }
 }
 
 const clienteBuscarFormularioUpdateBusqueda = () => {
@@ -132,9 +356,6 @@ const barCode = (div, input) => {
         default:
             setFormat = format[0];
             break;
-    }
-    if ((input.length == 3) || (input.length == 5) || (input.length == 8)) {
-        appendElement("./engine/producto/cantidad-por-prefijo.php", "#producto-corrobora-cantidad", { 'prefijo': input }, true, true);
     }
     JsBarcode(div, input, {
         format: setFormat,
@@ -737,38 +958,6 @@ const productoCorroboraExistencia = () => {
     });
 }
 
-const ventaRegistroFormulario = () => {
-    var me = $(this);
-    if (me.data('requestRunning')) {
-        return;
-    }
-    me.data('requestRunning', true);
-    let divProcess = "#right-content-data";
-    let divForm = "";
-    $.ajax({
-        type: "POST",
-        url: "./includes/ventas/nueva.php",
-        timeout: 45000,
-        beforeSend: function() {
-            $(divProcess).html(loading());
-            //$(divForm).hide(350);
-            //$(divProcess).show(350);
-        },
-        data: {},
-        complete: function() {
-            me.data('requestRunning', false);
-        },
-        success: function(data) {
-            setTimeout(function() {
-                $(divProcess).hide().html(data).fadeIn("slow");
-            }, 1000);
-        }
-    }).fail(function(jqXHR) {
-        console.log(jqXHR.statusText);
-        me.data('requestRunning', false);
-    });
-}
-
 const clienteBuscarFormulario = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1042,6 +1231,74 @@ const cajaAccionRegistrar = () => {
     });
 }
 
+const ventaRegistrar = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#venta-registro-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(150);
+            $(divProcess).show(150);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const ventaRegistrarFormulario = (div = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = (div !== null) ? div : "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/venta/registrar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const cajaAccionRegistrarFormulario = (div = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1066,6 +1323,38 @@ const cajaAccionRegistrarFormulario = (div = null) => {
         success: function(data) {
             setTimeout(function() {
                 $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const sistemaCompañiaSucursalCajaUpdate = (data) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./engine/control/compania/sucursal/caja-update.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { data: data },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).html(data);
             }, 1000);
         }
     }).fail(function(jqXHR) {

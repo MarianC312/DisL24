@@ -1,5 +1,109 @@
 <?php
     class Compania{ 
+        public static function reloadStaticData(){ 
+            if(Sistema::usuarioLogueado()){
+                $_SESSION["lista"]["compañia"]["cliente"] = Lista::compañiaCliente();
+                $_SESSION["lista"]["compañia"]["sucursal"]["stock"] = Compania::stockData();
+            }else{
+                Sistema::debug('error', 'compania.class.php - reloadStaticData - Usuario no logueado.');
+            }
+        }
+
+        public static function facturaData($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){ 
+                    $query = DataBase::select("compañia_sucursal_venta", "*", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        $data = [];
+                        if(DataBase::getNumRows($query) > 0){
+                            while($dataQuery = DataBase::getArray($query)){
+                                $data[$dataQuery["id"]] = $dataQuery;
+                            }
+                            foreach($data AS $key => $value){
+                                foreach($value AS $iKey => $iValue){
+                                    if(is_int($iKey)){
+                                        unset($data[$key][$iKey]);
+                                    }
+                                }
+                            }
+                        }
+                        return $data;
+                    }else{
+                        Sistema::debug('error', 'compania.class.php - facturaData - Error al comprobar la información. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - facturaData - Error en identificador de venta. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - facturaData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function facturaVisualizar($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){ 
+                    $data = Compania::facturaData($idVenta, $sucursal, $compañia);
+                    if(is_array($data)){
+                        if(count($data) > 0){
+                            echo '<pre>';
+                            print_r($data);
+                            echo '</pre>';
+                        }else{ 
+                            $mensaje['tipo'] = 'info';
+                            $mensaje['cuerpo'] = 'No se recibió información de la factura. <b>Intente nuevamente o contacte al administrador.</b>';
+                            Alert::mensaje($mensaje);
+                        }
+                    }else{
+                        $mensaje['tipo'] = 'danger';
+                        $mensaje['cuerpo'] = 'Hubo un error al recibir la información de la factura. <b>Intente nuevamente o contacte al administrador.</b>';
+                        Alert::mensaje($mensaje);
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al generar el recibo. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                    Sistema::debug('error', 'compania.class.php - facturaVisualizar - Error en identificador de venta. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - facturaVisualizar - Usuario no logueado.');
+            }
+        }
+
+        public static function stockRestar($producto, $productoCantidad, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($producto) && !is_null($producto) && strlen($producto) > 0){
+                    Session::iniciar();
+                    $response = [];
+                    $dataStock = $_SESSION["lista"]["compañia"]["sucursal"]["stock"];
+                    $producto = explode(",", $producto); 
+                    if(isset($productoCantidad) && !is_null($productoCantidad) && strlen($productoCantidad) > 0){
+                        $productoCantidad = explode(",", $productoCantidad);
+                        foreach($producto AS $key => $value){
+                            if($dataStock[$value]["stock"] >= $productoCantidad[$key]){
+                                $query = DataBase::update("producto_stock", "stock = stock - '".$productoCantidad[$key]."', operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$value."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
+                                $response[$key]["id"] = $value;
+                                $response[$key]["cantidad"] = $productoCantidad[$key];
+                                if($query){
+                                    $response[$key]["status"] = true; 
+                                }else{
+                                    $response[$key]["status"] = false;
+                                }
+                            }else{
+                                Sistema::debug('error', 'compania.class.php - stockRestar - El producto '.$dataStock[$value]["nombre"].' ['.$value.'] no tiene stock disponible. Stock disponible: '.$dataStock[$key]["stock"].' - Cantidad solicitada: '.$productoCantidad[$key]);
+                            }
+                        }
+                        return $response;
+                    }
+                }else{ 
+                    Sistema::debug('error', 'compania.class.php - stockRestar - Lista de productos nula. Ref.: '.$producto);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - stockRestar - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function stockRegistroProductoListaFormulario($formData, $max = 200){
             if(Sistema::usuarioLogueado()){ 
                 $data = Producto::buscadorData($formData, $max);
@@ -693,7 +797,7 @@
                     $data = [];
                     if(DataBase::getNumRows($query) > 0){
                         while($dataQuery = DataBase::getArray($query)){
-                            $data[] = $dataQuery;
+                            $data[$dataQuery["id"]] = $dataQuery;
                         }
                         foreach($data AS $key => $value){
                             foreach($value AS $iKey => $iValue){

@@ -161,6 +161,53 @@
             }
         }
 
+        public static function compañiaSucursalCajaHistorialUpdate($idHistorial){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idHistorial) && is_numeric($idHistorial) && $idHistorial > 0){
+                    $query = DataBase::update("compañia_sucursal_caja_historial", "procesado = 1", "id = '".$idHistorial."' AND procesado = 0 AND fechaModificacion IS NULL");
+                    if($query){
+                        return true;
+                    }else{
+                        Sistema::debug('error', 'sistema.class.php - compañiaSucursalHistorialCajaUpdate - Error al realizar el update del historial. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'sistema.class.php - compañiaSucursalHistorialCajaUpdate - Hubo un error en el identificador recibido. Ref.: '.$idHistorial);
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - compañiaSucursalHistorialCajaUpdate - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function compañiaSucursalCajaUpdate($data, $try = 0){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    $update = Caja::update($data["monto"], $data["identificador"], $data["operador"], $data["sucursal"], $data["compañia"]);
+                    if($update){
+                        if(!Sistema::compañiaSucursalCajaHistorialUpdate($data["identificador"])){
+                            $mensaje['tipo'] = 'info';
+                            $mensaje['cuerpo'] = 'Hubo un error al actualizar el estado del movimiento. <b>Informe al administrador a la brevedad</b>';
+                            Alert::mensaje($mensaje);
+                        }
+                        return true;
+                    }else{
+                        $mensaje['tipo'] = 'danger';
+                        $mensaje['cuerpo'] = 'Hubo un error al actualizar el monto de la caja. <b>Intente nuevamente o contacte al administrador.</b>';
+                        Alert::mensaje($mensaje);
+                        Sistema::debug('error', 'sistema.class.php - compañiaSucursalCajaUpdate - Hubo un error al actualizar la caja. Ref.: false');
+                    }
+                }else{
+                    $mensaje['tipo'] = 'alert';
+                    $mensaje['cuerpo'] = 'Hubo un error al actualizar la caja de la sucursal. <b>Informe al administrador a la brevedad.</b>';
+                    Alert::mensaje($mensaje);
+                    Sistema::debug('warning', 'sistema.class.php - compañiaSucursalCajaUpdate - Error en el arreglo de datos recibido.');
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - compañiaSucursalCajaUpdate - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function reloadStaticData(){
             Session::iniciar();
             $_SESSION["usuario"]->reloadStaticData();
@@ -172,7 +219,10 @@
             $_SESSION["lista"]["proveedor"] = Lista::proveedor();
             $_SESSION["lista"]["sucursal"] = Lista::sucursal();
             $_SESSION["lista"]["compañia"] = Lista::compañia();
+            $_SESSION["lista"]["compañia"]["cliente"] = Lista::compañiaCliente();
+            $_SESSION["lista"]["compañia"]["sucursal"]["stock"] = Compania::stockData();
             $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
+            $_SESSION["lista"]["pago"] = Lista::pago();
             $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
             $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
             $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
