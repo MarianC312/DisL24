@@ -123,6 +123,8 @@
                         $data["compañia"] = $_SESSION["usuario"]->getCompañia();
                         $data["identificador"] = DataBase::getLastId();
                         Sistema::compañiaSucursalCajaUpdate($data);
+                        echo '<script>cajaUpdateMonto('.Caja::dataGetMonto().')</script>';
+                        echo '<script>cajaHistorial()</script>';
                         return true;
                     }else{
                         $mensaje['tipo'] = 'danger';
@@ -233,8 +235,6 @@
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
                 $data = Caja::historialData();
-                echo '<pre>';
-                echo '</pre>';
                 ?>
                 <div class="mine-container">
                     <div class="titulo">Historial de caja</div>
@@ -327,6 +327,9 @@
                             <button type="button" onclick="cajaAccionRegistrarFormulario()" class="btn btn-outline-info"><i class="fa fa-plus"></i> movimiento</button>
                             <button type="button" onclick="ventaRegistrarFormulario('#container-caja-accion')" class="btn btn-outline-info"><i class="fa fa-plus"></i> venta</button>
                         </div>
+                    </div>
+                    <div style="font-weight: bold; font-size: 2em; color: var(--mono-green-1);">
+                        Monto en caja $ <span id="caja-monto"><?php echo Caja::dataGetMonto(); ?></span>
                     </div>
                     <div id="container-caja-accion"></div>
                     <div id="container-caja-historial" class="p-1">

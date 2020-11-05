@@ -9,9 +9,30 @@
             }
         }
 
+        public static function facturaIdUltima($sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $query = DataBase::select("compañia_sucursal_venta", "nComprobante", "sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY nComprobante DESC LIMIT 1");
+                if($query){
+                    if(DataBase::getNumRows($query) == 1){
+                        $dataQuery = DataBase::getArray($query);
+                        return $dataQuery["nComprobante"];
+                    }else{
+                        Sistema::debug('info', 'compania.class.php - facturaIdUltima - No se encontro información. Ref.: '.DataBase::getNumRows($query));
+                        return 0;
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - facturaIdUltima - No se pudo comprobar la información. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - facturaIdUltima - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function facturaData($idVenta, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
-                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){ 
+                if((isset($idVenta) && is_numeric($idVenta) && $idVenta > 0)){ 
                     $query = DataBase::select("compañia_sucursal_venta", "*", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
                     if($query){
                         $data = [];
@@ -32,7 +53,7 @@
                         Sistema::debug('error', 'compania.class.php - facturaData - Error al comprobar la información. Ref.: '.DataBase::getError());
                     }
                 }else{
-                    Sistema::debug('error', 'compania.class.php - facturaData - Error en identificador de venta. Ref.: '.$idVenta);
+                    Sistema::debug('error', 'compania.class.php - facturaData - Error en identificador de venta. Ref.: '.$nComprobante);
                 }
             }else{
                 Sistema::debug('error', 'compania.class.php - facturaData - Usuario no logueado.');
@@ -69,15 +90,15 @@
 
         public static function facturaVisualizar($idVenta, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
-                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){ 
+                if((isset($idVenta) && is_numeric($idVenta) && $idVenta > 0)){ 
                     $data = Compania::facturaData($idVenta, $sucursal, $compañia);
                     if(is_array($data)){
                         Session::iniciar();
                         $dataCompañia = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"][$_SESSION["usuario"]->getCompañia()];
                         $dataCompañiaStock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"];
-                        $nComprobante = "";
-                        for($i = 12; $i >= strlen($idVenta); $i--){
-                            $nComprobante .= "0";
+                        $prenComprobante = "";
+                        for($i = 12; $i >= strlen($data[$idVenta]["nComprobante"]); $i--){
+                            $prenComprobante .= "0";
                         }
                         if(count($data) > 0){
                             $producto = explode(",", $data[$idVenta]["producto"]);
@@ -121,7 +142,7 @@
                                     <div style="display: flex; flex-direction: column; align-items: flex-end">
                                         <span><b>Fecha: </b><?php echo date("d/m/Y", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
                                         <span><b>Hora: </b><?php echo date("H:i A", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
-                                        <span><b>Comprobante N°:</b> #<?php echo $nComprobante.$idVenta ?></span>
+                                        <span><b>Comprobante N°:</b> #<?php echo $prenComprobante.$data[$idVenta]["nComprobante"] ?></span>
                                     </div>
                                 </div>
                                 <div>

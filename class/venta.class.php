@@ -57,45 +57,54 @@
 
                         echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-info">Regresar</button></div>'; 
 
-                        $query = DataBase::insert("compañia_sucursal_venta", "producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
-                        if($query){
-                            $idVenta = DataBase::getLastId();
-                            $stockRestar = Compania::stockRestar($dataCaja["producto"], $dataCaja["productoCantidad"]);
-                            if($stockRestar){
-                                $query = DataBase::update("compañia_sucursal_venta", "procesadoStock = 1", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
-                                if(!$query){
-                                    Sistema::debug('error', 'venta.class.php - registrar - Error al procesar stock. Ref.: '.$idVenta);
-                                }
-                            }else{
-                                Sistema::debug('error', 'venta.class.php - registar - Error al registrar movimiento en stock.');
-                            }
-                            if($dataCaja["pago"] == 1){
-                                $cajaInsertData = [
-                                    "tipo" => 5,
-                                    "observacion" => "Venta condición contado",
-                                    "monto" => $dataCaja["total"],
-                                    "venta" => $idVenta
-                                ];
-                                $cajaUpdate = Caja::accionRegistrar($cajaInsertData);
-                                if($cajaUpdate){
-                                    $query = DataBase::update("compañia_sucursal_venta", "procesadoCaja = 1", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                        $nComprobante = Compania::facturaIdUltima();
+                        if(is_numeric($nComprobante) && $nComprobante >= 0){
+                            $query = DataBase::insert("compañia_sucursal_venta", "nComprobante,producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
+                            if($query){
+                                $idVenta = DataBase::getLastId();
+                                $stockRestar = Compania::stockRestar($dataCaja["producto"], $dataCaja["productoCantidad"]);
+                                if($stockRestar){
+                                    $query = DataBase::update("compañia_sucursal_venta", "procesadoStock = 1", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                                     if(!$query){
-                                        Sistema::debug('error', 'venta.class.php - registrar - Error al procesar venta. Ref.: '.$idVenta);
+                                        Sistema::debug('error', 'venta.class.php - registrar - Error al procesar stock. Ref.: '.$idVenta);
                                     }
                                 }else{
-                                    Sistema::debug('error', 'venta.class.php - registar - Error al registrar acción en caja.');
+                                    Sistema::debug('error', 'venta.class.php - registar - Error al registrar movimiento en stock.');
                                 }
+                                if($dataCaja["pago"] == 1){
+                                    $cajaInsertData = [
+                                        "tipo" => 5,
+                                        "observacion" => "Venta condición contado",
+                                        "monto" => $dataCaja["total"],
+                                        "venta" => $idVenta
+                                    ];
+                                    $cajaUpdate = Caja::accionRegistrar($cajaInsertData);
+                                    if($cajaUpdate){
+                                        $query = DataBase::update("compañia_sucursal_venta", "procesadoCaja = 1", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                        if(!$query){
+                                            Sistema::debug('error', 'venta.class.php - registrar - Error al procesar venta. Ref.: '.$idVenta);
+                                        }
+                                    }else{
+                                        Sistema::debug('error', 'venta.class.php - registar - Error al registrar acción en caja.');
+                                    }
+                                }
+                                Compania::facturaVisualizar($idVenta);
+                                echo '<script>cajaUpdateMonto('.Caja::dataGetMonto().')</script>';
+                                echo '<script>cajaHistorial();</script>';
+                            }else{
+                                $mensaje['tipo'] = 'danger';
+                                $mensaje['cuerpo'] = 'Hubo un error al registrar la venta. <b>Intente nuevamente o contacte al administrador.</b>';
+                                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                                Alert::mensaje($mensaje);
+                                Sistema::debug('error', 'venta.class.php - registrar - Error al registrar venta. Ref.: '.DataBase::getError());
                             }
-                            Compania::facturaVisualizar($idVenta);
                         }else{
-                            $mensaje['tipo'] = 'danger';
-                            $mensaje['cuerpo'] = 'Hubo un error al registrar la venta. <b>Intente nuevamente o contacte al administrador.</b>';
-                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                            $mensaje['tipo'] = 'warning';
+                            $mensaje['cuerpo'] = 'Hubo un error al obtener el identificador del comprobante. <b>Intente nuevamente o contacte al administrador.</b>';
+                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
                             Alert::mensaje($mensaje);
-                            Sistema::debug('error', 'venta.class.php - registrar - Error al registrar venta. Ref.: '.DataBase::getError());
+                            Sistema::debug('alert', 'venta.class.php - registrar - Identificador de comprobante incorrecto. Ref.: '.$nComprobante);
                         }
-
-                        
                     }else{
                         $mensaje['tipo'] = 'info';
                         $mensaje['cuerpo'] = 'No se encontraron productos para registrar.';

@@ -1,12 +1,22 @@
 :root {
     --gray: #f9fbfd;
     --green: #28a745;
+    --green-2: #43F900;
     --orange: #e5781b;
+    --light-blue: #076AF2;
     --red: #e51b23;
     --violet: #e51b88;
     --white: #FFFFFF;
     --black: #000000;
     --cream: #fdeeef;
+    --mono-green-1: #30B200;
+    --mono-green-2: #3DE000;
+    --mono-green-3: #4AF909;
+    --mono-green-4: #71F73F;
+    --mono-light-blue-1: #033B89;
+    --mono-light-blue-2: #034EB6;
+    --mono-light-blue-3: #1D76F1;
+    --mono-light-blue-4: #4B8FED;
     --mono-orange-1: #a15412;
     --mono-orange-2: #b86015;
     --mono-orange-3: #cf6c18;

@@ -19,9 +19,7 @@
     <link href="https://unpkg.com/bootstrap-table@1.18.0/dist/bootstrap-table.min.css" rel="stylesheet">
     <link href="https://unpkg.com/bootstrap-table@1.18.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.css" rel="stylesheet"> 
     <script src="https://unpkg.com/bootstrap-table@1.18.0/dist/bootstrap-table.min.js"></script>
-    <script src="https://unpkg.com/bootstrap-table@1.18.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
-
-
+    <script src="https://unpkg.com/bootstrap-table@1.18.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script> 
 
     <!-- Data Tables -->
     <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css" />
@@ -75,6 +73,6 @@
     <script src="./js/JsBarcode.all.min.js"></script>
 
     <!-- MiNe -->
-    <link rel="stylesheet" href="./css/style.css" />
-    <script src="./js/mine-actions.js"></script>
+    <link rel="stylesheet" href="./css/style.css?v=<?php echo Sistema::$version ?>" />
+    <script src="./js/mine-actions.js?v=<?php echo Sistema::$version ?>"></script>
 </head> 

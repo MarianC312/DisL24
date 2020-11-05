@@ -645,6 +645,13 @@ const successAction = (div, callback = null, loader = "loader") => {
     });
 }
 
+const cajaUpdateMonto = (monto) => {
+    let caja = document.getElementById("caja-monto");
+    if (caja) {
+        caja.innerHTML = monto;
+    }
+}
+
 const tareaAgregarData = (tarea, input, value, div) => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1331,7 +1338,7 @@ const cajaAccionRegistrarFormulario = (div = null) => {
     });
 }
 
-const facturaVisualizar = (idVenta, div = null) => {
+const facturaVisualizar = (idVenta, nComprobante = null, div = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1348,7 +1355,7 @@ const facturaVisualizar = (idVenta, div = null) => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: { idVenta: idVenta },
+        data: { idVenta: idVenta, nComprobante: nComprobante },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -1387,6 +1394,42 @@ const sistemaCompañiaSucursalCajaUpdate = (data) => {
         success: function(data) {
             setTimeout(function() {
                 $(divProcess).html(data);
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaHistorial = (div = "#container-caja-historial") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    if (!$(div).length === 0) {
+        me.data('requestRunning', false);
+        return;
+    }
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/historial.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
         }
     }).fail(function(jqXHR) {
