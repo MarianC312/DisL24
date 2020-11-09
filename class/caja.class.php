@@ -93,7 +93,7 @@
             return false;
         }
 
-        public static function accionRegistrar($data){
+        public static function accionRegistrar($data, $alert = true){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
@@ -117,7 +117,7 @@
                     if($query){
                         $mensaje['tipo'] = 'success';
                         $mensaje['cuerpo'] = 'Se registró el movimiento satisfactoriamente.';
-                        Alert::mensaje($mensaje);
+                        if($alert) Alert::mensaje($mensaje);
                         $data["operador"] = $_SESSION["usuario"]->getId();
                         $data["sucursal"] = $_SESSION["usuario"]->getSucursal();
                         $data["compañia"] = $_SESSION["usuario"]->getCompañia();
@@ -130,20 +130,20 @@
                         $mensaje['tipo'] = 'danger';
                         $mensaje['cuerpo'] = 'Hubo un error al registrar el movimiento en caja. <b>Intente nuevamente o contacte al administrador.</b>';
                         $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
-                        Alert::mensaje($mensaje);
+                        if($alert) Alert::mensaje($mensaje);
                         Sistema::debug('error', 'caja.class.php - accionRegistrar - Error al registrar la información en base de datos. Ref.: '.DataBase::getError());
                         return false;
                     }
                     $mensaje['tipo'] = 'warning';
                     $mensaje['cuerpo'] = 'No se reconoce el movimiento a realizar. <b>Intente nuevamente o contacte administrador.</b>';
                     $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
-                    Alert::mensaje($mensaje);
+                    if($alert) Alert::mensaje($mensaje);
                     Sistema::debug('alert', 'caja.class.php - accionRegistrar - No se reconoce el movimiento. Ref.: '.$data["tipo"]);
                 }else{
                     $mensaje['tipo'] = 'danger';
                     $mensaje['cuerpo'] = 'Hubo un error con la información recibida. <b>Intente nuevamente o contacte al administrador.</b>';
                     $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
-                    Alert::mensaje($mensaje);
+                    if($alert) Alert::mensaje($mensaje);
                     Sistema::debug('error', 'caja.class.php - accionRegistrar - Error en el arreglo de datos.');
                 }
             }else{

@@ -12,7 +12,7 @@
         public static function facturaIdUltima($sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                $query = DataBase::select("compañia_sucursal_venta", "nComprobante", "sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY nComprobante DESC LIMIT 1");
+                $query = DataBase::select("compañia_sucursal_venta", "nComprobante", "sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY cast(nComprobante as unsigned) DESC LIMIT 1");
                 if($query){
                     if(DataBase::getNumRows($query) == 1){
                         $dataQuery = DataBase::getArray($query);
@@ -480,16 +480,16 @@
                     <div class="titulo">Registrar un producto de la base de productos en mi stock:</div>
                     <form id="compania-stock-registro-producto-form" onsubmit="return false;" action="./includes/compania/stock-registro-producto-lista-formulario.php" form="#compania-stock-registro-producto-form" process="#compania-stock-registro-producto-process">
                         <fieldset class="form-group">
-                            <div class="d-flex justify-content-around">
+                            <div class="d-flex justify-content-around flex-row-reverse">
                                 <div class="form-check">
                                     <label class="form-check-label">
-                                        <input type="radio" class="form-check-input" onchange="compañiaRegistroProductoUpdateBusqueda()" name="filtroOpcion" id="filtroOpcion1" value="1" checked="">
+                                        <input type="radio" class="form-check-input" onchange="compañiaRegistroProductoUpdateBusqueda()" name="filtroOpcion" id="filtroOpcion1" value="1">
                                         Filtrar por Etiquetas <i class="fa fa-tag"></i>
                                     </label>
                                 </div>
                                 <div class="form-check">
                                     <label class="form-check-label">
-                                        <input type="radio" class="form-check-input" onchange="compañiaRegistroProductoUpdateBusqueda()" name="filtroOpcion" id="filtroOpcion2" value="2">
+                                        <input type="radio" class="form-check-input" onchange="compañiaRegistroProductoUpdateBusqueda()" name="filtroOpcion" id="filtroOpcion2" value="2" checked="">
                                         Filtrar por Código de barra <i class="fa fa-barcode"></i>
                                     </label>
                                 </div>
@@ -519,6 +519,14 @@
                     <div id="compania-stock-registro-producto-process" style="display: none"></div>
                 </div>
                 <script> 
+                    $(document).ready(() => {
+                        if ($('#filtroOpcion1').is(':checked')) {
+                            $("#tag").focus();
+                        }
+                        if ($('#filtroOpcion2').is(':checked')) {
+                            $("#codigo").focus();
+                        }
+                    })
                     $("#compania-stock-registro-producto-form #container-tag input").on("keypress", (e) => {
                         let keycode = (e.keyCode ? e.keyCode : e.which);
                         if(keycode == '13'){
@@ -950,6 +958,7 @@
                                     }
                                 }
                             });
+                            $("#tabla-producto-inventario_wrapper input[type='search']").focus()
                         } ); 
                     </script>
                 </div>

@@ -158,7 +158,7 @@ function ventaProductoAgregarInput(idParent, dataset) {
         //cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
         if ((document.activeElement === document.getElementById(e.currentTarget.id))) {
             var keycode = (e.keyCode ? e.keyCode : e.which);
-            if (keycode == '9' || keycode == '17' || keycode == '39') {
+            if (keycode == '9' || keycode == '17' || keycode == '39' || keycode == '13') {
                 $("#container-producto #producto").focus();
             } else if (keycode == '32') {
                 ventaRegistrar();
@@ -326,12 +326,12 @@ const compañiaRegistroProductoUpdateBusqueda = () => {
     if ($('#filtroOpcion1').is(':checked')) {
         $("#container-tag").val("").fadeIn("slow").find("*").prop("disabled", false);
         $("#container-codigo").val("").fadeOut(100).find("*").prop("disabled", true);
-        $("#compania-stock-registro-producto-form #tag").focus();
+        $("#tag").focus();
     }
     if ($('#filtroOpcion2').is(':checked')) {
         $("#container-tag").val("").fadeOut(100).find("*").prop("disabled", true);
         $("#container-codigo").val("").fadeIn("slow").find("*").prop("disabled", false);
-        $("#compania-stock-registro-producto-form #codigo").focus();
+        $("#codigo").focus();
     }
 }
 

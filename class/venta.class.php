@@ -55,8 +55,6 @@
 
                         $dataCaja["total"] = $dataCaja["subtotal"] - ($dataCaja["subtotal"] / 100 * $dataCaja["descuento"]); 
 
-                        echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-info">Regresar</button></div>'; 
-
                         $nComprobante = Compania::facturaIdUltima();
                         if(is_numeric($nComprobante) && $nComprobante >= 0){
                             $query = DataBase::insert("compañia_sucursal_venta", "nComprobante,producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
@@ -78,7 +76,7 @@
                                         "monto" => $dataCaja["total"],
                                         "venta" => $idVenta
                                     ];
-                                    $cajaUpdate = Caja::accionRegistrar($cajaInsertData);
+                                    $cajaUpdate = Caja::accionRegistrar($cajaInsertData, false);
                                     if($cajaUpdate){
                                         $query = DataBase::update("compañia_sucursal_venta", "procesadoCaja = 1", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                                         if(!$query){
@@ -141,12 +139,19 @@
                                 $("#producto").on("keyup", 
                                     function(){
                                         $("#container-producto-lista").find("li").css({display: "none"});
+                                        $("#buscador-vacio").addClass("d-none");
                                         var value = $(this).val().toLowerCase();
                                         if(value.length > 0){ 
                                             $("#container-producto-lista li").filter(function ()
                                             {
                                                 $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
                                             });
+                                            let resultados = $('#container-producto-lista').find('li:visible');
+                                            if(resultados.length > 0){
+                                                $("#buscador-vacio").addClass("d-none");
+                                            }else{
+                                                $("#buscador-vacio").removeClass("d-none");
+                                            }
                                         }else{
                                             $("#container-producto-lista").find("li").css({display: "none"});
                                         }
@@ -206,7 +211,7 @@
                                     if(is_array($dataStock) && count($dataStock) > 0){
                                         foreach($dataStock AS $key => $value){
                                             ?>
-                                            <li class="list-group-item" style="display: none">
+                                            <li class="list-group-item" id="c-p-c-b-<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>" style="display: none"  data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
                                                 <div class="d-flex justify-content-between align-items-center" data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
                                                     <div class="d-flex justify-content-between">
                                                         <div>
@@ -226,6 +231,7 @@
                                     }
                                 ?>
                             </ul>
+                            <div id="buscador-vacio" class="d-none text-center p-2 font-weight-bold">Producto no encontrado.</div>
                         </div> 
                         <table id="tabla-venta-productos" data-sticky-header="true" class="table table-hover table-responsive w-100 tableFixHead"> 
                             <thead class="sticky-header">
@@ -288,12 +294,47 @@
                     </form>
                 </div>
                 <script>
+                    $(document).ready(() => {
+                        $("#producto").focus();
+                    })
+
+                    $("#producto").on("keypress", (e) => {
+                        let keycode = (e.keyCode ? e.keyCode : e.which);
+                        let barcode = $("#producto").val();
+                        console.log(keycode);
+                        switch(keycode){
+                            case 13:
+                                if(barcode.length > 0){
+                                    let lista = [...document.getElementById("container-producto-lista").childNodes];
+                                    lista.map((data, i) => {
+                                        if(typeof data === 'object' && data.length > 0){
+                                            //console.log(i + " " + data.dataset);
+                                        }else{
+                                            if(data.dataset.barCode === barcode){
+                                                $("#" + data.id + " button").click();
+                                            }
+                                        }
+                                    });
+                                }else{
+                                    ventaRegistrar();
+                                }
+                            break;
+                            case 45: 
+                                e.preventDefault();
+                                $("#producto").val("").focus();
+                            break;
+                        }
+                        
+                    });
+
                     function ventaProductoRegistro(e){ 
-                        let obj = e.parentElement;
-                        let pos = ventaProductoAgregarInput("lista-productos", obj.dataset);
-                        cajaCalculaTotalBruto(); 
-                        $("#container-producto #producto").val("");
-                        $("#container-producto-lista").find("li").css({display: "none"});
+                        setTimeout(() => { 
+                            let obj = e.parentElement;
+                            let pos = ventaProductoAgregarInput("lista-productos", obj.dataset);
+                            cajaCalculaTotalBruto(); 
+                            $("#container-producto #producto").val("");
+                            $("#container-producto-lista").find("li").css({display: "none"});
+                        }, 350);
                     }
 
                     $("#iva").on("change", (e) => {
