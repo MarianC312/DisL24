@@ -286,17 +286,19 @@
                         <div class="titulo">Base de productos</div>
                         <button type="button" onclick="$('#stock-registro-producto-lista-resultado').remove()" class="btn delete"><i class="fa fa-times"></i></button>
                     </div>
-                    <div class="p-1">
+                    <div class="p-1" style="overflow: auto;">
                         <table id="tabla-producto-inventario" class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th scope="col">Código</th>
-                                    <th scope="col">Producto</th>
-                                    <th class="text-center" scope="col">Stock</th>
-                                    <th class="text-center" scope="col">Mínimo</th>
-                                    <th class="text-center" scope="col">Máximo</th>
-                                    <th scope="col">Tipo</th>
-                                    <th scope="col">Categoría</th>
+                                    <th id="tag-codigo" scope="col">Código</th>
+                                    <th id="tag-producto" scope="col">Producto</th>
+                                    <th id="tag-stock" class="text-center" scope="col">Stock</th>
+                                    <th id="tag-minimo" class="text-center" scope="col">S. Mínimo</th>
+                                    <th id="tag-maximo" class="text-center" scope="col">S. Máximo</th>
+                                    <th id="tag-preu" scope="col">Precio x U.</th>
+                                    <th id="tag-prem" scope="col">Precio May.</th>
+                                    <th id="tag-tipo" scope="col">Tipo</th>
+                                    <th id="tag-categoria" scope="col">Categoría</th>
                                     <th scope="col">Sub-Categoría</th>
                                     <th scope="col">Acciones</th>
                                 </tr>
@@ -321,10 +323,12 @@
                                                     $prodStock = $stock[$stockKey]["stock"];
                                                     $prodMin = $stock[$stockKey]["minimo"];
                                                     $prodMax = $stock[$stockKey]["maximo"];
+                                                    $prodPrecio = $stock[$stockKey]["precio"];
                                                 }else{
                                                     $prodStock = null;
                                                     $prodMin = null;
                                                     $prodMax = null;
+                                                    $prodPrecio = null;
                                                 }
                                                 ?>
                                                 <tr id="producto-<?php echo $value["id"] ?>" data-key="<?php echo $value["id"] ?>">
@@ -333,6 +337,8 @@
                                                     <td id="stock" data-value="<?php echo (isset($prodStock) && is_numeric($prodStock)) ? $prodStock : 0 ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodStock)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$prodStock.'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
                                                     <td id="minimo" data-value="<?php echo (isset($prodMin) && is_numeric($prodMin)) ? $prodMin : 0 ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodMin) && is_numeric($prodMin)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$prodMin.'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="maximo" data-value="<?php echo (isset($prodMax) && is_numeric($prodMax)) ? $prodMax : 0 ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodMax) && is_numeric($prodMax)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$prodMax.'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
+                                                    <td id="precio" data-value="<?php echo (isset($prodPrecio) && is_numeric($prodPrecio)) ? $prodPrecio : "$0" ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodPrecio) && is_numeric($prodPrecio)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$prodPrecio.'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
+                                                    <td id="precio_mayorista" data-value="<?php echo (isset($value["precio_mayorista"]) && is_numeric($value["precio_mayorista"])) ? $value["precio_mayorista"] : "$0" ?>" class="text-center"><i class='fa fa-circle text-muted'></i></td>
                                                     <td><?php echo $productoTipo[$value["tipo"]]; ?></td>
                                                     <td><?php echo $productoCategoria[$value["categoria"]] ?></td>
                                                     <td><?php echo (is_numeric($value["subcategoria"])) ? $productoSubcategoria[$value["subcategoria"]] : "<span class='text-muted'>No categorizado</span>" ?></td>
@@ -347,9 +353,11 @@
                                                 if($counter == 500){
                                                     ?>
                                                     <tr>
-                                                        <td colspan="9" class="text-center">
+                                                        <td colspan="11" class="text-center">
                                                             Cargar más
                                                         </td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
                                                         <td class="d-none"></td>
                                                         <td class="d-none"></td>
                                                         <td class="d-none"></td>
@@ -366,7 +374,7 @@
                                         }else{
                                             ?> 
                                             <tr>
-                                                <td colspan="9" class="text-center">
+                                                <td colspan="11" class="text-center">
                                                     <b>No se encontraron productos.</b> <br> 
                                                     <?php
                                                         if($formData["filtroOpcion"] == 1){
@@ -392,6 +400,8 @@
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
                                             </tr>
                                             <?php
                                         }
@@ -403,9 +413,11 @@
                                         }
                                         ?> 
                                         <tr>
-                                            <td colspan="9" class="text-center">
+                                            <td colspan="11" class="text-center">
                                                 Hubo un error al encontrar los productos de la compañía. <b>Intente nuevamente o contacte al administrador.</b>
                                             </td>
+                                            <td></td>
+                                            <td></td>
                                             <td></td>
                                             <td></td>
                                             <td></td>
@@ -433,6 +445,65 @@
                                 content: 'Click para agregar un nuevo valor.',
                                 delay: [150,150],
                                 animation: 'fade'
+                            });
+                            tippy('td button', {
+                                content: 'Click para modificar el valor.',
+                                delay: [150,150],
+                                animation: 'fade'
+                            });
+                            tippy('#tag-codigo', {
+                                content: '<i class="fa fa-barcode"></i> Código de barra del producto.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-producto', {
+                                content: 'Nombre y descripción del artículo.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-stock', {
+                                content: 'Cantidad de artículo en stock.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-minimo', {
+                                content: 'Stock mínimo es un parámetro definido para el sistema, con el cual se le dará una notificación cuando este artículo alcance valores inferios al guardado.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-maximo', {
+                                content: 'Stock máximo al contrario de "Stock Mínimo", dará una notificación cuando este artículo supere al valor guardado.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-preu', {
+                                content: 'Precio por unidad del artículo.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-prem', {
+                                content: 'Precio al por mayor del artículo. <b>No disponible</b>',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-tipo', {
+                                content: 'Tipo de producto',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-categoria', {
+                                content: 'Categoría de producto',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
                             });
                             $('#tabla-producto-inventario').DataTable({
                                 "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',

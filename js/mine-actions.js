@@ -2,7 +2,7 @@ const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></spa
 
 const beep1 = new Audio("./sound/scanner-beep.mp3");
 
-const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo']) => {
+const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo', 'precio']) => {
     tipo.map((data) => {
         console.log("#producto-" + idProducto + " #" + data);
         replaceClass("#producto-" + idProducto + " #" + data, "opacity-0", "");
