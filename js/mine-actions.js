@@ -43,7 +43,9 @@ const cajaCalculaTotalBruto = () => {
 }
 
 const cajaCalculaProductoPrecioBruto = (pos, idProducto) => {
-    let newValue = ($('#producto-' + pos + '-' + idProducto + '-cantidad').val() * parseFloat($('#producto-' + pos + '-' + idProducto + '-precio').text())).toFixed(2);
+    let cantidad = parseInt($('#producto-' + pos + '-' + idProducto + '-cantidad').val());
+    let precio = parseFloat($('#producto-' + pos + '-' + idProducto + '-precio').text());
+    let newValue = (cantidad * precio).toFixed(2);
     $('#producto-' + pos + '-' + idProducto + '-total-bruto').html(newValue);
 }
 
@@ -92,14 +94,17 @@ const dataTableSet = (componente, sort = false, lengthMenu = [
 }
 
 function ventaProductoAgregarInput(idParent, dataset) {
-    if (dataset.stock <= 0) {
-        alert("El producto " + dataset.producto + " se encuentra sin stock.");
-        return;
-    }
 
-    if (dataset.precio <= 0 || dataset.precio === null || dataset.precio == "") {
-        alert("El producto " + dataset.producto + " no tiene un precio registrado.");
-        return;
+    if (dataset.barCode !== null) {
+        if (dataset.stock <= 0) {
+            alert("El producto " + dataset.producto + " se encuentra sin stock.");
+            return;
+        }
+
+        if (dataset.precio <= 0 || dataset.precio === null || dataset.precio == "") {
+            alert("El producto " + dataset.producto + " no tiene un precio registrado.");
+            return;
+        }
     }
 
     let cantidad = document.getElementById(idParent + "-agregados").childElementCount;
@@ -149,17 +154,22 @@ function ventaProductoAgregarInput(idParent, dataset) {
     input1.min = 0;
     input1.value = 1;
     input1.onchange = () => {
-        cajaCalculaProductoPrecioBruto();
+        cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
         cajaCalculaTotalBruto();
         cajaCalculaTotal();
     }
     input1.onkeyup = (e) => {
-        console.log(e.keyCode);
+        //console.log(e.keyCode);
         //cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
         if ((document.activeElement === document.getElementById(e.currentTarget.id))) {
             var keycode = (e.keyCode ? e.keyCode : e.which);
             if (keycode == '9' || keycode == '17' || keycode == '39' || keycode == '13') {
-                $("#container-producto #producto").focus();
+                if (dataset.barCode !== null) {
+                    $("#container-producto #producto").focus();
+                } else {
+                    $("#tipoProducto").prop("checked", true);
+                    ventaRegistrarFormularioUpdatetipoProducto();
+                }
             } else if (keycode == '32') {
                 ventaRegistrar();
             } else if (!isNaN(e.key)) {
@@ -169,12 +179,12 @@ function ventaProductoAgregarInput(idParent, dataset) {
                 let totalBruto = (inputVal * dataset.precio).toFixed(2);
                 if (inputVal < min) {
                     totalBruto = (min * dataset.precio).toFixed(2);
-                    console.log(totalBruto);
+                    //console.log(totalBruto);
                     $("#" + e.currentTarget.id).val(min);
                     alert("El valor ingresado es incorrecto.");
                 } else if (inputVal > max) {
                     totalBruto = (max * dataset.precio).toFixed(2);
-                    console.log(totalBruto);
+                    //console.log(totalBruto);
                     $("#" + e.currentTarget.id).val(max);
                     alert("El valor ingresado supera el stock del producto. Stock disponible: " + max);
                 }
@@ -182,8 +192,8 @@ function ventaProductoAgregarInput(idParent, dataset) {
                 setTimeout(cajaCalculaTotalBruto(), 1000);
             }
         } else {
-            console.log(document.activeElement);
-            console.log(document.getElementById(e.currentTarget.id));
+            //console.log(document.activeElement);
+            //console.log(document.getElementById(e.currentTarget.id));
         }
     };
 
@@ -195,6 +205,22 @@ function ventaProductoAgregarInput(idParent, dataset) {
     input2.name = "producto-identificador[]";
     input2.value = dataset.idProducto;
 
+    let input3 = document.createElement("input");
+    input3.type = "text";
+    input3.className = "form-control d-none";
+    input3.setAttribute("readonly", true);
+    input3.id = "producto-" + cantidad + "-" + dataset.idProducto + "-precio-unitario";
+    input3.name = "producto-precio-unitario[]";
+    input3.value = dataset.precio;
+
+    let input4 = document.createElement("input");
+    input4.type = "text";
+    input4.className = "form-control d-none";
+    input4.setAttribute("readonly", true);
+    input4.id = "producto-" + cantidad + "-" + dataset.idProducto + "-descripcion";
+    input4.name = "producto-descripcion[]";
+    input4.value = dataset.producto;
+
     let inputContainer4 = document.createElement("td");
     inputContainer4.className = "align-middle";
     inputContainer4.appendChild(input1);
@@ -205,6 +231,8 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     container.appendChild(inputContainer0);
     container.appendChild(input2);
+    container.appendChild(input3);
+    container.appendChild(input4);
     container.appendChild(inputContainer1);
     container.appendChild(inputContainer2);
     container.appendChild(inputContainer3);
@@ -213,39 +241,40 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     document.getElementById(idParent + "-agregados").appendChild(container);
 
-    const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
-    switch (true) {
-        case (dataset.barCode.length <= 2):
-            setFormat = format[5];
-            break;
-        case (dataset.barCode.length > 2 && dataset.barCode.length <= 5):
-            setFormat = format[4];
-            break;
-        case (dataset.barCode.length > 5 && dataset.barCode.length <= 8):
-            setFormat = format[3];
-            break;
-        case (dataset.barCode.length > 8 && dataset.barCode.length < 13):
-            setFormat = format[6];
-            break;
-        case (dataset.barCode.length == 13):
-            setFormat = format[2];
-            break;
-        default:
-            setFormat = format[2];
-            break;
+    if (dataset.barCode !== null) {
+        const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
+        switch (true) {
+            case (dataset.barCode.length <= 2):
+                setFormat = format[5];
+                break;
+            case (dataset.barCode.length > 2 && dataset.barCode.length <= 5):
+                setFormat = format[4];
+                break;
+            case (dataset.barCode.length > 5 && dataset.barCode.length <= 8):
+                setFormat = format[3];
+                break;
+            case (dataset.barCode.length > 8 && dataset.barCode.length < 13):
+                setFormat = format[6];
+                break;
+            case (dataset.barCode.length == 13):
+                setFormat = format[2];
+                break;
+            default:
+                setFormat = format[2];
+                break;
+        }
+        let divDOM = document.getElementById("producto-" + cantidad + "-" + dataset.idProducto + "-barcode");
+        let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('jsbarcode-format', setFormat);
+        svg.setAttribute('jsbarcode-value', dataset.barCode);
+        svg.setAttribute('jsbarcode-width', 1);
+        svg.setAttribute('jsbarcode-height', 45);
+        svg.setAttribute('jsbarcode-fontSize', 11);
+        svg.className.baseVal = "barcode";
+        divDOM.appendChild(svg);
+
+        JsBarcode(".barcode").init();
     }
-
-    let divDOM = document.getElementById("producto-" + cantidad + "-" + dataset.idProducto + "-barcode");
-    let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute('jsbarcode-format', setFormat);
-    svg.setAttribute('jsbarcode-value', dataset.barCode);
-    svg.setAttribute('jsbarcode-width', 1);
-    svg.setAttribute('jsbarcode-height', 45);
-    svg.setAttribute('jsbarcode-fontSize', 11);
-    svg.className.baseVal = "barcode";
-    divDOM.appendChild(svg);
-
-    JsBarcode(".barcode").init();
 
     beep1.volume = 0.5;
     beep1.play();
@@ -298,6 +327,31 @@ function agregarInput(idParent, value, placeholder = null) {
 
         document.getElementById(idParent + "-badge").appendChild(span);
     });
+}
+
+const ventaRegistrarFormularioUpdatetipoProducto = () => {
+    if ($('#tipoProducto').is(':checked')) {
+        $("#container-producto").fadeIn("slow").find("*").prop("disabled", false).val("");
+        $("#container-producto-no-codificado").val("").fadeOut(100).find("*").prop("disabled", true);
+        $("#container-producto-lista").find("li").css({ display: "none" });
+        $("#tipoProductoLabel").html("producto codificado");
+        $("#container-producto #producto").focus();
+    } else {
+        $("#container-producto").fadeOut(100).find("*").prop("disabled", true).val("");
+        $("#container-producto-no-codificado").fadeIn("slow").find("*").prop("disabled", false).val("");
+        $("#tipoProductoLabel").html("producto no codificado");
+        $("#container-producto-no-codificado #precio").focus();
+    }
+}
+
+const ventaRegistrarFormularioUpdateBusquedaCliente = () => {
+    if ($('#tipoCliente').is(':checked')) {
+        $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeOut(100).find("*").prop("disabled", true);
+        $("#tipoClienteLabel").html("Comprador ocasional");
+    } else {
+        $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeIn("slow").find("*").prop("disabled", false);
+        $("#tipoClienteLabel").html("Cliente");
+    }
 }
 
 const ventaRegistrarFormularioUpdateBusqueda = () => {

@@ -17,12 +17,12 @@
                         $dataCaja["productoCantidad"] = "";
                         $dataCaja["productoPrecio"] = "";
                         foreach($data["producto-identificador"] AS $key => $value){
-                            $dataProducto[$key]["id"] = $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["producto"];
-                            $dataProducto[$key]["idStock"] = $value;
-                            $dataProducto[$key]["stock"] = $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["stock"];
-                            $dataProducto[$key]["precio"] = $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"];
+                            $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["producto"];
+                            $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
+                            $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["stock"];
+                            $dataProducto[$key]["precio"] = ($value == 0) ? $data["producto-precio-unitario"][$key] : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"];
                             $dataProducto[$key]["cantidad"] = $data["producto-cantidad"][$key];
-                            $dataProducto[$key]["nombre"] = $_SESSION["lista"]["producto"][$dataProducto[$key]["id"]]["nombre"];
+                            $dataProducto[$key]["nombre"] = ($value == 0) ? $data["producto-descripcion"][$key] : $_SESSION["lista"]["producto"][$dataProducto[$key]["id"]]["nombre"];
                             $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
                             $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];
                             if(strlen($dataCaja["producto"]) > 0){
@@ -40,12 +40,14 @@
                         }
 
                         foreach($dataProducto AS $key => $value){
-                            if($value["stock"] < $value["cantidad"]){
-                                $mensaje['tipo'] = 'warning';
-                                $mensaje['cuerpo'] = 'El producto '.$value["nombre"].' no tiene stock disponible para venta. Stock disponible: '.$value["stock"].' - Cantidad solicitada: '.$value["cantidad"];
-                                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
-                                Alert::mensaje($mensaje);
-                                exit;
+                            if($value["id"] != null && $value["idStock"] != null && $value["stock"] != null){
+                                if($value["stock"] < $value["cantidad"]){
+                                    $mensaje['tipo'] = 'warning';
+                                    $mensaje['cuerpo'] = 'El producto '.$value["nombre"].' no tiene stock disponible para venta. Stock disponible: '.$value["stock"].' - Cantidad solicitada: '.$value["cantidad"];
+                                    $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                    Alert::mensaje($mensaje);
+                                    exit;
+                                }
                             }
                         }
 
@@ -55,7 +57,8 @@
 
                         $dataCaja["total"] = $dataCaja["subtotal"] - ($dataCaja["subtotal"] / 100 * $dataCaja["descuento"]); 
 
-                        $nComprobante = Compania::facturaIdUltima();
+                        $nComprobante = Compania::facturaIdUltima(); 
+                        
                         if(is_numeric($nComprobante) && $nComprobante >= 0){
                             $query = DataBase::insert("compañia_sucursal_venta", "nComprobante,producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                             if($query){
@@ -162,49 +165,69 @@
                     </script>
                     <div id="venta-registro-process" style="display: none;"></div>
                     <form id="venta-registro-form" action="./engine/venta/registrar.php" form="#venta-registro-form" process="#venta-registro-process">
-                        <div class="">
-                            <fieldset class="form-group d-flex justify-content-around">
-                                <div class="form-check">
-                                    <label class="form-check-label">
-                                        <input type="radio" class="form-check-input" onchange="ventaRegistrarFormularioUpdateBusqueda()" name="tipoCliente" id="tipoCliente1" value="1" checked="">
-                                        Comprador ocasional
-                                    </label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <!-- NO UTILIZADO -->
+                                <fieldset class="form-group d-none justify-content-around">
+                                    <div class="form-check">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" onchange="ventaRegistrarFormularioUpdateBusqueda()" name="tipoCliente" id="tipoCliente1" value="1" checked="">
+                                            Comprador ocasional
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <label class="form-check-label">
+                                            <input type="radio" class="form-check-input" onchange="ventaRegistrarFormularioUpdateBusqueda()" name="tipoCliente" id="tipoCliente2" value="2">
+                                            Cliente
+                                        </label>
+                                    </div>
+                                </fieldset>
+                                <!-- NO UTILIZADO -->
+                                <div class="d-flex">
+                                    <div class="form-grou mr-2">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" onchange="ventaRegistrarFormularioUpdateBusquedaCliente()" id="tipoCliente" checked>
+                                            <label class="custom-control-label" for="tipoCliente" id="tipoClienteLabel">Comprador ocasional</label>
+                                        </div>
+                                    </div>
+                                    <div id="container-cliente" class="form-group flex-grow-1">
+                                        <label for="cliente" class="d-block"><i class="fa fa-search"></i> Buscar cliente</label>
+                                        <select class="form-control" id="cliente" name="cliente">
+                                            <option value=""> - Buscar cliente - </option>
+                                            <?php
+                                                if(is_array($dataCliente) && count($dataCliente) > 0){
+                                                    foreach($dataCliente AS $key => $value){
+                                                        echo '<option value="'.$value["id"].'">['.$value["documento"].'] '.$value["nombre"].'</option>';
+                                                    }
+                                                }
+                                            ?>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="form-check">
-                                    <label class="form-check-label">
-                                        <input type="radio" class="form-check-input" onchange="ventaRegistrarFormularioUpdateBusqueda()" name="tipoCliente" id="tipoCliente2" value="2">
-                                        Cliente
-                                    </label>
-                                </div>
-                            </fieldset>
-                        </div>
-                        <div id="container-cliente" class="form-group">
-                            <label for="cliente" class="d-block"><i class="fa fa-search"></i> Buscar cliente</label>
-                            <select class="form-control" id="cliente" name="cliente">
-                                <option value=""> - Buscar cliente - </option>
-                                <?php
-                                    if(is_array($dataCliente) && count($dataCliente) > 0){
-                                        foreach($dataCliente AS $key => $value){
-                                            echo '<option value="'.$value["id"].'">['.$value["documento"].'] '.$value["nombre"].'</option>';
-                                        }
-                                    }
-                                ?>
-                            </select>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="pago">Forma de pago</label>
+                                    <select class="form-control" id="pago" name="pago">
+                                        <?php
+                                            if(is_array($_SESSION["lista"]["pago"]) && count($_SESSION["lista"]["pago"]) > 0){
+                                                foreach($_SESSION["lista"]["pago"] AS $key => $value){
+                                                    echo '<option value="'.$key.'">'.$value["pago"].'</option>';
+                                                }
+                                            }
+                                        ?>
+                                    </select>
+                                </div> 
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label for="pago">Forma de pago</label>
-                            <select class="form-control" id="pago" name="pago">
-                                <?php
-                                    if(is_array($_SESSION["lista"]["pago"]) && count($_SESSION["lista"]["pago"]) > 0){
-                                        foreach($_SESSION["lista"]["pago"] AS $key => $value){
-                                            echo '<option value="'.$key.'">'.$value["pago"].'</option>';
-                                        }
-                                    }
-                                ?>
-                            </select>
-                        </div> 
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" onchange="ventaRegistrarFormularioUpdatetipoProducto()" id="tipoProducto" checked>
+                                <label class="custom-control-label" for="tipoProducto"><i class="fa fa-plus"></i> Agregar <span id="tipoProductoLabel">producto codificado</span></label>
+                            </div>
+                        </div>
                         <div id="container-producto" class="form-group">
-                            <label for="producto" class="d-block"><i class="fa fa-plus"></i> Agregar producto</label>
+                            <label for="producto" class="d-none"> producto</label>
                             <input type="text" class="form-control" placeholder="Buscar producto" id="producto" autocomplete="off">
                             <ul id="container-producto-lista" class="list-group" style="max-height: 15vh; overflow: auto;">
                                 <?php
@@ -233,6 +256,30 @@
                             </ul>
                             <div id="buscador-vacio" class="d-none text-center p-2 font-weight-bold">Producto no encontrado.</div>
                         </div> 
+                        <div id="container-producto-no-codificado" class="row"> 
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="col-form-label" for="descripcion">Descripción</label>
+                                    <input type="text" class="form-control" placeholder="VARIOS" value="VARIOS" id="descripcion" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3 align-self-end">
+                                <div class="form-group">
+                                    <label class="control-label">Precio</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text">$</span>
+                                            </div>
+                                            <input type="text" id="precio" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 align-self-end">
+                                <button type="button" class="btn btn-success mb-3" onclick="ventaProductoNoCodificadoRegistro()"><i class="fa fa-level-down"></i></button>
+                            </div>
+                        </div>
                         <table id="tabla-venta-productos" data-sticky-header="true" class="table table-hover table-responsive w-100 tableFixHead"> 
                             <thead class="sticky-header">
                                 <tr>
@@ -301,7 +348,7 @@
                     $("#producto").on("keypress", (e) => {
                         let keycode = (e.keyCode ? e.keyCode : e.which);
                         let barcode = $("#producto").val();
-                        console.log(keycode);
+                        //console.log(keycode);
                         switch(keycode){
                             case 13:
                                 if(barcode.length > 0){
@@ -337,6 +384,29 @@
                         }, 350);
                     }
 
+                    function ventaProductoNoCodificadoRegistro(){ 
+                        let producto = $("#container-producto-no-codificado #descripcion").val();
+                        let precio = $("#container-producto-no-codificado #precio").val();
+                        let dataset = {
+                            "barCode": null,
+                            "idProducto": '0',
+                            "precio": (precio == '') ? '0' : precio,
+                            "producto": (producto == '') ? 'VARIOS' : producto,
+                            "stock": null
+                        };
+                        setTimeout(() => { 
+                            let pos = ventaProductoAgregarInput("lista-productos", dataset);
+                            cajaCalculaTotalBruto(); 
+                        }, 550);
+                    }
+
+                    $("#container-producto-no-codificado input").on("keypress", (e) => {
+                        let keycode = (e.keyCode ? e.keyCode : e.which);
+                        if(keycode == '13'){
+                            ventaProductoNoCodificadoRegistro();
+                        }
+                    });
+
                     $("#iva").on("change", (e) => {
                         if($("#iva").is(":checked")){
                             $("#iva-valor").val("21");
@@ -347,7 +417,8 @@
                     })
 
                     tailSelectSet("#cliente");
-                    ventaRegistrarFormularioUpdateBusqueda();
+                    ventaRegistrarFormularioUpdateBusquedaCliente();
+                    ventaRegistrarFormularioUpdatetipoProducto();
                 </script>
                 <?php
             }else{

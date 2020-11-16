@@ -161,7 +161,7 @@
                                                 foreach($producto AS $key => $value){
                                                     ?>
                                                     <tr style="border-bottom: 1px solid lightgray;">
-                                                        <td style="padding: 1.015em 0; "><?php echo $_SESSION["lista"]["producto"][$dataCompañiaStock[$value]["producto"]]["nombre"] ?></td>
+                                                        <td style="padding: 1.015em 0; "><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$dataCompañiaStock[$value]["producto"]]["nombre"] ?></td>
                                                         <td style="padding: 1.015em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
                                                         <td style="padding: 1.015em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
                                                         <td style="padding: 1.015em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
@@ -248,17 +248,21 @@
                     if(isset($productoCantidad) && !is_null($productoCantidad) && strlen($productoCantidad) > 0){
                         $productoCantidad = explode(",", $productoCantidad);
                         foreach($producto AS $key => $value){
-                            if($dataStock[$value]["stock"] >= $productoCantidad[$key]){
-                                $query = DataBase::update("producto_stock", "stock = stock - '".$productoCantidad[$key]."', operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$value."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
-                                $response[$key]["id"] = $value;
-                                $response[$key]["cantidad"] = $productoCantidad[$key];
-                                if($query){
-                                    $response[$key]["status"] = true; 
+                            if($value != 0){
+                                if($dataStock[$value]["stock"] >= $productoCantidad[$key]){
+                                    $query = DataBase::update("producto_stock", "stock = stock - '".$productoCantidad[$key]."', operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$value."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
+                                    $response[$key]["id"] = $value;
+                                    $response[$key]["cantidad"] = $productoCantidad[$key];
+                                    if($query){
+                                        $response[$key]["status"] = true; 
+                                    }else{
+                                        $response[$key]["status"] = false;
+                                    }
                                 }else{
-                                    $response[$key]["status"] = false;
+                                    Sistema::debug('error', 'compania.class.php - stockRestar - El producto '.$dataStock[$value]["nombre"].' ['.$value.'] no tiene stock disponible. Stock disponible: '.$dataStock[$key]["stock"].' - Cantidad solicitada: '.$productoCantidad[$key]);
                                 }
                             }else{
-                                Sistema::debug('error', 'compania.class.php - stockRestar - El producto '.$dataStock[$value]["nombre"].' ['.$value.'] no tiene stock disponible. Stock disponible: '.$dataStock[$key]["stock"].' - Cantidad solicitada: '.$productoCantidad[$key]);
+                                $response[$key]["status"] = true;
                             }
                         }
                         return $response;

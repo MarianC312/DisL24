@@ -72,7 +72,7 @@
         } 
 
         public static function producto(){
-            $query = DataBase::select("producto", "*", "1", "ORDER BY nombre ASC");
+            $query = DataBase::select("producto", "*", "estado = 1", "ORDER BY nombre ASC");
             if($query){
                 if(DataBase::getNumRows($query) > 0){
                     $data = [];

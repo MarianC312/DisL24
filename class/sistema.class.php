@@ -3,7 +3,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.2.15";
+        public static $version = "alpha-1.3.3";
 
         public static function dbGetCantidadProductoPorPrefijo($prefijo){
             if(Sistema::usuarioLogueado()){
