@@ -20,11 +20,21 @@
                             $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["producto"];
                             $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
                             $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["stock"];
-                            $dataProducto[$key]["precio"] = ($value == 0) ? $data["producto-precio-unitario"][$key] : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"];
+                            $dataProducto[$key]["precio"] = $data["producto-precio-unitario"][$key]; 
                             $dataProducto[$key]["cantidad"] = $data["producto-cantidad"][$key];
                             $dataProducto[$key]["nombre"] = ($value == 0) ? $data["producto-descripcion"][$key] : $_SESSION["lista"]["producto"][$dataProducto[$key]["id"]]["nombre"];
                             $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
                             $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];
+                            if($value != 0){
+                                if($dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioMayorista"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioKiosco"]){
+                                    $mensaje['tipo'] = 'warning';
+                                    $mensaje['cuerpo'] = 'El precio del producto '.$dataProducto[$key]["nombre"].' no coincide con los registrados en stock. Corrobore los datos antes de continuar...';
+                                    $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                    Alert::mensaje($mensaje);
+                                    echo $dataProducto[$key]["precio"]."<br>pmi = ".$_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"]."<br>pma = ".$_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioMayorista"]."<br>pk = ".$_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioKiosco"];
+                                    exit;
+                                }
+                            } 
                             if(strlen($dataCaja["producto"]) > 0){
                                 $dataCaja["producto"] .= ",";
                             }
@@ -58,7 +68,7 @@
                         $dataCaja["total"] = $dataCaja["subtotal"] - ($dataCaja["subtotal"] / 100 * $dataCaja["descuento"]); 
 
                         $nComprobante = Compania::facturaIdUltima(); 
-                        
+
                         if(is_numeric($nComprobante) && $nComprobante >= 0){
                             $query = DataBase::insert("compañia_sucursal_venta", "nComprobante,producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                             if($query){
@@ -167,22 +177,6 @@
                     <form id="venta-registro-form" action="./engine/venta/registrar.php" form="#venta-registro-form" process="#venta-registro-process">
                         <div class="row">
                             <div class="col-md-6">
-                                <!-- NO UTILIZADO -->
-                                <fieldset class="form-group d-none justify-content-around">
-                                    <div class="form-check">
-                                        <label class="form-check-label">
-                                            <input type="radio" class="form-check-input" onchange="ventaRegistrarFormularioUpdateBusqueda()" name="tipoCliente" id="tipoCliente1" value="1" checked="">
-                                            Comprador ocasional
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <label class="form-check-label">
-                                            <input type="radio" class="form-check-input" onchange="ventaRegistrarFormularioUpdateBusqueda()" name="tipoCliente" id="tipoCliente2" value="2">
-                                            Cliente
-                                        </label>
-                                    </div>
-                                </fieldset>
-                                <!-- NO UTILIZADO -->
                                 <div class="d-flex">
                                     <div class="form-grou mr-2">
                                         <div class="custom-control custom-checkbox">
@@ -234,8 +228,8 @@
                                     if(is_array($dataStock) && count($dataStock) > 0){
                                         foreach($dataStock AS $key => $value){
                                             ?>
-                                            <li class="list-group-item" id="c-p-c-b-<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>" style="display: none"  data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
-                                                <div class="d-flex justify-content-between align-items-center" data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
+                                            <li class="list-group-item" id="c-p-c-b-<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>" style="display: none"  data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-precio-mayorista="<?php echo $value["precioMayorista"] ?>" data-precio-kiosco="<?php echo $value["precioKiosco"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
+                                                <div class="d-flex justify-content-between align-items-center" data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-precio-mayorista="<?php echo $value["precioMayorista"] ?>" data-precio-kiosco="<?php echo $value["precioKiosco"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
                                                     <div class="d-flex justify-content-between">
                                                         <div>
                                                             <?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>
@@ -286,7 +280,7 @@
                                     <td class="fit" scope="row"></td>
                                     <td class="fit" scope="row"><i class="fa fa-barcode"></i> Código</td>
                                     <td class="w-100 fit">Descripción</td>
-                                    <td class="fit">Precio x U.</td>
+                                    <td class="fit" style="min-width: 210px;">Precio</td>
                                     <td class="fit" style="min-width: 110px;">Cantidad</td>
                                     <td class="fit" style="min-width: 140px;">TOTAL</td>
                                 </tr>

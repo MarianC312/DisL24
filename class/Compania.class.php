@@ -301,6 +301,7 @@
                                     <th id="tag-maximo" class="text-center" scope="col">S. Máximo</th>
                                     <th id="tag-preu" scope="col">Precio x U.</th>
                                     <th id="tag-prem" scope="col">Precio May.</th>
+                                    <th id="tag-prek" scope="col">Precio Kiosco</th>
                                     <th id="tag-tipo" scope="col">Tipo</th>
                                     <th id="tag-categoria" scope="col">Categoría</th>
                                     <th scope="col">Sub-Categoría</th>
@@ -328,11 +329,15 @@
                                                     $prodMin = $stock[$stockKey]["minimo"];
                                                     $prodMax = $stock[$stockKey]["maximo"];
                                                     $prodPrecio = $stock[$stockKey]["precio"];
+                                                    $prodPrecioMayorista = $stock[$stockKey]["precioMayorista"];
+                                                    $prodPrecioKiosco = $stock[$stockKey]["precioKiosco"];
                                                 }else{
                                                     $prodStock = null;
                                                     $prodMin = null;
                                                     $prodMax = null;
                                                     $prodPrecio = null;
+                                                    $prodPrecioMayorista = null;
+                                                    $prodPrecioKiosco = null;
                                                 }
                                                 ?>
                                                 <tr id="producto-<?php echo $value["id"] ?>" data-key="<?php echo $value["id"] ?>">
@@ -342,7 +347,8 @@
                                                     <td id="minimo" data-value="<?php echo (isset($prodMin) && is_numeric($prodMin)) ? $prodMin : 0 ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodMin) && is_numeric($prodMin)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$prodMin.'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="maximo" data-value="<?php echo (isset($prodMax) && is_numeric($prodMax)) ? $prodMax : 0 ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodMax) && is_numeric($prodMax)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$prodMax.'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="precio" data-value="<?php echo (isset($prodPrecio) && is_numeric($prodPrecio)) ? $prodPrecio : "$0" ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodPrecio) && is_numeric($prodPrecio)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$prodPrecio.'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
-                                                    <td id="precio_mayorista" data-value="<?php echo (isset($value["precio_mayorista"]) && is_numeric($value["precio_mayorista"])) ? $value["precio_mayorista"] : "$0" ?>" class="text-center"><i class='fa fa-circle text-muted'></i></td>
+                                                    <td id="precioMayorista" data-value="<?php echo (isset($prodPrecioMayorista) && is_numeric($prodPrecioMayorista)) ? $prodPrecioMayorista : "$0" ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodPrecioMayorista) && is_numeric($prodPrecioMayorista)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$prodPrecioMayorista.'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
+                                                    <td id="precioKiosco" data-value="<?php echo (isset($prodPrecioKiosco) && is_numeric($prodPrecioKiosco)) ? $prodPrecioKiosco : "$0" ?>" class="text-center <?php echo (!$enStock) ? "opacity-0" : "" ?>"><?php echo (isset($prodPrecioKiosco) && is_numeric($prodPrecioKiosco)) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$prodPrecioKiosco.'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
                                                     <td><?php echo $productoTipo[$value["tipo"]]; ?></td>
                                                     <td><?php echo $productoCategoria[$value["categoria"]] ?></td>
                                                     <td><?php echo (is_numeric($value["subcategoria"])) ? $productoSubcategoria[$value["subcategoria"]] : "<span class='text-muted'>No categorizado</span>" ?></td>
@@ -357,9 +363,10 @@
                                                 if($counter == 500){
                                                     ?>
                                                     <tr>
-                                                        <td colspan="11" class="text-center">
+                                                        <td colspan="12" class="text-center">
                                                             Cargar más
                                                         </td>
+                                                        <td class="d-none"></td>
                                                         <td class="d-none"></td>
                                                         <td class="d-none"></td>
                                                         <td class="d-none"></td>
@@ -378,7 +385,7 @@
                                         }else{
                                             ?> 
                                             <tr>
-                                                <td colspan="11" class="text-center">
+                                                <td colspan="12" class="text-center">
                                                     <b>No se encontraron productos.</b> <br> 
                                                     <?php
                                                         if($formData["filtroOpcion"] == 1){
@@ -406,6 +413,7 @@
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>
+                                                <td class="d-none"></td>
                                             </tr>
                                             <?php
                                         }
@@ -417,19 +425,20 @@
                                         }
                                         ?> 
                                         <tr>
-                                            <td colspan="11" class="text-center">
+                                            <td colspan="12" class="text-center">
                                                 Hubo un error al encontrar los productos de la compañía. <b>Intente nuevamente o contacte al administrador.</b>
                                             </td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
                                         </tr>
                                         <?php
                                     }
@@ -492,7 +501,13 @@
                                 allowHTML: true
                             });
                             tippy('#tag-prem', {
-                                content: 'Precio al por mayor del artículo. <b>No disponible</b>',
+                                content: 'Precio al por mayor del artículo.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-prek', {
+                                content: 'Precio de kiosco del artículo.',
                                 delay: [150,150],
                                 animation: 'fade',
                                 allowHTML: true
@@ -749,7 +764,7 @@
                             if(is_bool($productoEnStock) && $productoEnStock){
                                 $idProductoStock = Compania::stockGetId($data["idProducto"]);
                                 if(is_numeric($idProductoStock) && $idProductoStock > 0){
-                                    $query = DataBase::update("producto_stock", $data["tipo"]." = ".$data["cantidad"], "id = '".$idProductoStock."' AND producto = '".$data["idProducto"]."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                    $query = DataBase::update("producto_stock", $data["tipo"]." = ".$data["cantidad"].", operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$idProductoStock."' AND producto = '".$data["idProducto"]."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                                     if($query){
                                         echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return compañiaStockContenidoData('.$data["idProducto"].', "'.$data["tipo"].'"); }, "loader-ok")</script>';
                                     }else{
@@ -759,7 +774,7 @@
                                     Sistema::debug('error', 'compania.class.php - stockEditarContenido - Hubo un error al recibir el identificador del stock del producto. Ref.: '.$idProductoStock);
                                 }
                             }elseif(is_numeric($productoEnStock) && $productoEnStock == 0){
-                                $query = DataBase::insert("producto_stock", "producto,sucursal,compañia,".$data["tipo"], "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."','".$data["cantidad"]."'");
+                                $query = DataBase::insert("producto_stock", "producto,sucursal,compañia,".$data["tipo"].",operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."','".$data["cantidad"]."','".$_SESSION["usuario"]->getId()."'");
                                 if($query){
                                     echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return compañiaStockContenidoData('.$data["idProducto"].', "'.$data["tipo"].'"); }, "loader-ok")</script>';
                                 }else{
@@ -832,7 +847,49 @@
                         <div class="titulo">Stock de productos de <?php echo mb_strtoupper(Compania::getNombre($_SESSION["usuario"]->getCompañia())) ?> - <?php echo Compania::sucursalGetNombre($_SESSION["usuario"]->getSucursal()) ?></div>
                         <button type="button" class="btn btn-info" onclick="compañiaStockRegistroProductoFormulario()"><i class="fa fa-plus"></i> Agregar productos al stock</button>
                     </div> 
-                    <div class="p-1"> 
+
+                    <script> 
+                        $(document).ready(function(){
+                            $("#buscador-input").on("keyup", 
+                                function(){
+                                    $("#tabla-producto-inventario #loading").removeClass("d-none");
+                                    $("#tabla-producto-inventario").find("tbody tr").css({display: "none"}); 
+                                    $("#tabla-producto-inventario #not-found").addClass("d-none");
+                                    $("#tabla-producto-inventario #go-find").addClass("d-none");
+                                    setTimeout(() => {
+                                        $("#tabla-producto-inventario #loading").addClass("d-none"); 
+                                        var value = $(this).val().toLowerCase();
+                                        if(value.length > 0){ 
+                                            $("#tabla-producto-inventario tbody tr").filter(function (){ 
+                                                $(this).toggle($(this).text().normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().indexOf(value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")) > -1); 
+                                            });
+                                            let resultados = $('#tabla-producto-inventario').find('tbody tr:visible');
+                                            console.log(resultados);
+                                            if(resultados.length > 0){
+                                                $("#tabla-producto-inventario #not-found").addClass("d-none");
+                                            }else{
+                                                $("#tabla-producto-inventario #not-found").removeClass("d-none");
+                                            }
+                                        }else{
+                                            $("#tabla-producto-inventario").find("tbody tr").css({display: "none"}); 
+                                            $("#tabla-producto-inventario #go-find").removeClass("d-none");
+                                        } 
+                                    }, 350);
+                                }
+                            );
+                        }); 
+                    </script>
+
+                    <div class="">
+                        <div class="d-flex justify-content-center mb-3">
+                            <div class="d-flex flex-column" style="height: fit-content; width: 75vw; text-align: left; position: sticky; top: 125px;">
+                                <span id="titulo"><i class="fa fa-barcode"></i> Buscar producto <small class="text-muted font-weight-bold">(<?php echo count($data) ?> productos registrados)</small></span>
+                                <input class="form-control form-control-lg w-100 align-self-center" type="text" placeholder="" autocomplete="off" id="buscador-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-1 w-100 mh-50 overflow-auto"> 
                         <table id="tabla-producto-inventario" class="table table-hover">
                             <thead>
                                 <tr>
@@ -843,6 +900,7 @@
                                     <th id="tag-maximo" class="text-center" scope="col">S. Máximo</th>
                                     <th id="tag-preu" scope="col">Precio x U.</th>
                                     <th id="tag-prem" scope="col">Precio May.</th>
+                                    <th id="tag-prek" scope="col">Precio Kiosco</th>
                                     <th id="tag-tipo" scope="col">Tipo</th>
                                     <th id="tag-categoria" scope="col">Categoría</th>
                                 </tr>
@@ -857,44 +915,27 @@
                                             $counter = 0;
                                             foreach($data AS $key => $value){
                                                 ?>
-                                                <tr id="producto-<?php echo $value["producto"] ?>" data-key="<?php echo $value["producto"] ?>">
+                                                <tr style="display: none" id="producto-<?php echo $value["producto"] ?>" data-key="<?php echo $value["producto"] ?>">
                                                     <th scope="row"><?php echo $producto[$value["producto"]]["codigoBarra"] ?></th>
                                                     <td><?php echo $producto[$value["producto"]]["nombre"] ?></td>
                                                     <td id="stock" data-value="<?php echo (isset($value["stock"]) && is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
                                                     <td id="minimo" data-value="<?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="maximo" data-value="<?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? $value["maximo"] : 0 ?>" class="text-center"><?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["maximo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="precio" data-value="<?php echo (isset($value["precio"]) && is_numeric($value["precio"])) ? $value["precio"] : "$0" ?>" class="text-center"><?php echo (isset($value["precio"]) && is_numeric($value["precio"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precio"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
-                                                    <td id="precio_mayorista" data-value="<?php echo (isset($value["precio_mayorista"]) && is_numeric($value["precio_mayorista"])) ? $value["precio_mayorista"] : "$0" ?>" class="text-center"><i class='fa fa-circle text-muted'></i></td>
+                                                    <td id="precioMayorista" data-value="<?php echo (isset($value["precioMayorista"]) && is_numeric($value["precioMayorista"])) ? $value["precioMayorista"] : "$0" ?>" class="text-center"><?php echo (isset($value["precioMayorista"]) && is_numeric($value["precioMayorista"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precioMayorista"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
+                                                    <td id="precioKiosco" data-value="<?php echo (isset($value["precioKiosco"]) && is_numeric($value["precioKiosco"])) ? $value["precioKiosco"] : "$0" ?>" class="text-center"><?php echo (isset($value["precioKiosco"]) && is_numeric($value["precioKiosco"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precioKiosco"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
                                                     <td><?php echo $productoTipo[$producto[$value["producto"]]["tipo"]]; ?></td>
                                                     <td><?php echo $productoCategoria[$producto[$value["producto"]]["categoria"]] ?></td>
                                                 </tr>
                                                 <?php
-                                                $counter++;
-                                                if($counter == 500){
-                                                    ?>
-                                                    <tr>
-                                                        <td colspan="9" class="text-center">
-                                                            Cargar más
-                                                        </td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                        <td class="d-none"></td>
-                                                    </tr>
-                                                    <?php
-                                                    break;
-                                                }
                                             } 
                                         }else{
                                             ?> 
                                             <tr>
-                                                <td colspan="9" class="text-center">
+                                                <td colspan="10" class="text-center">
                                                     No se encontraron productos registrados en la compañia. Para agregar un nuevo producto clickee en el siguiente <a href="#/" onclick="compañiaStockRegistroProductoFormulario()">link</a>.
                                                 </td>
+                                                <td class="d-none"></td>
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>
                                                 <td class="d-none"></td>
@@ -914,22 +955,67 @@
                                         }
                                         ?> 
                                         <tr>
-                                            <td colspan="9" class="text-center">
+                                            <td colspan="10" class="text-center">
                                                 Hubo un error al encontrar los productos de la compañía. <b>Intente nuevamente o contacte al administrador.</b>
                                             </td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
+                                            <td class="d-none"></td>
                                         </tr>
                                         <?php
                                     }
                                 ?>
                             </tbody>
+                            <tfoot>
+                                <tr id="loading">
+                                    <td colspan="10">
+                                        <?php echo Sistema::loading(); ?>
+                                    </td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                </tr>
+                                <tr id="not-found">
+                                    <td colspan="10" class="text-center">
+                                        Producto no encontrado en el stock. Intente registrando el producto desde nuestra base de productos <a href="#/" onclick="compañiaStockRegistroProductoFormulario()">aquí</a>.
+                                    </td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                </tr>
+                                <tr id="go-find">
+                                    <td colspan="10" class="text-center">
+                                        Ingrese datos para buscar el producto en stock. <small class="text-muted">(código de barra, nombre, marca, etc.)</small>
+                                    </td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                     <script> 
@@ -987,7 +1073,13 @@
                                 allowHTML: true
                             });
                             tippy('#tag-prem', {
-                                content: 'Precio al por mayor del artículo. <b>No disponible</b>',
+                                content: 'Precio al por mayor del artículo.',
+                                delay: [150,150],
+                                animation: 'fade',
+                                allowHTML: true
+                            });
+                            tippy('#tag-prek', {
+                                content: 'Precio de kiosco del artículo.',
                                 delay: [150,150],
                                 animation: 'fade',
                                 allowHTML: true
@@ -1004,36 +1096,10 @@
                                 animation: 'fade',
                                 allowHTML: true
                             });
-                            $('#tabla-producto-inventario').DataTable({
-                                "sDom": '<"d-flex justify-content-between"lfp>rt<"d-flex justify-content-between"ip><"clear">',
-                                "lengthMenu": [ [8, 25, 50, 100, -1], [8, 25, 50, 100, "Todos"] ],
-                                "bSort": true,
-                                "language": {
-                                    "decimal":        "",
-                                    "emptyTable":     "No hay información para mostrar.",
-                                    "info":           "Mostrando página _PAGE_ de _PAGES_",
-                                    "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
-                                    "infoFiltered":   "(filtrado de _MAX_ total de registros)",
-                                    "infoPostFix":    "",
-                                    "thousands":      ",",
-                                    "lengthMenu":     "Mostrar _MENU_ registros.",
-                                    "loadingRecords": "Cargando...",
-                                    "processing":     "Procesando...",
-                                    "search":         "Buscar:",
-                                    "zeroRecords":    "No se encontraron coincidencias.",
-                                    "paginate": {
-                                        "first":      "Primero",
-                                        "last":       "Último",
-                                        "next":       "Siguiente",
-                                        "previous":   "Anterior"
-                                    },
-                                    "aria": {
-                                        "sortAscending":  ": activar para ordenar ascendentemente",
-                                        "sortDescending": ": activar para ordenar descendientemente"
-                                    }
-                                }
-                            });
-                            $("#tabla-producto-inventario_wrapper input[type='search']").focus()
+                            $("#buscador-input").focus();
+                            $("#tabla-producto-inventario #loading").addClass("d-none");
+                            $("#tabla-producto-inventario #not-found").addClass("d-none");
+                            $("#tabla-producto-inventario #go-find").removeClass("d-none");
                         } ); 
                     </script>
                 </div>

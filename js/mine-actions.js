@@ -2,7 +2,7 @@ const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></spa
 
 const beep1 = new Audio("./sound/scanner-beep.mp3");
 
-const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo', 'precio']) => {
+const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo', 'precio', 'precioMayorista', 'precioKiosco']) => {
     tipo.map((data) => {
         console.log("#producto-" + idProducto + " #" + data);
         replaceClass("#producto-" + idProducto + " #" + data, "opacity-0", "");
@@ -17,7 +17,8 @@ const cajaCalculaTotal = () => {
         let idProducto = data[i].dataset.idProducto;
         let pos = data[i].dataset.pos;
         let cantidad = $("#producto-" + pos + "-" + idProducto + "-cantidad").val();
-        subtotal += cantidad * data[i].dataset.precio;
+        let precio = parseFloat($("#producto-" + pos + "-" + idProducto + "-precio").val());
+        subtotal += cantidad * precio;
     }
     if (!$("#iva").is(":checked")) {
         subtotal = subtotal - (subtotal / 100 * 21);
@@ -34,7 +35,8 @@ const cajaCalculaTotalBruto = () => {
         let idProducto = data[i].dataset.idProducto;
         let pos = data[i].dataset.pos;
         let cantidad = $("#producto-" + pos + "-" + idProducto + "-cantidad").val();
-        prodsubtotal += cantidad * data[i].dataset.precio;
+        let precio = parseFloat($("#producto-" + pos + "-" + idProducto + "-precio").val());
+        prodsubtotal += cantidad * precio;
     }
     prodsubtotal = parseFloat(prodsubtotal);
     let subtotal = prodsubtotal - ((prodsubtotal / 100) * iva);
@@ -44,7 +46,7 @@ const cajaCalculaTotalBruto = () => {
 
 const cajaCalculaProductoPrecioBruto = (pos, idProducto) => {
     let cantidad = parseInt($('#producto-' + pos + '-' + idProducto + '-cantidad').val());
-    let precio = parseFloat($('#producto-' + pos + '-' + idProducto + '-precio').text());
+    let precio = parseFloat($('#producto-' + pos + '-' + idProducto + '-precio').val());
     let newValue = (cantidad * precio).toFixed(2);
     $('#producto-' + pos + '-' + idProducto + '-total-bruto').html(newValue);
 }
@@ -114,6 +116,8 @@ function ventaProductoAgregarInput(idParent, dataset) {
     container.setAttribute("data-producto", dataset.producto);
     container.setAttribute("data-stock", dataset.stock);
     container.setAttribute("data-precio", dataset.precio);
+    container.setAttribute("data-precio-mayorista", dataset.precioMayorista);
+    container.setAttribute("data-precio-kiosco", dataset.precioKiosco);
     container.setAttribute("data-bar-code", dataset.barCode);
     container.setAttribute("data-pos", cantidad);
 
@@ -141,9 +145,37 @@ function ventaProductoAgregarInput(idParent, dataset) {
     inputContainer2.className = "align-middle";
     inputContainer2.innerHTML = dataset.producto;
 
+    let input5 = document.createElement("select");
+    input5.className = "form-control";
+    input5.id = "producto-" + cantidad + "-" + dataset.idProducto + "-precio";
+    input5.onchange = () => {
+        cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
+        $("#producto-" + cantidad + "-" + dataset.idProducto + "-precio-unitario").val($("#producto-" + cantidad + "-" + dataset.idProducto + "-precio").val());
+        cajaCalculaTotalBruto();
+        cajaCalculaTotal();
+    }
+
+    var option1 = document.createElement("option");
+    option1.value = dataset.precio;
+    option1.text = "$" + dataset.precio + " (Minorista)";
+    option1.setAttribute("selected", "selected");
+    if (isNaN(parseFloat(dataset.precio))) option1.setAttribute("disabled", true);
+    var option2 = document.createElement("option");
+    option2.value = dataset.precioMayorista;
+    option2.text = "$" + dataset.precioMayorista + " (Mayorista)";
+    if (isNaN(parseFloat(dataset.precioMayorista))) { option2.setAttribute("disabled", true); }
+    var option3 = document.createElement("option");
+    option3.value = dataset.precioKiosco;
+    option3.text = "$" + dataset.precioKiosco + " (Kiosco)";
+    if (isNaN(parseFloat(dataset.precioKiosco))) option3.setAttribute("disabled", true);
+
+    input5.appendChild(option1);
+    input5.appendChild(option2);
+    input5.appendChild(option3);
+
     let inputContainer3 = document.createElement("td");
     inputContainer3.className = "text-center align-middle";
-    inputContainer3.innerHTML = '$<span id="producto-' + cantidad + '-' + dataset.idProducto + '-precio">' + dataset.precio + '</span>';
+    inputContainer3.appendChild(input5);
 
     let input1 = document.createElement("input");
     input1.type = "number";
