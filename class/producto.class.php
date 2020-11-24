@@ -647,30 +647,46 @@
         }
 
         public static function registro($data){
+            //echo '<button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-outline-info">Regresar</button>'; 
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
+                    $data["nombre"] = Sistema::textoSinSignos(mb_strtoupper(Sistema::textoSinAcentos(trim($data["nombre"]))));
                     $productoExiste = Producto::corroboraExistencia(["codigo" => $data["codigo"]]);
                     if($productoExiste){
                         Sistema::debug("info", "producto.class.php - registro - El producto ya existe en la base de datos.");
                         $mensaje['tipo'] = 'info';
                         $mensaje['cuerpo'] = 'El producto ya se encuentra registrado.';
                         $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
-                            <button type="button" onclick="productoEditarFormulario('.$data[""].')" class="btn btn-info">Editar producto</button>
-                            <button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-outline-info">Regresar</button>
+                            <button type="button" onclick="compañiaStock()" class="btn btn-info">Ir a Mi Stock</button>
+                            <button type="button" onclick="compañiaStockRegistroProductoFormulario()" class="btn btn-outline-info">Ir a Agregar Producto a Mi Stock</button>
                         </div>';
                         Alert::mensaje($mensaje);
                         return;
                     }else{
-                        $query = DataBase::insert("producto", "nombre,tipo,codigoBarra,categoria,subcategoria,fabricante,inventariable,paraVenta,paraCompra,proveedor,sucursal,compañia", "'".$data["nombre"]."','".$data["tipo"]."','".$data["codigo"]."','".$data["categoria"]."',".((isset($data["subcategoria"]) && is_numeric($data["subcategoria"])) ? $data["subcategoria"] : "NULL").",".((isset($data["fabricante"]) && is_numeric($data["fabricante"])) ? $data["fabricante"] : "NULL").",".((isset($data["inventariable"]) && is_numeric($data["inventariable"])) ? $data["inventariable"] : "NULL").",".((isset($data["venta"]) && is_numeric($data["venta"])) ? $data["venta"] : "NULL").",".((isset($data["compra"]) && is_numeric($data["compra"])) ? $data["compra"] : "NULL").",".((isset($data["proveedor"]) && is_numeric($data["proveedor"])) ? $data["proveedor"] : "NULL").",".((isset($data["sucursal"]) && is_numeric($data["sucursal"])) ? $data["sucursal"] : "NULL").",".((isset($data["compañia"]) && is_numeric($data["compañia"])) ? $data["compañia"] : $_SESSION["usuario"]->getCompañia()));
-                        if($query){
+                        $query = DataBase::insert("producto", "nombre,tipo,codigoBarra,categoria,subcategoria,operador", "'".$data["nombre"]."','".$data["tipo"]."','".$data["codigo"]."','".$data["categoria"]."',".((isset($data["subcategoria"]) && is_numeric($data["subcategoria"])) ? $data["subcategoria"] : "NULL").",'".$_SESSION["usuario"]->getId()."'");
+                        if($query){ 
+                            $aCargar = ["stock","minimo","maximo","precio","precioMayorista","precioKiosco"];
+                            $cargaStock = false;
+                            foreach($aCargar AS $key => $value){
+                                if(is_numeric($data[$value]) && $data[$value] >= 0){
+                                    $cargaStock = true;
+                                }
+                            }
                             Session::iniciar();
                             $_SESSION["usuario"]->tareaEliminar('Registro de producto ['.$data["codigo"].']');
                             Sistema::debug("success", "producto.class.php - registro - Producto registrado satisfactoriamente.");
                             $mensaje['tipo'] = 'success';
                             $mensaje['cuerpo'] = 'Se registró el producto <b>'.$data["nombre"].'</b> satisfactoriamente.';
+                            if($cargaStock){
+                                $data["idProducto"] = DataBase::getLastId();
+                                $stockRegistro = Compania::stockRegistro($data);
+                                if(!$stockRegistro){
+                                    $mensaje['cuerpo'] .= '<br><br> <b>¡Advertencia! Hubo un error al registrar el stock del producto.</b> <small>(Regresá a <a href="#"  onclick="compañiaStock()">"Mi Stock"</a> para cargar los datos.)</small> <br>';
+                                }
+                            }
                             $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
-                                <button type="button" onclick="productoRegistroFormulario()" class="btn btn-success">Registrar otro producto</button>
-                                <button type="button" onclick="productoEditarFormulario('.DataBase::getLastId().')" class="btn btn-outline-success">Continuar al producto</button>
+                                <button type="button" onclick="compañiaStock()" class="btn btn-success">Ir a Mi Stock</button>
+                                <button type="button" onclick="compañiaStockRegistroProductoFormulario()" class="btn btn-outline-success">Ir a Agregar Producto a Mi Stock</button>
                             </div>';
                             Alert::mensaje($mensaje);
                             return true;
@@ -1180,7 +1196,8 @@
                                             </div>
                                             <div class="form-group">
                                                 <label class="col-form-label required" for="nombre"><i class="fa fa-pencil-square-o"></i> Nombre</label>
-                                                <input type="text" class="form-control" required placeholder="Nombre del producto" id="nombre" name="nombre" value="<?php echo (isset($data["nombre"])) ? $data["nombre"] : ""; ?>">
+                                                <input type="text" class="form-control" required placeholder="Ej.: 1884 CABERNET 750CC" id="nombre" name="nombre" value="<?php echo (isset($data["nombre"])) ? $data["nombre"] : ""; ?>">
+                                                <small class="text-muted">Ingrese el nombre del producto en el siguiente orden: MARCA > TIPO > PRESENTACIÓN. Por ejemplo: <b>1884 VINO MALBEC 750CC</b>.</small>
                                             </div>
                                             <div class="form-group d-flex justify-content-end">
                                                 <button class="btn btn-outline-primary" id="producto-form-step" value="2" onclick="stepper1.next()">Siguiente</button>
@@ -1219,85 +1236,37 @@
                                                     </div> 
                                                 </div>
                                             </div>
-                                            <div class="form-group">
-                                                <label class="col-form-label" for="fabricante"><i class="fa fa-list"></i> Fabricante</label>
-                                                <div class="input-group">
-                                                    <select class="form-control" id="fabricante" name="fabricante">
-                                                        <option value=""> -- </option>
-                                                        <?php
-                                                            if(is_array($_SESSION["lista"]["fabricante"]) && count($_SESSION["lista"]["fabricante"]) > 0){
-                                                                foreach($_SESSION["lista"]["fabricante"] AS $key => $value){
-                                                                    $selected = (isset($data["fabricante"]) && $data["fabricante"] == $key) ? "selected" : "";
-                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
-                                                                }
-                                                            }else{
-                                                                switch(true){
-                                                                    case ($_SESSION["lista"]["fabricante"] < 1):
-                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de fabricantes es menor a 1.");
-                                                                    break;
-                                                                    case(is_bool($_SESSION["lista"]["fabricante"]) && !$_SESSION["lista"]["fabricante"]):
-                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de fabricantes es FALSE.");
-                                                                    break;
-                                                                    default:
-                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de fabricantes es desconocido.");
-                                                                    break;
-                                                                }
-                                                            }
-                                                        ?>
-                                                    </select>
-                                                    <div class="input-group-append">
-                                                        <button type="button" id="producto-categoria-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
-                                                    </div> 
+                                            <div class="d-flex justify-content-between">
+                                                <div class="form-group">
+                                                    <label class="col-form-label" for="stock">Stock</label>
+                                                    <input type="number" min="0" class="form-control" placeholder="0" id="stock" name="stock">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-form-label" for="minimo">Stock Mímino</label>
+                                                    <input type="number" min="0" class="form-control" placeholder="0" id="minimo" name="minimo">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-form-label" for="maximo">Stock Máximo</label>
+                                                    <input type="number" min="0" class="form-control" placeholder="0" id="maximo" name="maximo">
                                                 </div>
                                             </div>
-                                            <div class="d-flex justify-content-around"> 
+                                            <div class="d-flex justify-content-between"> 
                                                 <div class="form-group">
-                                                    <div class="custom-control custom-checkbox">
-                                                        <input type="checkbox" class="custom-control-input" id="venta" name="venta" value="1" <?php echo (isset($data["venta"]) && $data["venta"] == 1) ? "checked" : ""; ?>>
-                                                        <label class="custom-control-label" for="venta">Producto para Venta</label>
-                                                    </div>
+                                                    <label class="col-form-label" for="precio">Precio Minorista</label>
+                                                    <input type="number" min="0" class="form-control" placeholder="0" id="precio" name="precio">
                                                 </div>
                                                 <div class="form-group">
-                                                    <div class="custom-control custom-checkbox">
-                                                        <input type="checkbox" class="custom-control-input" id="compra" name="compra" value="1" <?php echo (isset($data["compra"]) && $data["compra"] == 1) ? "checked" : ""; ?>>
-                                                        <label class="custom-control-label" for="compra">Producto para Compra</label>
-                                                    </div>
+                                                    <label class="col-form-label" for="precioMayorista">Precio Mayorista</label>
+                                                    <input type="number" min="0" class="form-control" placeholder="0" id="precioMayorista" name="precioMayorista">
                                                 </div>
-                                            </div> 
-                                            <div class="form-group">
-                                                <label class="col-form-label" for="proveedor"><i class="fa fa-list"></i> Proveedor</label>
-                                                <div class="input-group">
-                                                    <select class="form-control" id="proveedor" name="proveedor">
-                                                        <option value=""> -- </option>
-                                                        <?php
-                                                            if(is_array($_SESSION["lista"]["proveedor"]) && count($_SESSION["lista"]["proveedor"]) > 0){
-                                                                foreach($_SESSION["lista"]["proveedor"] AS $key => $value){
-                                                                    $selected = (isset($data["proveedor"]) && $data["proveedor"] == $key) ? "selected" : "";
-                                                                    echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
-                                                                }
-                                                            }else{
-                                                                switch(true){
-                                                                    case ($_SESSION["lista"]["proveedor"] < 1):
-                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de proveedores es menor a 1.");
-                                                                    break;
-                                                                    case(is_bool($_SESSION["lista"]["proveedor"]) && !$_SESSION["lista"]["proveedor"]):
-                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de proveedores es FALSE.");
-                                                                    break;
-                                                                    default:
-                                                                        Sistema::debug("Error", "producto.class.php - registroFormulario - El valor de la lista de proveedores es desconocido.");
-                                                                    break;
-                                                                }
-                                                            }
-                                                        ?>
-                                                    </select>
-                                                    <div class="input-group-append">
-                                                        <button type="button" id="producto-proveedor-get-form" class="btn btn-outline-success"><i class="fa fa-plus"></i></button>
-                                                    </div> 
+                                                <div class="form-group">
+                                                    <label class="col-form-label" for="precioKiosco">Precio Kiosco</label>
+                                                    <input type="number" min="0" class="form-control" placeholder="0" id="precioKiosco" name="precioKiosco">
                                                 </div>
                                             </div>
                                             <div class="form-group d-flex justify-content-between"> 
-                                                <button class="btn btn-outline-primary" id="producto-form-step" value="1"  onclick="stepper1.previous()">Anterior</button>
-                                                <button class="btn btn-outline-primary" id="producto-form-step" value="3"  onclick="stepper1.next()">Siguiente</button>
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="1" onclick="stepper1.previous()">Anterior</button>
+                                                <button class="btn btn-outline-primary" id="producto-form-step" value="3" onclick="stepper1.next()">Siguiente</button>
                                             </div>
                                         </div>
                                         <div id="producto-registro-p-3" class="content <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 3) ? "dstepper-block active" : ""; ?>" role="tabpanel" aria-labelledby="producto-registro-p-3-trigger"> 
@@ -1330,7 +1299,6 @@
                                                 <label class="col-form-label" for="sucursal"><i class="fa fa-list"></i> Sucursal</label>
                                                 <div class="input-group">
                                                     <select class="form-control" id="sucursal" name="sucursal">
-                                                        <option value=""> -- </option>
                                                         <?php
                                                             if(is_array($_SESSION["lista"]["sucursal"]) && count($_SESSION["lista"]["sucursal"]) > 0){
                                                                 foreach($_SESSION["lista"]["sucursal"] AS $key => $value){

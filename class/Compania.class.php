@@ -398,7 +398,7 @@
                                                         }else{
                                                             $mensaje['tipo'] = 'info';
                                                             $mensaje['cuerpo'] = 'Intenta nuevamente una parte del código de barra.<br> Utilizá <u>parte del código de barra</u> para identificar mejor a los productos, por ejemplo si querés
-                                                            buscar una serie de productos de un importador o productor <b>te recomendamos</b> ingresar hasta <u>8 números del código</u> para que la búsqueda sea satisfactoria. <br><br><b>Si estás utilizando el código completo y el producto no aparece, contactá a administración para realizar el registro.</b>';
+                                                            buscar una serie de productos de un importador o productor <b>te recomendamos</b> ingresar hasta <u>8 números del código</u> para que la búsqueda sea satisfactoria. <br><br><b>Para registrar este producto ingresá a este <a href="#" onclick="productoRegistroFormulario(false,'.$formData["codigo"].')">LINK</a></b>';
                                                             Alert::mensajeSmall($mensaje);
                                                         }
                                                     ?>
@@ -836,6 +836,40 @@
             }else{
                 Sistema::debug('error', 'compania.class.php - stockEditarContenidoFormulario - Usuario no logueado.');
             }
+        }
+
+        public static function stockRegistro($data, $alert = false){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    Session::iniciar();
+                    $productoExiste = Producto::corroboraExistencia(["codigo" => $data["codigo"]]);
+                    if($productoExiste){
+                        $query = DataBase::insert("producto_stock", "producto,sucursal,compañia,stock,minimo,maximo,precio,precioMayorista,precioKiosco,operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."',".((is_numeric($data["stock"])) ? $data["stock"] : "NULL").",".((is_numeric($data["minimo"])) ? $data["minimo"] : "NULL").",".((is_numeric($data["maximo"])) ? $data["maximo"] : "NULL").",".((is_numeric($data["precio"])) ? $data["precio"] : "NULL").",".((is_numeric($data["precioMayorista"])) ? $data["precioMayorista"] : "NULL").",".((is_numeric($data["precioKiosco"])) ? $data["precioKiosco"] : "NULL").",'".$_SESSION["usuario"]->getId()."'");
+                        if($query){
+                            if($alert){
+                                $mensaje['tipo'] = 'success';
+                                $mensaje['cuerpo'] = 'Se registró el stock del producto satisfactoriamente.';
+                                Alert::mensaje($mensaje);
+                            }
+                            return true;
+                        }else{
+                            if($alert){
+                                $mensaje['tipo'] = 'danger';
+                                $mensaje['cuerpo'] = 'Hubo un error al registrar el stock del producto. <b>Intente nuevamente o contacte al administrador.</b>';
+                                Alert::mensaje($mensaje);
+                            } 
+                            Sistema::debug('error', 'compania.class.php - stockRegistro - Error al registrar el stock del producto. Ref.: '.DataBase::getError());
+                        }
+                    }else{
+                        Sistema::debug('error', 'compania.class.php - stockRegistro - Producto inexistente. Ref.: '.$data["codigo"]);
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - stockRegistro - Error en arreglo de datos recibido. Ref.: '.count($data));
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - stockRegistro - Usuario no logueado.');
+            }
+            return false;
         }
 
         public static function stockFormulario(){

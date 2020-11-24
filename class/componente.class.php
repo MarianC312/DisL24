@@ -424,19 +424,21 @@
                                                 <a href="#/" onclick="clienteBuscarFormulario()" class="nav-item nav-link"><i class="fa fa-search"></i> Buscar cliente</a>
                                             </div>
                                         </div>
+                                        <a href="#/" onclick="alert('En desarrollo...')" class="nav-item nav-link active"><i class="fa fa-file-pdf-o"></i> Facturación</a>
                                         <?php
                                             if($_SESSION["usuario"]->isAdmin()){
                                                 ?>
                                                 <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
                                                 <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="administracion-collapse">                                            
-                                                <div class="d-flex flex-column ml-3"> 
-                                                        <a href="#/" onclick="adminUsuarioGestionar()" class="nav-item nav-link"><i class="fa fa-users"></i> Gestión Usuario</a>
-                                                        <a href="#/" onclick="adminProductoGestionar()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Gestión de Producto</a>
-                                                        <a href="#/" onclick="adminClienteGestionar()" class="nav-item nav-link"><i class="fa fa-user"></i> Gestión de Clientes</a>
+                                                    <div class="d-flex flex-column ml-3"> 
+                                                            <a href="#/" onclick="adminUsuarioGestionar()" class="nav-item nav-link"><i class="fa fa-users"></i> Gestión Usuario</a>
+                                                            <a href="#/" onclick="adminProductoGestionar()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Gestión de Producto</a>
+                                                            <a href="#/" onclick="adminClienteGestionar()" class="nav-item nav-link"><i class="fa fa-user"></i> Gestión de Clientes</a>
+                                                    </div>
                                                 </div>
                                                 <?php
                                             }
-                                        ?>
+                                        ?> 
                                     </div>
                                     <div class="navbar-nav mt-4 justify-content-end">
                                         <a href="#/" onclick="requestLogout()" class="nav-item nav-link"><i class="fa fa-sign-out"></i> Salir</a>

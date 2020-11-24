@@ -328,8 +328,9 @@ body {
 }
 
 #container-tareas-pendientes {
-    min-width: 10vw;
+    min-width: 12vw;
     max-width: 25vw;
+    min-height: 4vh;
 }
 
 .index-container {
@@ -360,12 +361,19 @@ body {
 }
 
 .fly {
-    position: absolute;
+    position: absolute !important;
     top: 4rem;
     right: 0;
     z-index: 1000;
     max-height: 15em;
-    overflow: auto;
+    overflow: hidden;
+}
+
+#container-tareas-pendientes-header .titulo {
+    font-weight: bold;
+    border: 0;
+    margin: 0;
+    padding: 0;
 }
 
 #container-tareas-pendientes #container-tareas-pendientes-header {

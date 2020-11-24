@@ -826,7 +826,7 @@ const productoRegistro = () => {
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
-    data.push({ name: "exceptions", value: ["sucursal", "subcategoria", "fabricante", "venta", "compra", "proveedor"] });
+    data.push({ name: "exceptions", value: ["subcategoria", "stock", "minimo", "maximo", "precio", "precioMayorista", "precioKiosco"] });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
     $.ajax({
