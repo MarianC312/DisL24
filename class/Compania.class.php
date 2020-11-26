@@ -1,5 +1,27 @@
 <?php
     class Compania{ 
+        public static function corroboraExistencia($idCompañia){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idCompañia) && is_numeric($idCompañia) && $idCompañia > 0){
+                    $query = DataBase::select("compañia", "id", "id = '".$idCompañia."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            return true;
+                        }else{
+                            Sistema::debug('error', 'compania.class.php - corroboraExistencia - Compañía no encontrada. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'compania.class.php - corroboraExistencia - Error al consultar la información de la compañía. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - corroboraExistencia - Error en identificador de compañía. Ref.: '.$idCompañia);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - corroboraExistencia - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function reloadStaticData(){ 
             if(Sistema::usuarioLogueado()){
                 $_SESSION["lista"]["compañia"]["cliente"] = Lista::compañiaCliente();
@@ -53,10 +75,128 @@
                         Sistema::debug('error', 'compania.class.php - facturaData - Error al comprobar la información. Ref.: '.DataBase::getError());
                     }
                 }else{
-                    Sistema::debug('error', 'compania.class.php - facturaData - Error en identificador de venta. Ref.: '.$nComprobante);
+                    Sistema::debug('error', 'compania.class.php - facturaData - Error en identificador de venta. Ref.: '.$idVenta);
                 }
             }else{
                 Sistema::debug('error', 'compania.class.php - facturaData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function facturacion($idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $idCompañia = (is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia();
+                if(isset($idCompañia) && is_numeric($idCompañia) && $idCompañia > 0){
+                    if(Compania::corroboraExistencia($idCompañia)){
+                        $data = $_SESSION["lista"]["compañia"][$idCompañia]["sucursal"]["facturacion"];
+                        unset($data["pendiente"]);
+                        if(is_array($data)){
+                            ?>
+                            <div class="mine-container">
+                                <div class="d-flex justify-content-between">
+                                    <div class="titulo">Facturación</div> 
+                                </div>
+                                <table id="tabla-facturacion" class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Recibo</th>
+                                            <th>Estado</th>
+                                            <th>Total</th>
+                                            <th>Creado</th>
+                                            <th>Pagado el</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                            if(count($data) > 0){
+                                                foreach($data AS $key => $value){
+                                                    ?>
+                                                    <tr>
+                                                        <td><a href="./administracion/documentacion/compania/<?php echo $idCompañia ?>/facturacion/<?php echo $value["file"] ?>" download=""><?php echo mb_strtoupper($value["recibo"]) ?> <i class="fa fa-download"></i></a></td>
+                                                        <td class="text-<?php echo Administracion::$facturaEstadoClass[$value["estado"]] ?>"><?php echo Administracion::$facturaEstado[$value["estado"]] ?></td>
+                                                        <td>AR$ <?php echo $value["total"] ?></td>
+                                                        <td><?php echo date("d/m/Y H:i A", strtotime($value["fechaCarga"])) ?></td>
+                                                        <td><?php echo (!is_null($value["fechaPago"])) ? date("d/m/Y H:i A", strtotime($value["fechaPago"])) : "&nbsp;" ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                            }else{
+                                                ?>
+                                                <td colspan="5" class="text-center">La compañía no tiene facturación asociada.</td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                                <?php
+                                            }
+                                        ?>
+                                    </tbody>
+                                </table>
+                                <script>
+                                    dataTableSet("#tabla-facturacion");
+                                </script>
+                            </div>
+                            <?php
+                        }else{
+                            Sistema::debug('error', 'compania.class.php - clienteFacturacionGestion - Hubo un error al recibir la información de la facturación.');
+                            $mensaje['tipo'] = 'warning';
+                            $mensaje['cuerpo'] = 'Hubo un error al recibir la información de la facturación de la compañía. <b>Intente nuevamente o contacte al administrador.</b>';
+                            Alert::mensaje($mensaje);
+                        }
+                    }else{
+                        Sistema::debug('info', 'compania.class.php - clienteFacturacionGestion - No se encontró la compañía con el identificador brindado. Ref.: '.$idCompañia);
+                        $mensaje['tipo'] = 'info';
+                        $mensaje['cuerpo'] = 'No se encontró la compañía.';
+                        Alert::mensaje($mensaje);
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - clienteFacturacionGestion - Identificador de oficina erroneo. Ref.: '.$idCompañia);
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información de la compañía. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - clienteFacturacionGestion - Usuario no logueado.');
+            }
+        } 
+
+        public static function facturacionData($idCompañia, $estado = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                if($_SESSION["usuario"]->isAdmin()){
+                    if(isset($idCompañia) && is_numeric($idCompañia) && $idCompañia > 0){
+                        if(Compania::corroboraExistencia($idCompañia)){
+                            $query = DataBase::select("sistema_compañia_facturacion", "*", ((is_numeric($estado)) ? "estado = '".$estado."'" : "1")." AND compañia = '".$idCompañia."'", "ORDER BY estado ASC, fechaCarga DESC");
+                            if($query){
+                                $data = [];
+                                if(DataBase::getNumRows($query) > 0){
+                                    while($dataQuery = DataBase::getArray($query)){
+                                        $data[$dataQuery["id"]] = $dataQuery;
+                                    }
+                                    foreach($data AS $key => $value){
+                                        foreach($value AS $iKey => $iValue){
+                                            if(is_int($iKey)){
+                                                unset($data[$key][$iKey]);
+                                            }
+                                        }
+                                    }
+                                }
+                                return $data;
+                            }else{
+                                Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Hubo un error al buscar la información de la facturación de la compañía. Ref.: '.DataBase::getError());
+                            }
+                        }else{
+                            Sistema::debug('info', 'administracion.class.php - clienteFacturacionData - No se encontró la compañía con el identificador brindado. Ref.: '.$idCompañia); 
+                        }
+                    }else{
+                        Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Identificador de oficina erroneo. Ref.: '.$idCompañia); 
+                    }
+                }else{ 
+                    Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Acceso denegado.');
+                }
+            }else{
+                Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Usuario no logueado.');
             }
             return false;
         }
@@ -1203,29 +1343,43 @@
             return false;
         } 
 
-        public static function buscarFormulario()
-        {
-            $data = Compania::getCompania(); 
-            ?>
-            <div> 
-                <div class="titulo">Búsqueda de Compañía</div>
-                <div id="compania-buscar-process"></div>
-                <form id="compania-buscar-form" action="./includes/compania/buscar.php" form="#compania-buscar-form" process="#compania-buscar-process"> 
-                    <div class="form-group">
-                        <label for="compania"><i class="fa fa-list-alt"></i> Seleccione Compañía</label>
-                        <select class="form-control" id="compania" name="compania">
-                            <option value=""> -- </option>
-                            <?php
-                                foreach($data AS $key => $value){
-                                    echo '<option value="'.$key.'">'.$value["nombre"].'</option>';
-                                }
-                            ?>
-                        </select>
-                        <button type="button" onclick="buscarCompañiaFormulario()" class="btn btn-success">Buscar</button>
-                    </div>
-                </form>
-            </div>  
-            <?php 
+        public static function buscarFormulario($callback){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $compañia = $_SESSION["lista"]["compañia"];
+                ?>
+                <div> 
+                    <div class="titulo">Búsqueda de Compañía</div>
+                    <div id="compania-buscar-process"></div>
+                    <form id="compania-buscar-form"> 
+                        <div class="form-group">
+                            <label for="compania"><i class="fa fa-list-alt"></i> Seleccione Compañía</label>
+                            <div class="input-group">
+                                <select class="form-control" id="compania" name="compania">
+                                    <option value=""> -- </option>
+                                    <?php
+                                        foreach($compañia AS $key => $value){
+                                            echo '<option value="'.$key.'">'.$value["nombre"].'</option>';
+                                        }
+                                    ?>
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" onclick="<?php echo $callback ?>" class="btn btn-success"><i class="fa fa-search"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <script>
+                        $("#compania").change(() => {
+                            <?php echo $callback ?>
+                        });
+                        tailSelectSet("#compania", true, []);
+                    </script>
+                </div>
+                <?php 
+            }else{
+                Sistema::debug('error', 'compania.class.php - buscarFormulario - Usuario no logueado.');
+            }
         }
 
         public static function getNombre($idCompañia){

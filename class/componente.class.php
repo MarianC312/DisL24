@@ -424,16 +424,15 @@
                                                 <a href="#/" onclick="clienteBuscarFormulario()" class="nav-item nav-link"><i class="fa fa-search"></i> Buscar cliente</a>
                                             </div>
                                         </div>
-                                        <a href="#/" onclick="alert('En desarrollo...')" class="nav-item nav-link active"><i class="fa fa-file-pdf-o"></i> Facturación</a>
+                                        <a href="#/" onclick="compañiaFacturacion()" class="nav-item nav-link d-flex justify-content-between"><span><i class="fa fa-file-pdf-o"></i> Facturación</span> <span class="badge badge-pill badge-primary <?php echo (is_array($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"]) && count($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"]) > 0) ? "" : "d-none"; ?>"><?php echo count($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"]) ?></span></a>
                                         <?php
                                             if($_SESSION["usuario"]->isAdmin()){
                                                 ?>
-                                                <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
+                                                <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
                                                 <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="administracion-collapse">                                            
                                                     <div class="d-flex flex-column ml-3"> 
-                                                            <a href="#/" onclick="adminUsuarioGestionar()" class="nav-item nav-link"><i class="fa fa-users"></i> Gestión Usuario</a>
-                                                            <a href="#/" onclick="adminProductoGestionar()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Gestión de Producto</a>
-                                                            <a href="#/" onclick="adminClienteGestionar()" class="nav-item nav-link"><i class="fa fa-user"></i> Gestión de Clientes</a>
+                                                            <a href="#/" onclick="administracionProducto()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Producto</a>
+                                                            <a href="#/" onclick="administracionCliente()" class="nav-item nav-link"><i class="fa fa-user"></i> Cliente</a>
                                                     </div>
                                                 </div>
                                                 <?php

@@ -565,6 +565,38 @@ const requestLogin = () => {
     });
 }
 
+const compañiaFacturacion = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/facturacion.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const requestLogout = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1488,6 +1520,39 @@ const sistemaCompañiaSucursalCajaUpdate = (data) => {
     });
 }
 
+const sistemaReloadStaticData = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./engine/control/reload-static-data.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).html(data);
+                setTimeout(() => { sistemaReloadStaticData() }, 3600000);
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const cajaHistorial = (div = "#container-caja-historial") => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1657,7 +1722,7 @@ const adminProductoGestionar = () => {
     });
 }
 
-const adminClienteGestionar = () => {
+const administracionCliente = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1667,7 +1732,7 @@ const adminClienteGestionar = () => {
     let divForm = "";
     $.ajax({
         type: "POST",
-        url: "./includes/administracion/cliente/gestionar.php",
+        url: "./includes/administracion/cliente/buscar-formulario.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());
@@ -1689,8 +1754,133 @@ const adminClienteGestionar = () => {
     });
 }
 
-const buscarCompañiaFormulario = () => {
-    console.log("execute");
+
+
+const administracionClienteFacturacionRegistro = (idCompania) => {
+    let me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#administracion-cliente-facturacion-form");
+    let data = new FormData();
+    let formData = form.serializeArray();
+    let file = document.getElementById("file").files;
+    formData.map((info) => data.append(info.name, info.value));
+    $.each(file, (i, fileData) => data.append(i, fileData));
+    data.append("idCompañia2", idCompania);
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 180000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        enctype: 'multipart/form-data',
+        contentType: false,
+        cache: false,
+        processData: false,
+        xhr: function() {
+            var jqXHR = null;
+            if (window.ActiveXObject) {
+                jqXHR = new window.ActiveXObject("Microsoft.XMLHTTP");
+            } else {
+                jqXHR = new window.XMLHttpRequest();
+            }
+            jqXHR.upload.addEventListener("progress", function(evt) {
+                if (evt.lengthComputable) {
+                    var percentComplete = Math.round((evt.loaded * 100) / evt.total);
+                    $("#archivo-load-progress-bar").attr('aria-valuenow', percentComplete).css('width', percentComplete + "%");
+                    console.log('Uploaded percent', percentComplete);
+                }
+            }, false);
+            return jqXHR;
+        },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        $(divProcess).load("./includes/error.php");
+        me.data('requestRunning', false);
+    });
+}
+
+const administracionClienteFacturacionFormulario = (idCompania) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#administracion-cliente-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/administracion/cliente/facturacion-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { idCompania: idCompania },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const administracionFacturacionGestion = (idCompania) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#administracion-cliente-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/administracion/cliente/facturacion-gestion.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { idCompania: idCompania },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const administracionClienteBuscar = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1698,11 +1888,14 @@ const buscarCompañiaFormulario = () => {
     me.data('requestRunning', true);
     let form = $("#compania-buscar-form");
     let data = form.serializeArray();
-    let divProcess = form.attr("process");
-    let divForm = form.attr("form");
+    data.push({ name: "form", value: "#compania-buscar-form" });
+    data.push({ name: "process", value: "#right-content-data" });
+    data.push({ name: "compania", value: $("#compania").val() });
+    let divProcess = "#right-content-data";
+    let divForm = "#compania-buscar-form";
     $.ajax({
         type: "POST",
-        url: form.attr("action"),
+        url: "./includes/administracion/cliente/gestion.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());
@@ -1758,3 +1951,5 @@ const nuevaCompania = () => {
         me.data('requestRunning', false);
     });
 }
+
+sistemaReloadStaticData();

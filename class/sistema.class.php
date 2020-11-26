@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.5.4e";
+        public static $version = "alpha-1.6.14g";
 
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );
@@ -224,6 +224,7 @@
         }
 
         public static function reloadStaticData(){
+            Sistema::debug('info', 'sistema.class.php - reloadStaticData - Inicio recarga de datos estáticos...');
             Session::iniciar();
             $_SESSION["usuario"]->reloadStaticData();
             $_SESSION["lista"]["producto"] = Lista::producto();
@@ -237,12 +238,15 @@
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"] = Compania::data();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia());
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia(), 1);
             $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
             $_SESSION["lista"]["pago"] = Lista::pago();
             $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
             $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
             $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
             $_SESSION["componente"]["menu"]["data"]["opcion"] = (isset($_SESSION["componente"]["menu"]["data"]["opcion"])) ? $_SESSION["componente"]["menu"]["data"]["opcion"] : [];
+            Sistema::debug('info', 'sistema.class.php - reloadStaticData - Fin recarga de datos estáticos.');
         }
 
         public static function componenteEstado($idComponente){

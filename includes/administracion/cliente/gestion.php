@@ -12,14 +12,14 @@
                 }
                 $data[$key] = $value;
             }
-            Admin::setNuevaCompania($data);
+            Administracion::clienteGestion($data);
         }else{
             $mensaje['tipo'] = 'danger';
             $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';
             Alert::mensaje($mensaje);
-            Sistema::debug("error", "corrobora-existencia.php - Error al recibir la información del formulario.");
+            Sistema::debug('error', 'includes > administracion > cliente > gestion.php - Error al recibir la información del formulario.');
         }
     }else{
-        Sistema::debug('error', 'corrobora-existencia.php - Usuario no logueado.');
+        Sistema::debug('error', 'includes > administracion > cliente > gestion.php - Usuario no logueado.');
     }
 ?>

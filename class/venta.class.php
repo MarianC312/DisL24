@@ -20,8 +20,8 @@
                             $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["producto"];
                             $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
                             $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["stock"];
-                            $dataProducto[$key]["precio"] = $data["producto-precio-unitario"][$key]; 
-                            $dataProducto[$key]["cantidad"] = $data["producto-cantidad"][$key];
+                            $dataProducto[$key]["precio"] = trim($data["producto-precio-unitario"][$key]); 
+                            $dataProducto[$key]["cantidad"] = trim($data["producto-cantidad"][$key]);
                             $dataProducto[$key]["nombre"] = ($value == 0) ? $data["producto-descripcion"][$key] : $_SESSION["lista"]["producto"][$dataProducto[$key]["id"]]["nombre"];
                             $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
                             $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];

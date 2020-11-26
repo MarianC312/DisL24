@@ -291,6 +291,10 @@ body {
     background-image: url("../image/bg-general.png");
 }
 
+.bg-red-1 {
+    background-color: var(--mono-red-1) !important;
+}
+
 .bg-orange-1 {
     background-color: var(--mono-orange-1) !important;
 }
