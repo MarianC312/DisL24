@@ -96,7 +96,12 @@
                             <div class="mine-container">
                                 <div class="d-flex justify-content-between">
                                     <div class="titulo">Facturación</div> 
-                                </div>
+                                </div> 
+                                <?php
+                                    $mensaje['tipo'] = 'info';
+                                    $mensaje['cuerpo'] = 'La cancelación de las facturas adeudadas será por depósito bancario:<br><b>BBVA</b><br><b>CBU:</b> 0170282040000034200724<br><br>Una vez realizado el depósito adjuntar el comprobante de pago a la dirección de email <a href="mailto:contacto@efecesoluciones.com.ar">contacto@efecesoluciones.com.ar</a>';
+                                    Alert::mensaje($mensaje);
+                                ?>
                                 <table id="tabla-facturacion" class="table table-hover">
                                     <thead>
                                         <tr>
@@ -164,36 +169,32 @@
         public static function facturacionData($idCompañia, $estado = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                if($_SESSION["usuario"]->isAdmin()){
-                    if(isset($idCompañia) && is_numeric($idCompañia) && $idCompañia > 0){
-                        if(Compania::corroboraExistencia($idCompañia)){
-                            $query = DataBase::select("sistema_compañia_facturacion", "*", ((is_numeric($estado)) ? "estado = '".$estado."'" : "1")." AND compañia = '".$idCompañia."'", "ORDER BY estado ASC, fechaCarga DESC");
-                            if($query){
-                                $data = [];
-                                if(DataBase::getNumRows($query) > 0){
-                                    while($dataQuery = DataBase::getArray($query)){
-                                        $data[$dataQuery["id"]] = $dataQuery;
-                                    }
-                                    foreach($data AS $key => $value){
-                                        foreach($value AS $iKey => $iValue){
-                                            if(is_int($iKey)){
-                                                unset($data[$key][$iKey]);
-                                            }
+                if(isset($idCompañia) && is_numeric($idCompañia) && $idCompañia > 0){
+                    if(Compania::corroboraExistencia($idCompañia)){
+                        $query = DataBase::select("sistema_compañia_facturacion", "*", ((is_numeric($estado)) ? "estado = '".$estado."'" : "1")." AND compañia = '".$idCompañia."'", "ORDER BY estado ASC, fechaCarga DESC");
+                        if($query){
+                            $data = [];
+                            if(DataBase::getNumRows($query) > 0){
+                                while($dataQuery = DataBase::getArray($query)){
+                                    $data[$dataQuery["id"]] = $dataQuery;
+                                }
+                                foreach($data AS $key => $value){
+                                    foreach($value AS $iKey => $iValue){
+                                        if(is_int($iKey)){
+                                            unset($data[$key][$iKey]);
                                         }
                                     }
                                 }
-                                return $data;
-                            }else{
-                                Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Hubo un error al buscar la información de la facturación de la compañía. Ref.: '.DataBase::getError());
                             }
+                            return $data;
                         }else{
-                            Sistema::debug('info', 'administracion.class.php - clienteFacturacionData - No se encontró la compañía con el identificador brindado. Ref.: '.$idCompañia); 
+                            Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Hubo un error al buscar la información de la facturación de la compañía. Ref.: '.DataBase::getError());
                         }
                     }else{
-                        Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Identificador de oficina erroneo. Ref.: '.$idCompañia); 
+                        Sistema::debug('info', 'administracion.class.php - clienteFacturacionData - No se encontró la compañía con el identificador brindado. Ref.: '.$idCompañia); 
                     }
-                }else{ 
-                    Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Acceso denegado.');
+                }else{
+                    Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Identificador de oficina erroneo. Ref.: '.$idCompañia); 
                 }
             }else{
                 Sistema::debug('error', 'administracion.class.php - clienteFacturacionData - Usuario no logueado.');

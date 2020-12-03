@@ -314,7 +314,7 @@ function ventaProductoAgregarInput(idParent, dataset) {
     let containerGeneral = document.getElementById("tabla-venta-productos");
     containerGeneral.scrollTop = containerGeneral.scrollHeight;
 
-    setTimeout($("#producto-" + cantidad + "-" + dataset.idProducto + "-cantidad").focus(), 1000);
+    setTimeout($("#producto").focus(), 1000);
 
     return cantidad;
 }

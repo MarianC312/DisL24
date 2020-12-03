@@ -89,7 +89,7 @@
                     </p>
                     <div class="p-2 text-left">
                         <?php 
-                            if($_SESSION["usuario"]->debug()){
+                            if($_SESSION["usuario"]->isAdmin()){
                                 ?>
                                 <span class="font-weight-bold">Información para el administrador:</span>
                                 <div class="dropdown-divider border-<?php echo $data["tipo"] ?>"></div>
