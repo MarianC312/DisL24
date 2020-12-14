@@ -367,7 +367,7 @@
 
         public static function visualizarUsuario($compania)
         {
-            $lista = Admin::getListaUsuario($compania);
+            $lista = Administracion::getListaUsuario($compania);
             ?>
             <div class="mine-container">
                 <div class="d-flex justify-content-between"> 

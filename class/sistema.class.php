@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.6.15a";
+        public static $version = "alpha-1.11.26g";
 
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );
@@ -227,7 +227,8 @@
             Sistema::debug('info', 'sistema.class.php - reloadStaticData - Inicio recarga de datos estáticos...');
             Session::iniciar();
             $_SESSION["usuario"]->reloadStaticData();
-            $_SESSION["lista"]["producto"] = Lista::producto();
+            $_SESSION["lista"]["producto"]["codificado"] = Lista::producto();
+            $_SESSION["lista"]["producto"]["noCodificado"] = Compania::productoNoCodifData();
             $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
             $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
             $_SESSION["lista"]["producto"]["subcategoria"] = Lista::productoSubCategoria();

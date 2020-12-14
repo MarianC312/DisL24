@@ -612,6 +612,68 @@
             }
         }
 
+        public static function nocodifCorroboraExistencia($data, $cargaFormularioRegistro = false, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && (count($data) <= 4 && count($data) >= 1)){
+                    if(isset($data["codigo"]) && ((is_numeric($data["codigo"]) && $data["codigo"] > 0) || (is_numeric($data["idProducto"]) && $data["idProducto"] > 0))){
+                        Session::iniciar();
+                        if(is_numeric($data["codigo"]) && $data["codigo"] > 0){
+                            $condicion =  "codigoBarra = '".$data["codigo"]."'";
+                        }elseif(is_numeric($data["idProducto"]) && $data["idProducto"] > 0){
+                            $condicion =  "id = '".$data["idProducto"]."'";
+                        }else{
+                            $mensaje['tipo'] = 'danger';
+                            $mensaje['cuerpo'] = 'Hubo un error al recibir la información del producto. <b>Intente nuevamente o contacte al administrador.</b>';
+                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                            Alert::mensaje($mensaje);
+                            Sistema::debug("error", "producto.class.php - nocodifCorroboraExistencia - Valor de código e identificador de producto incorrecto.");
+                            return null;
+                        }
+                        $query = DataBase::select("compañia_producto", "id", $condicion." AND compañia = ".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia()), "");
+                        if($query){
+                            if(DataBase::getNumRows($query) == 1){
+                                $dataQuery = DataBase::getArray($query);
+                                if($cargaFormularioRegistro){
+                                    Sistema::debug("success", "producto.class.php - nocodifCorroboraExistencia - Producto encontrado, carga de formulario de edición para producto ID: ".$dataQuery["id"].".");
+                                    echo '<script>productoEditarFormulario('.$dataQuery["id"].')</script>';
+                                }else{
+                                    Sistema::debug("success", "producto.class.php - nocodifCorroboraExistencia - Producto encontrado ID: ".$dataQuery["id"].".");
+                                    return true;
+                                }
+                            }else{ 
+                                if($cargaFormularioRegistro){
+                                    echo '<script>productoRegistroFormulario(0, "'.$data["codigo"].'")</script>';
+                                    Sistema::debug("success", "producto.class.php - nocodifCorroboraExistencia - Producto inexistente, cargando formulario de registro.");
+                                }else{
+                                    Sistema::debug("success", "producto.class.php - nocodifCorroboraExistencia - Producto inexistente.");
+                                    return false;
+                                }
+                            }
+                        }else{
+                            $mensaje['tipo'] = 'danger';
+                            $mensaje['cuerpo'] = 'Hubo un error al comprobar la información del producto. <b>Intente nuevamente o contacte al administrador.</b>';
+                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                            Alert::mensaje($mensaje);
+                            Sistema::debug("error", "producto.class.php - nocodifCorroboraExistencia - Error en query de comprobación de información.");
+                        }
+                    }else{
+                        $mensaje['tipo'] = 'danger';
+                        $mensaje['cuerpo'] = 'El código ingresado es incorrecto. Debe ser un número. <b>Intente nuevamente.</b>';
+                        $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                        Alert::mensaje($mensaje);
+                        Sistema::debug("error", "producto.class.php - nocodifCorroboraExistencia - Código no numérico.");
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información del producto. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                    Sistema::debug("error", "producto.class.php - nocodifCorroboraExistencia - No se recibió la data correcta.");
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - nocodifCorroboraExistencia - Usuario no logueado.');
+            }
+        }
+
         public static function corroboraExistenciaFormulario(){
             if(Sistema::usuarioLogueado()){
                 ?>
@@ -707,6 +769,69 @@
                 }
             }else{
                 Sistema::debug('error', 'producto.class.php - registro - Usuario no logueado.');
+            }
+        }
+
+        public static function nocodifRegistro($data){
+            //echo '<button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-outline-info">Regresar</button>'; 
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    $data["nombre"] = Sistema::textoSinSignos(mb_strtoupper(Sistema::textoSinAcentos(trim($data["nombre"]))));
+                    $productoExiste = (is_null($data["codigo"]) || strlen($data["codigo"]) == 0) ? false : Producto::nocodifCorroboraExistencia(["codigo" => $data["codigo"]]);
+                    if($productoExiste){
+                        Sistema::debug("info", "producto.class.php - registro - El producto ya existe en la base de datos.");
+                        $mensaje['tipo'] = 'info';
+                        $mensaje['cuerpo'] = 'El producto ya se encuentra registrado.';
+                        $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
+                            <button type="button" onclick="compañiaStock()" class="btn btn-info">Ir a Mi Stock</button>
+                            <button type="button" onclick="compañiaStockRegistroProductoFormulario()" class="btn btn-outline-info">Ir a Agregar Producto a Mi Stock</button>
+                        </div>';
+                        Alert::mensaje($mensaje);
+                        return;
+                    }else{
+                        $query = DataBase::insert("compañia_producto", "nombre,tipo,codigoBarra,categoria,subcategoria,operador,compañia", "'".$data["nombre"]."','".$data["tipo"]."',".((is_null($data["codigo"]) || strlen($data["codigo"]) == 0) ? "NULL" : "'".$data["codigo"]."'").",'".$data["categoria"]."',".((isset($data["subcategoria"]) && is_numeric($data["subcategoria"])) ? $data["subcategoria"] : "NULL").",'".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getCompañia()."'");
+                        if($query){ 
+                            $aCargar = ["stock","minimo","maximo","precio","precioMayorista","precioKiosco"];
+                            $cargaStock = false;
+                            foreach($aCargar AS $key => $value){
+                                if(is_numeric($data[$value]) && $data[$value] >= 0){
+                                    $cargaStock = true;
+                                }
+                            }
+                            Session::iniciar();
+                            Sistema::debug("success", "producto.class.php - registro - Producto registrado satisfactoriamente.");
+                            $mensaje['tipo'] = 'success';
+                            $mensaje['cuerpo'] = 'Se registró el producto <b>'.$data["nombre"].'</b> satisfactoriamente.';
+                            if($cargaStock){
+                                $data["idProducto"] = DataBase::getLastId();
+                                $stockRegistro = Compania::stockRegistro($data, false, false);
+                                if(!$stockRegistro){
+                                    $mensaje['cuerpo'] .= '<br><br> <b>¡Advertencia! Hubo un error al registrar el stock del producto.</b> <small>(Regresá a <a href="#"  onclick="compañiaStock()">"Mi Stock"</a> para cargar los datos.)</small> <br>';
+                                }
+                            }
+                            $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
+                                <button type="button" onclick="compañiaStock()" class="btn btn-success">Ir a Mi Stock</button>
+                                <button type="button" onclick="compañiaStockRegistroProductoFormulario()" class="btn btn-outline-success">Ir a Agregar Producto a Mi Stock</button>
+                            </div>';
+                            Alert::mensaje($mensaje);
+                            return true;
+                        }else{
+                            Sistema::debug('error', 'producto.class.php - nocodifRegistro - Error en query de registro de producto.');
+                            $mensaje['tipo'] = 'danger';
+                            $mensaje['cuerpo'] = 'Hubo un error al registrar el producto. <b>Intente nuevamente o contacte al administrador.</b>';
+                            $mensaje['cuerpo'] .= '<div class="d-block"><button type="button" onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                            Alert::mensaje($mensaje);
+                            return false;
+                        }
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error con los datos recibidos. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                    Sistema::debug("error", "producto.class.php - nocodifRegistro - Arreglo de datos del formulario incorrecto.");
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - nocodifRegistro - Usuario no logueado.');
             }
         }
 
@@ -1077,45 +1202,89 @@
             }
         }
 
-        public static function registroFormulario($data){
+        public static function editarContenidoFormulario($data){
+            if(Sistema::usuarioLogueado()){
+                echo '<pre>';
+                print_r($data);
+                echo '</pre>';
+                if(isset($data) && is_array($data) && count($data) == 3){
+                    ?>
+                    <div id="producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-process" style="display: none"></div>
+                    <form id="producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form" action="./engine/producto/editar-contenido.php" form="#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form" process="#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-process"> 
+                        <div class="form-group mb-0"> 
+                            <div class="input-group">
+                                <input class="form-control form-control-sm" type="text" id="valor" name="valor" value="<?php echo (strlen($data["value"]) > 0) ? $data["value"] : "" ?>">
+                                <input class="form-control form-control-sm d-none" type="text" id="tipo" name="tipo" value="<?php echo $data["tipo"] ?>" readonly>
+                                <input class="form-control form-control-sm d-none" type="text" id="idProducto" name="idProducto" value="<?php echo $data["producto"] ?>" readonly>
+                                <div class="input-group-append">
+                                    <button type="button" onclick="productoEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>')" class="btn btn-sm btn-outline-success"><i class="fa fa-check"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                    <script>
+                        $(document).ready(() => {
+                            $("#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form #valor").focus();
+                            $("#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form #valor").keypress((e) => {
+                                var keycode = (e.keyCode ? e.keyCode : e.which);
+                                if(keycode == '13'){
+                                    productoEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>') 
+                                }
+                            });
+                        })
+                    </script>
+                    <?php
+                }else{
+                    Sistema::debug('error', 'producto.class.php - editarContenidoFormulario - Error en arreglo de datos.');
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - editarContenidoFormulario - Usuario no logueado.');
+            }
+        }
+
+        public static function registroFormulario($data, $codificado = true){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) == 3){
                     foreach($data AS $key => $value){
-                        if($key != 'tarea' && (!isset($data[$key]) || is_null($data[$key]))){
-                            Sistema::debug('alert', 'producto.class.php - registroFormulario - El parámetro '.$key.' tiene un valor incorrecto o inexistente.');
-                            $mensaje['tipo'] = 'warning';
-                            $mensaje['cuerpo'] = 'Hubo un error con uno de los datos recibidos ['.$key.']. <b>Intente nuevamente o contacte al administrador</b>.';
-                            Alert::mensaje($mensaje);
-                            exit;
+                        if($codificado){
+                            if($key != 'tarea' && (!isset($data[$key]) || is_null($data[$key]))){
+                                Sistema::debug('alert', 'producto.class.php - registroFormulario - El parámetro '.$key.' tiene un valor incorrecto o inexistente.');
+                                $mensaje['tipo'] = 'warning';
+                                $mensaje['cuerpo'] = 'Hubo un error con uno de los datos recibidos ['.$key.']. <b>Intente nuevamente o contacte al administrador</b>.';
+                                Alert::mensaje($mensaje);
+                                exit;
+                            }
                         }
                     }
                     if(isset($data["corroborar"]) && $data["corroborar"] === "true"){
                         Producto::corroboraExistenciaFormulario();
                     }else{
                         Session::iniciar();
-                        if(isset($data["tarea"]) && (is_null($data["tarea"]) || strlen($data["tarea"]) == 0)){
-                            $_SESSION["usuario"]->tarea("Registro de producto [".$data["codigo"]."]", ["codigo" => $data["codigo"], "accion" => "productoRegistroFormulario(false, ".$data["codigo"].", 'Registro de producto [".$data["codigo"]."]')"]);
-                            echo '<script>loadUsuarioTareasPendientes();</script>';
-                        }else{
-                            $data = $_SESSION["tarea"][$data["tarea"]]["data"];
+                        if($codificado){
+                            if(isset($data["tarea"]) && (is_null($data["tarea"]) || strlen($data["tarea"]) == 0)){
+                                $_SESSION["usuario"]->tarea("Registro de producto ".(($codificado) ? "codificado" : "no codificado")." [".$data["codigo"]."]", ["codigo" => $data["codigo"], "accion" => "productoRegistroFormulario(false, ".$data["codigo"].", 'Registro de producto ".(($codificado) ? "codificado" : "no codificado")." [".$data["codigo"]."]')"]);
+                                echo '<script>loadUsuarioTareasPendientes();</script>';
+                            }else{
+                                $data = $_SESSION["tarea"][$data["tarea"]]["data"];
+                            }
                         }
                         ?>
                         <div class="mine-container">
-                            <div class="titulo">Registro de producto</div>
+                            <div class="titulo">Registro de producto <?php echo ($codificado) ? "codificado" : "no codificado" ?></div>
                             <div id="producto-registro-debug"></div>
                             <div id="producto-registro-stepper-1" class="bs-stepper">
                                 <div class="bs-stepper-header" role="tablist">
                                     <div class="step <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 1) ? "active" : ""; ?>" data-target="#producto-registro-p-1">
                                         <button type="button" class="step-trigger" role="tab" aria-controls="producto-registro-p-1" id="producto-registro-p-1-trigger" aria-selected="<?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 1) ? "true" : "false"; ?>">
                                             <span class="bs-stepper-circle">1</span>
-                                            <span class="bs-stepper-label">Datos obligatorios</span>
+                                            <span class="bs-stepper-label">Datos de producto</span>
                                         </button>
                                     </div>
                                     <div class="line"></div>
                                     <div class="step <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 2) ? "active" : ""; ?>" data-target="#producto-registro-p-2">
                                         <button type="button" class="step-trigger" role="tab" aria-controls="producto-registro-p-2" id="producto-registro-p-2-trigger" aria-selected="<?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 2) ? "true" : "false"; ?>">
                                             <span class="bs-stepper-circle">2</span>
-                                            <span class="bs-stepper-label">Datos opcionales</span>
+                                            <span class="bs-stepper-label">Stock y Precios</span>
                                         </button>
                                     </div>
                                     <div class="line"></div>
@@ -1131,8 +1300,17 @@
                                     <form id="producto-registro-formulario-form" onsubmit="return false" action="./engine/producto/registro.php" form="#producto-registro-formulario-form" process="#producto-registro-formulario-process"> 
                                         <div id="producto-registro-p-1" class="content <?php echo (isset($data["producto-form-step"]) && $data["producto-form-step"] == 1) ? "dstepper-block active" : ""; ?>" role="tabpanel" aria-labelledby="producto-registro-p-1-trigger">
                                             <div class="form-group">
-                                                <label class="col-form-label required" for="codigo"><i class="fa fa-barcode"></i> Código</label>
-                                                <input type="text" class="form-control" required placeholder="Código comercial del producto" id="codigo" name="codigo" value="<?php echo (isset($data["codigo"])) ? $data["codigo"] : ''; ?>">
+                                                <label class="col-form-label <?php echo ($codificado) ? "required" : "" ?>" for="codigo"><i class="fa fa-barcode"></i> Código</label>
+                                                <input type="text" class="form-control" required placeholder="<?php echo ($codificado) ? "Código comercial del producto" : "Atajo para venta" ?>" id="codigo" name="codigo" value="<?php echo (isset($data["codigo"])) ? $data["codigo"] : ''; ?>">
+                                                <small class="text-muted">
+                                                    <?php
+                                                        if($codificado){
+                                                            echo "El código comercial debe ser exácto al leido en el <b>código de barra del producto</b>.";
+                                                        }else{
+                                                            echo "El atajo debe ser numérico o dejarse vacío. Si se ingresa 1, el sistema creará el atajo <b>CTRL + 1</b>. <br>Si se deja vacío el sistema no creará atajos y solo podrá buscarse este producto mediante su descripción. <u><b>Los atajos no pueden repetirse</b></u>.";
+                                                        }
+                                                    ?>
+                                                </small>
                                             </div>
                                             <div class="form-group">
                                                 <label class="col-form-label required" for="tipo"><i class="fa fa-list"></i> Tipo</label>
@@ -1195,9 +1373,17 @@
                                                 </div>
                                             </div>
                                             <div class="form-group">
-                                                <label class="col-form-label required" for="nombre"><i class="fa fa-pencil-square-o"></i> Nombre</label>
-                                                <input type="text" class="form-control" required placeholder="Ej.: 1884 CABERNET 750CC" id="nombre" name="nombre" value="<?php echo (isset($data["nombre"])) ? $data["nombre"] : ""; ?>">
-                                                <small class="text-muted">Ingrese el nombre del producto en el siguiente orden: MARCA > TIPO > PRESENTACIÓN. Por ejemplo: <b>1884 VINO MALBEC 750CC</b>.</small>
+                                                <label class="col-form-label required" for="nombre"><i class="fa fa-pencil-square-o"></i> Descripción</label>
+                                                <input type="text" class="form-control" required placeholder="<?php echo ($codificado) ? "Ej.: 1884 CABERNET 750CC" : "COCA COLA CAJÓN X 8" ?>" id="nombre" name="nombre" value="<?php echo (isset($data["nombre"])) ? $data["nombre"] : ""; ?>">
+                                                <small class="text-muted">
+                                                    <?php
+                                                        if($codificado){
+                                                            echo "Ingrese la descripción del producto en el siguiente orden: MARCA > TIPO > PRESENTACIÓN. Por ejemplo: <b>1884 VINO MALBEC 750CC</b>.";
+                                                        }else{
+                                                            echo "Ingrese la descripción del producto en el siguiente orden: MARCA > TIPO > PRESENTACIÓN. Por ejemplo: <b>COCA COLA ZERO CAJON X 12</b>.";
+                                                        }
+                                                    ?>
+                                                </small>
                                             </div>
                                             <div class="form-group d-flex justify-content-end">
                                                 <button class="btn btn-outline-primary" id="producto-form-step" value="2" onclick="stepper1.next()">Siguiente</button>
@@ -1327,18 +1513,23 @@
                                             </div>
                                             <div class="form-group d-flex justify-content-between"> 
                                                 <button class="btn btn-outline-primary" id="producto-form-step" value="2"  onclick="stepper1.previous()">Anterior</button>
-                                                <button class="btn btn-outline-success" id="producto-form-registro" value="1" onclick="productoRegistro()">Registrar producto</button>
+                                                <button class="btn btn-outline-success" id="producto-form-registro" value="1" onclick="productoRegistro('<?php echo ($codificado) ? 'true' : 'false'; ?>')">Registrar producto</button>
                                             </div>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                             <script> 
-                                $("#producto-registro-formulario-form input").on('focusout', (e) => {
-                                    tareaAgregarData('Registro de producto [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
-                                });
-                                $("#producto-registro-formulario-form select").on('change', (e) => {
-                                    tareaAgregarData('Registro de producto [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
+                                $(document).ready(() => {
+                                    let codificado = <?php echo ($codificado) ? "true" : "false"; ?>;
+                                    if(codificado){
+                                        $("#producto-registro-formulario-form input").on('focusout', (e) => {
+                                            tareaAgregarData('Registro de producto <?php echo ($codificado) ? "codificado" : "no codificado" ?> [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
+                                        });
+                                        $("#producto-registro-formulario-form select").on('change', (e) => {
+                                            tareaAgregarData('Registro de producto <?php echo ($codificado) ? "codificado" : "no codificado" ?> [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
+                                        });
+                                    }
                                 });
                                 tail.select('#categoria', {
                                     search: true,
@@ -1387,6 +1578,15 @@
             }else{
                 Sistema::debug("error", "producto.class.php - registroFormulario - Usuario no logueado.");
             }
+        }
+
+        public static function noCodifRegistroFormulario(){
+            $data = [
+                "corroborar" => false,
+                "codigo" => null,
+                "tarea" => null
+            ];
+            Producto::registroFormulario($data, false);
         }
     }
 ?>

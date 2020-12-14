@@ -256,7 +256,7 @@
                                         <span><?php echo $dataCompañia["direccion"] ?></span>
                                         <span><?php echo $dataCompañia["telefono"] ?></span>
                                     </div>
-                                    <img src="image/compañia/<?php echo $dataCompañia["id"] ?>/logo.png" height="150px" alt="<?php echo $dataCompañia["nombre"] ?>" />
+                                    <img src="image/compañia/<?php echo $dataCompañia["id"] ?>/logo.png" style="height: 4em;" alt="<?php echo $dataCompañia["nombre"] ?>" />
                                 </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
                                     <div style="display: flex; flex-direction: column; padding: 1.5em 0;">
@@ -286,6 +286,9 @@
                                         <span><b>Comprobante N°:</b> #<?php echo $prenComprobante.$data[$idVenta]["nComprobante"] ?></span>
                                     </div>
                                 </div>
+                                <div style="display: flex; justify-content: center; align-items: center; padding: 0.375em">
+                                    <b>COMPROBANTE NO FISCAL</b>
+                                </div>
                                 <div>
                                     <table style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; width: 100%;">
                                         <thead style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
@@ -300,9 +303,11 @@
                                             <?php
                                                 $total = 0;
                                                 foreach($producto AS $key => $value){
+                                                    $tipo = ($value[0] == "*") ? "noCodificado" : "codificado";
+                                                    $value = str_replace("*", "", $value);
                                                     ?>
                                                     <tr style="border-bottom: 1px solid lightgray;">
-                                                        <td style="padding: 1.015em 0; "><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$dataCompañiaStock[$value]["producto"]]["nombre"] ?></td>
+                                                        <td style="padding: 1.015em 0; "><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
                                                         <td style="padding: 1.015em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
                                                         <td style="padding: 1.015em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
                                                         <td style="padding: 1.015em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
@@ -384,8 +389,8 @@
                 if(isset($producto) && !is_null($producto) && strlen($producto) > 0){
                     Session::iniciar();
                     $response = [];
-                    $dataStock = $_SESSION["lista"]["compañia"]["sucursal"]["stock"];
-                    $producto = explode(",", $producto); 
+                    $dataStock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"];
+                    $producto = explode(",", str_replace("*", "", $producto)); 
                     if(isset($productoCantidad) && !is_null($productoCantidad) && strlen($productoCantidad) > 0){
                         $productoCantidad = explode(",", $productoCantidad);
                         foreach($producto AS $key => $value){
@@ -398,6 +403,7 @@
                                         $response[$key]["status"] = true; 
                                     }else{
                                         $response[$key]["status"] = false;
+                                        Sistema::debug('error', 'compania.class.php - stockRestar - No se pudo restar el stock al producto en stock N° '.$value.'. Ref.: '.DataBase::getError());
                                     }
                                 }else{
                                     Sistema::debug('error', 'compania.class.php - stockRestar - El producto '.$dataStock[$value]["nombre"].' ['.$value.'] no tiene stock disponible. Stock disponible: '.$dataStock[$key]["stock"].' - Cantidad solicitada: '.$productoCantidad[$key]);
@@ -458,6 +464,9 @@
                                             $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"]; 
                                             $counter = 0;
                                             foreach($data AS $key => $value){
+                                                echo '<pre>';
+                                                print_r($value);
+                                                echo '</pre>';
                                                 $enStock = (Sistema::in_array_r($value["id"], $stockProducto)) ? true : false;
                                                 if($enStock){
                                                     $stockKey = "";
@@ -589,6 +598,8 @@
                     </div>
                     <script> 
                         $(document).ready(function() {
+                            let cantidad = <?php echo (is_array($data)) ? count($data) : null; ?>;
+                            if(!isNaN(cantidad) && cantidad === 0) productoRegistroFormulario(false, <?php echo $formData["codigo"] ?>);
                             $('td a').on('click', (e) => {
                                 productoInventarioEditarContenidoFormulario(e.currentTarget.parentNode.parentNode.getAttribute("data-key"),e.currentTarget.parentNode.getAttribute("id"),e.currentTarget.parentNode.getAttribute("data-value"));
                             });
@@ -704,7 +715,7 @@
             }
         }
 
-        public static function stockRegistroProductoFormulario(){
+        public static function stockRegistroProductoFormulario($codigoBarra = null){
             if(Sistema::usuarioLogueado()){
                 ?>
                 <div class="mine-container">
@@ -728,7 +739,7 @@
                         </fieldset>
                         <div id="container-codigo" class="form-group" style="display: none">
                             <label class="col-form-label" for="codigo"><i class="fa fa-barcode"></i> Código de barra</label>
-                            <input type="text" class="form-control" placeholder="Ingresá el código del producto" id="codigo" name="codigo">
+                            <input type="text" class="form-control" placeholder="Ingresá el código del producto" id="codigo" name="codigo" value="<?php echo $codigoBarra ?>">
                             <small class="text-muted">Utilizá una parte del código para obtener un listado ámplio del proveedor/importador. Conocé más <a href="#/">acá</a></small>
                         </div>
                         <div id="container-tag" class="form-group" style="display: none">
@@ -751,12 +762,17 @@
                 </div>
                 <script> 
                     $(document).ready(() => {
+
                         if ($('#filtroOpcion1').is(':checked')) {
                             $("#tag").focus();
                         }
                         if ($('#filtroOpcion2').is(':checked')) {
                             $("#codigo").focus();
                         }
+                        compañiaRegistroProductoUpdateBusqueda();
+
+                        let codigoBarra = "<?php echo $codigoBarra; ?>";
+                        if(codigoBarra !== null && codigoBarra.length > 0){ compañiaStockRegistroProductoListaFormulario(); }
                     })
                     $("#compania-stock-registro-producto-form #container-tag input").on("keypress", (e) => {
                         let keycode = (e.keyCode ? e.keyCode : e.which);
@@ -781,7 +797,6 @@
                             compañiaStockRegistroProductoListaFormulario()
                         }
                     });
-                    compañiaRegistroProductoUpdateBusqueda();
                 </script>
                 <?php
             }else{
@@ -789,11 +804,11 @@
             }
         }
 
-        public static function stockGetData($idProducto, $tipo = null, $sucursal = null, $compañia = null){
+        public static function stockGetData($idProducto, $tipo = null, $sucursal = null, $compañia = null, $productoTipo = "codificado"){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
                     Session::iniciar();
-                    $query = DataBase::select("producto_stock", ((!is_null($tipo)) ? $tipo : "*"), "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    $query = DataBase::select("producto_stock", ((!is_null($tipo)) ? $tipo : "*"), (($productoTipo == "codificado") ? "producto" : "productoNC")." = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
                     if($query){
                         if(DataBase::getNumRows($query) == 1){
                             $dataQuery = DataBase::getArray($query);
@@ -823,10 +838,10 @@
             return false;
         }
 
-        public static function stockContenido($idProducto, $tipo){
+        public static function stockContenido($idProducto, $tipo, $productoTipo = "codificado"){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0 && isset($tipo) && strlen($tipo) > 0){
-                    $data = Compania::stockGetData($idProducto, $tipo);
+                    $data = Compania::stockGetData($idProducto, $tipo, null, null, $productoTipo);
                     if(is_numeric($data[$tipo])){
                         echo '<button type="button" class="btn btn-sm btn-link btn-iconed p-0"><span class="spn">'.(($tipo === "precio") ? "$" : "").$data[$tipo].'</span> <i class="fa fa-pencil"></i></button>';
                         ?>
@@ -851,10 +866,10 @@
             }
         }
 
-        public static function stockGetId($idProducto, $sucursal = null, $compañia = null){
+        public static function stockGetId($idProducto, $sucursal = null, $compañia = null, $productoTipo = "codificado"){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
-                    $query = DataBase::select("producto_stock", "id", "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    $query = DataBase::select("producto_stock", "id", (($productoTipo == "codificado") ? "producto" : "productoNC")." = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
                     if($query){
                         if(DataBase::getNumRows($query) == 1){
                             $dataQuery = DataBase::getArray($query);
@@ -874,11 +889,11 @@
             return false;
         }
 
-        public static function stockCorroboraExistencia($idProducto, $sucursal = null, $compañia = null){
+        public static function stockCorroboraExistencia($idProducto, $sucursal = null, $compañia = null, $productoTipo = "codificado"){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
                     Session::iniciar();
-                    $query = DataBase::select("producto_stock", "id", "producto = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    $query = DataBase::select("producto_stock", "id", (($productoTipo == "codificado") ? "producto" : "productoNC")." = '".$idProducto."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
                     if($query){
                         return (DataBase::getNumRows($query) == 1) ? true : 0;
                     }else{
@@ -898,16 +913,16 @@
                 if(isset($data) && is_array($data) && count($data) > 0){
                     echo Sistema::loading();
                     $codigoProducto = Producto::getCodigo($data["idProducto"]);
-                    if(is_numeric($codigoProducto) && !is_bool($codigoProducto)){
-                        if(Producto::corroboraExistencia(["codigo" => $codigoProducto])){
-                            $productoEnStock = Compania::stockCorroboraExistencia($data["idProducto"]);
+                    if((is_numeric($codigoProducto) && !is_bool($codigoProducto)) || $data["productoTipo"] == "noCodificado"){
+                        if((Producto::corroboraExistencia(["codigo" => $codigoProducto])) || $data["productoTipo"] == "noCodificado"){
+                            $productoEnStock = Compania::stockCorroboraExistencia($data["idProducto"], null, null, $data["productoTipo"]);
                             Session::iniciar();
                             if(is_bool($productoEnStock) && $productoEnStock){
-                                $idProductoStock = Compania::stockGetId($data["idProducto"]);
+                                $idProductoStock = Compania::stockGetId($data["idProducto"], null, null, $data["productoTipo"]);
                                 if(is_numeric($idProductoStock) && $idProductoStock > 0){
-                                    $query = DataBase::update("producto_stock", $data["tipo"]." = ".$data["cantidad"].", operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$idProductoStock."' AND producto = '".$data["idProducto"]."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                    $query = DataBase::update("producto_stock", $data["tipo"]." = ".$data["cantidad"].", operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$idProductoStock."' AND ".(($data["productoTipo"] == "codificado") ? "producto" : "productoNC")." = '".$data["idProducto"]."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                                     if($query){
-                                        echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return compañiaStockContenidoData('.$data["idProducto"].', "'.$data["tipo"].'"); }, "loader-ok")</script>';
+                                        echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return compañiaStockContenidoData('.$data["idProducto"].', "'.$data["tipo"].'", "'.$data["productoTipo"].'"); }, "loader-ok")</script>';
                                     }else{
                                         Sistema::debug('error', 'compania.class.php - stockEditarContenido - Hubo un error al editar el contenido del stock. Ref.: '.$idProductoStock);
                                     }
@@ -915,9 +930,9 @@
                                     Sistema::debug('error', 'compania.class.php - stockEditarContenido - Hubo un error al recibir el identificador del stock del producto. Ref.: '.$idProductoStock);
                                 }
                             }elseif(is_numeric($productoEnStock) && $productoEnStock == 0){
-                                $query = DataBase::insert("producto_stock", "producto,sucursal,compañia,".$data["tipo"].",operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."','".$data["cantidad"]."','".$_SESSION["usuario"]->getId()."'");
+                                $query = DataBase::insert("producto_stock", (($data["productoTipo"] == "codificado") ? "producto" : "productoNC").",sucursal,compañia,".$data["tipo"].",operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."','".$data["cantidad"]."','".$_SESSION["usuario"]->getId()."'");
                                 if($query){
-                                    echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return compañiaStockContenidoData('.$data["idProducto"].', "'.$data["tipo"].'"); }, "loader-ok")</script>';
+                                    echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return compañiaStockContenidoData('.$data["idProducto"].', "'.$data["tipo"].'", "'.$data["productoTipo"].'"); }, "loader-ok")</script>';
                                 }else{
                                     Sistema::debug('error', 'compania.class.php - stockEditarContenido - Hubo un error al registrar '.$data["tipo"].' del producto. Ref.: '.$codigoProducto);
                                 }
@@ -944,7 +959,7 @@
 
         public static function stockEditarContenidoFormulario($data){
             if(Sistema::usuarioLogueado()){
-                if(isset($data) && is_array($data) && count($data) == 3){
+                if(isset($data) && is_array($data) && count($data) == 4){
                     ?>
                     <div id="producto-<?php echo $data["producto"] ?>-stock-editar-<?php echo $data["tipo"] ?>-process" style="display: none"></div>
                     <form id="producto-<?php echo $data["producto"] ?>-stock-editar-<?php echo $data["tipo"] ?>-form" action="./engine/compania/stock-editar-contenido.php" form="#producto-<?php echo $data["producto"] ?>-stock-editar-<?php echo $data["tipo"] ?>-form" process="#producto-<?php echo $data["producto"] ?>-stock-editar-<?php echo $data["tipo"] ?>-process"> 
@@ -954,7 +969,7 @@
                                 <input class="form-control form-control-sm d-none" type="text" id="tipo" name="tipo" value="<?php echo $data["tipo"] ?>" readonly>
                                 <input class="form-control form-control-sm d-none" type="text" id="idProducto" name="idProducto" value="<?php echo $data["producto"] ?>" readonly>
                                 <div class="input-group-append">
-                                    <button type="button" onclick="compañiaStockEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>')" class="btn btn-sm btn-outline-success"><i class="fa fa-check"></i></button>
+                                    <button type="button" onclick="compañiaStockEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>','<?php echo $data['productoTipo'] ?>')" class="btn btn-sm btn-outline-success"><i class="fa fa-check"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -965,7 +980,7 @@
                             $("#producto-<?php echo $data["producto"] ?>-stock-editar-<?php echo $data["tipo"] ?>-form #cantidad").keypress((e) => {
                                 var keycode = (e.keyCode ? e.keyCode : e.which);
                                 if(keycode == '13'){
-                                    compañiaStockEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>') 
+                                    compañiaStockEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>','<?php echo $data['productoTipo'] ?>') 
                                 }
                             });
                         })
@@ -979,13 +994,13 @@
             }
         }
 
-        public static function stockRegistro($data, $alert = false){
+        public static function stockRegistro($data, $alert = false, $codificado = true){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
-                    $productoExiste = Producto::corroboraExistencia(["codigo" => $data["codigo"]]);
+                    $productoExiste = ($codificado) ? Producto::corroboraExistencia(["codigo" => $data["codigo"]]) : Producto::nocodifCorroboraExistencia(["codigo" => $data["codigo"], "idProducto" => $data["idProducto"]]);
                     if($productoExiste){
-                        $query = DataBase::insert("producto_stock", "producto,sucursal,compañia,stock,minimo,maximo,precio,precioMayorista,precioKiosco,operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."',".((is_numeric($data["stock"])) ? $data["stock"] : "NULL").",".((is_numeric($data["minimo"])) ? $data["minimo"] : "NULL").",".((is_numeric($data["maximo"])) ? $data["maximo"] : "NULL").",".((is_numeric($data["precio"])) ? $data["precio"] : "NULL").",".((is_numeric($data["precioMayorista"])) ? $data["precioMayorista"] : "NULL").",".((is_numeric($data["precioKiosco"])) ? $data["precioKiosco"] : "NULL").",'".$_SESSION["usuario"]->getId()."'");
+                        $query = DataBase::insert("producto_stock", (($codificado) ? "producto" : "productoNC").",sucursal,compañia,stock,minimo,maximo,precio,precioMayorista,precioKiosco,operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."',".((is_numeric($data["stock"])) ? $data["stock"] : "NULL").",".((is_numeric($data["minimo"])) ? $data["minimo"] : "NULL").",".((is_numeric($data["maximo"])) ? $data["maximo"] : "NULL").",".((is_numeric($data["precio"])) ? $data["precio"] : "NULL").",".((is_numeric($data["precioMayorista"])) ? $data["precioMayorista"] : "NULL").",".((is_numeric($data["precioKiosco"])) ? $data["precioKiosco"] : "NULL").",'".$_SESSION["usuario"]->getId()."'");
                         if($query){
                             if($alert){
                                 $mensaje['tipo'] = 'success';
@@ -1013,6 +1028,29 @@
             return false;
         }
 
+        public static function productoNoCodifData($idCompañia = null){
+            Session::iniciar();
+            $idCompañia = (is_null($idCompañia)) ? $_SESSION["usuario"]->getCompañia() : $idCompañia;
+            $query = DataBase::select("compañia_producto", "*", "compañia = '".$idCompañia."'", "ORDER BY nombre ASC");
+            if($query){
+                $data = [];
+                if(DataBase::getNumRows($query) > 0){
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    }
+                }
+                return $data;
+            }
+            return false;
+        }
+
         public static function stockFormulario(){
             if(Sistema::usuarioLogueado()){
                 $data = Compania::stockData();
@@ -1020,7 +1058,10 @@
                 <div class="mine-container">
                     <div class="d-flex justify-content-between">
                         <div class="titulo">Stock de productos de <?php echo mb_strtoupper(Compania::getNombre($_SESSION["usuario"]->getCompañia())) ?> - <?php echo Compania::sucursalGetNombre($_SESSION["usuario"]->getSucursal()) ?></div>
-                        <button type="button" class="btn btn-info" onclick="compañiaStockRegistroProductoFormulario()"><i class="fa fa-plus"></i> Agregar productos al stock</button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-info" onclick="productoNoCodifRegistroFormulario()"><i class="fa fa-plus"></i> Agregar productos no codificados</button>
+                            <button type="button" class="btn btn-info" onclick="compañiaStockRegistroProductoFormulario()"><i class="fa fa-plus"></i> Agregar productos al stock</button>
+                        </div>
                     </div> 
 
                     <script> 
@@ -1089,18 +1130,25 @@
                                             $productoCategoria = $_SESSION["lista"]["producto"]["categoria"];
                                             $counter = 0;
                                             foreach($data AS $key => $value){
+                                                if((is_numeric($value["producto"]) && $value["producto"] > 0)){
+                                                    $idProducto =  $value["producto"];
+                                                    $tipo = "codificado";
+                                                }else{
+                                                    $idProducto =  $value["productoNC"];
+                                                    $tipo = "noCodificado";
+                                                }
                                                 ?>
-                                                <tr style="display: none" id="producto-<?php echo $value["producto"] ?>" data-key="<?php echo $value["producto"] ?>">
-                                                    <th scope="row"><?php echo $producto[$value["producto"]]["codigoBarra"] ?></th>
-                                                    <td><?php echo $producto[$value["producto"]]["nombre"] ?></td>
+                                                <tr style="display: none" id="producto-<?php echo $idProducto ?>" data-key="<?php echo $idProducto ?>" data-producto-tipo="<?php echo $tipo ?>">
+                                                    <th scope="row"><?php echo $producto[$tipo][$idProducto]["codigoBarra"] ?></th>
+                                                    <td id="nombre" data-value="<?php echo $producto[$tipo][$idProducto]["nombre"] ?>"><button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn"><?php echo $producto[$tipo][$idProducto]["nombre"] ?></span> <i class="fa fa-pencil"></i></button></td>
                                                     <td id="stock" data-value="<?php echo (isset($value["stock"]) && is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
                                                     <td id="minimo" data-value="<?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="maximo" data-value="<?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? $value["maximo"] : 0 ?>" class="text-center"><?php echo (isset($value["maximo"]) && is_numeric($value["maximo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["maximo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
                                                     <td id="precio" data-value="<?php echo (isset($value["precio"]) && is_numeric($value["precio"])) ? $value["precio"] : "$0" ?>" class="text-center"><?php echo (isset($value["precio"]) && is_numeric($value["precio"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precio"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
                                                     <td id="precioMayorista" data-value="<?php echo (isset($value["precioMayorista"]) && is_numeric($value["precioMayorista"])) ? $value["precioMayorista"] : "$0" ?>" class="text-center"><?php echo (isset($value["precioMayorista"]) && is_numeric($value["precioMayorista"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precioMayorista"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
                                                     <td id="precioKiosco" data-value="<?php echo (isset($value["precioKiosco"]) && is_numeric($value["precioKiosco"])) ? $value["precioKiosco"] : "$0" ?>" class="text-center"><?php echo (isset($value["precioKiosco"]) && is_numeric($value["precioKiosco"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$'.$value["precioKiosco"].'</span> <i class="fa fa-pencil"></i></button>' : '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">$0</span> <i class="fa fa-pencil"></i></button>' ?></td>
-                                                    <td><?php echo $productoTipo[$producto[$value["producto"]]["tipo"]]; ?></td>
-                                                    <td><?php echo $productoCategoria[$producto[$value["producto"]]["categoria"]] ?></td>
+                                                    <td><?php echo $productoTipo[$producto[$tipo][$idProducto]["tipo"]]; ?></td>
+                                                    <td><?php echo $productoCategoria[$producto[$tipo][$idProducto]["categoria"]] ?></td>
                                                 </tr>
                                                 <?php
                                             } 
@@ -1196,10 +1244,30 @@
                     <script> 
                         $(document).ready(function() {
                             $('td a').on('click', (e) => {
-                                productoInventarioEditarContenidoFormulario(e.currentTarget.parentNode.parentNode.getAttribute("data-key"),e.currentTarget.parentNode.getAttribute("id"),e.currentTarget.parentNode.getAttribute("data-value"));
+                                let dataKey = e.currentTarget.parentNode.parentNode.getAttribute("data-key");
+                                let productoTipo = e.currentTarget.parentNode.parentNode.getAttribute("data-producto-tipo");
+                                let id = e.currentTarget.parentNode.getAttribute("id");
+                                let dataValue = e.currentTarget.parentNode.getAttribute("data-value");
+                                if(id === "nombre"){
+                                    alert("Esta característica será habilitada en breve.");
+                                    return;
+                                    productoEditarContenidoFormulario(dataKey,id,dataValue);
+                                }else{
+                                    productoInventarioEditarContenidoFormulario(dataKey,id,dataValue,productoTipo);
+                                }
                             });
                             $('td>button').on('click', (e) => {
-                                productoInventarioEditarContenidoFormulario(e.currentTarget.parentNode.parentNode.getAttribute("data-key"),e.currentTarget.parentNode.getAttribute("id"),e.currentTarget.parentNode.getAttribute("data-value"));
+                                let dataKey = e.currentTarget.parentNode.parentNode.getAttribute("data-key");
+                                let productoTipo = e.currentTarget.parentNode.parentNode.getAttribute("data-producto-tipo");
+                                let id = e.currentTarget.parentNode.getAttribute("id");
+                                let dataValue = e.currentTarget.parentNode.getAttribute("data-value");
+                                if(id === "nombre"){
+                                    alert("Esta característica será habilitada en breve.");
+                                    return;
+                                    productoEditarContenidoFormulario(dataKey,id,dataValue);
+                                }else{
+                                    productoInventarioEditarContenidoFormulario(dataKey,id,dataValue,productoTipo);
+                                }
                             });
                             tippy('td a', {
                                 content: 'Click para agregar un nuevo valor.',

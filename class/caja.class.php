@@ -308,7 +308,7 @@
                     </div>
                 </div>
                 <script>
-                    dataTableSet("#tabla-caja-historial", true, [[5, 10, 25, 50, 100, -1],[5, 10, 25, 50, 100, "Todos"]], 10, [ 1, "desc" ]);
+                    dataTableSet("#tabla-caja-historial", false, [[5, 10, 25, 50, 100, -1],[5, 10, 25, 50, 100, "Todos"]], 10, [ 1, "desc" ]);
                 </script>
                 <?php
             }else{

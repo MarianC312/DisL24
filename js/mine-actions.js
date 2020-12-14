@@ -253,6 +253,14 @@ function ventaProductoAgregarInput(idParent, dataset) {
     input4.name = "producto-descripcion[]";
     input4.value = dataset.producto;
 
+    let input6 = document.createElement("input");
+    input6.type = "text";
+    input6.className = "form-control d-none";
+    input6.setAttribute("readonly", true);
+    input6.id = "producto-" + cantidad + "-" + dataset.idProducto + "-tipo";
+    input6.name = "producto-tipo[]";
+    input6.value = dataset.productoTipo;
+
     let inputContainer4 = document.createElement("td");
     inputContainer4.className = "align-middle";
     inputContainer4.appendChild(input1);
@@ -261,10 +269,11 @@ function ventaProductoAgregarInput(idParent, dataset) {
     inputContainer5.className = "align-middle";
     inputContainer5.innerHTML = '$<span id="producto-' + cantidad + '-' + dataset.idProducto + '-total-bruto">' + dataset.precio + '</span>';
 
+    inputContainer0.appendChild(input2);
+    inputContainer0.appendChild(input3);
+    inputContainer0.appendChild(input4);
+    inputContainer0.appendChild(input6);
     container.appendChild(inputContainer0);
-    container.appendChild(input2);
-    container.appendChild(input3);
-    container.appendChild(input4);
     container.appendChild(inputContainer1);
     container.appendChild(inputContainer2);
     container.appendChild(inputContainer3);
@@ -276,6 +285,9 @@ function ventaProductoAgregarInput(idParent, dataset) {
     if (dataset.barCode !== null) {
         const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
         switch (true) {
+            case (dataset.barCode.substring(0, 3) == "PFC"):
+                setFormat = format[0];
+                break;
             case (dataset.barCode.length <= 2):
                 setFormat = format[5];
                 break;
@@ -295,6 +307,7 @@ function ventaProductoAgregarInput(idParent, dataset) {
                 setFormat = format[2];
                 break;
         }
+        console.log(setFormat);
         let divDOM = document.getElementById("producto-" + cantidad + "-" + dataset.idProducto + "-barcode");
         let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute('jsbarcode-format', setFormat);
@@ -671,7 +684,7 @@ const compañiaStockRegistroProductoFormulario = () => {
         return;
     }
     me.data('requestRunning', true);
-    console.log("exe test");
+    let data = $("#buscador-input").val();
     let divProcess = "#right-content-data";
     let divForm = "";
     $.ajax({
@@ -683,7 +696,7 @@ const compañiaStockRegistroProductoFormulario = () => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: {},
+        data: { data: data },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -698,7 +711,7 @@ const compañiaStockRegistroProductoFormulario = () => {
     });
 }
 
-const compañiaStockContenidoData = (idProducto, tipo) => {
+const compañiaStockContenidoData = (idProducto, tipo, productoTipo = "codificado") => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -716,7 +729,7 @@ const compañiaStockContenidoData = (idProducto, tipo) => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: { idProducto: idProducto, tipo: tipo },
+        data: { idProducto: idProducto, tipo: tipo, productoTipo: productoTipo },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -808,7 +821,7 @@ const tareaAgregarData = (tarea, input, value, div) => {
     });
 }
 
-const compañiaStockEditarContenido = (idProducto, tipo) => {
+const compañiaStockEditarContenido = (idProducto, tipo, productoTipo = "codificado") => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -819,6 +832,7 @@ const compañiaStockEditarContenido = (idProducto, tipo) => {
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
     data.push({ name: "idProducto2", value: idProducto });
+    data.push({ name: "productoTipo", value: productoTipo });
     data.push({ name: "tipo2", value: tipo });
     data.push({ name: "exceptions", value: ["exceptions"] });
     let divProcess = form.attr("process");
@@ -847,7 +861,7 @@ const compañiaStockEditarContenido = (idProducto, tipo) => {
     });
 }
 
-const productoRegistro = () => {
+const productoRegistro = (codificado = true) => {
 
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -858,6 +872,7 @@ const productoRegistro = () => {
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "codificado", value: codificado });
     data.push({ name: "exceptions", value: ["subcategoria", "stock", "minimo", "maximo", "precio", "precioMayorista", "precioKiosco"] });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
@@ -903,6 +918,38 @@ const productoRegistroFormulario = (corroborar = true, codigo = 0, tarea = null)
             $(divProcess).show(350);
         },
         data: { corroborar: corroborar, codigo: codigo, tarea: tarea },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoNoCodifRegistroFormulario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/nocodif-registrar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -989,7 +1036,6 @@ const compañiaStockEditarContenidoFormulario = (producto, tipo, cantidad = 0) =
     me.data('requestRunning', true);
     let divProcess = "#producto-" + producto + " #" + tipo;
     let divForm = "";
-    console.log(divProcess);
     $.ajax({
         type: "POST",
         url: "./includes/compania/stock-editar-contenido-formulario.php",
@@ -1014,7 +1060,39 @@ const compañiaStockEditarContenidoFormulario = (producto, tipo, cantidad = 0) =
     });
 }
 
-const productoInventarioEditarContenidoFormulario = (producto, tipo, cantidad = 0) => {
+const productoEditarContenidoFormulario = (producto, tipo, value = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#producto-" + producto + " #" + tipo;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/editar-contenido-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading("loader-circle-1"));
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: { producto: producto, tipo: tipo, value: value },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoInventarioEditarContenidoFormulario = (producto, tipo, cantidad = 0, productoTipo = "codificado") => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1032,7 +1110,7 @@ const productoInventarioEditarContenidoFormulario = (producto, tipo, cantidad = 
             //$(divForm).hide(350);
             //$(divProcess).show(350);
         },
-        data: { producto: producto, tipo: tipo, cantidad: cantidad },
+        data: { producto: producto, tipo: tipo, cantidad: cantidad, productoTipo: productoTipo },
         complete: function() {
             me.data('requestRunning', false);
         },

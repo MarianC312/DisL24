@@ -2,7 +2,7 @@
     require_once 'autoload.class.php';
     if(Sistema::usuarioLogueado()){
         if(isset($_POST)){
-            Compania::stockRegistroProductoFormulario();
+            Compania::stockRegistroProductoFormulario($_POST["data"]);
         }else{
             Sistema::debug('error', 'includes > compania > stock-registro-producto-formulario.php - Hubo un error al recibir la información del formulario.');
             $mensaje['tipo'] = 'danger';

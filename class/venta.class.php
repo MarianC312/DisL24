@@ -2,6 +2,7 @@
     class Venta {
         public static function registrar($data){
             if(Sistema::usuarioLogueado()){
+                //echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
                 if(isset($data) && is_array($data) && count($data) > 0){
                     if(isset($data["producto-identificador"]) && is_array($data["producto-identificador"]) && count($data["producto-identificador"]) > 0){
                         Session::iniciar();
@@ -16,13 +17,14 @@
                         $dataCaja["producto"] = "";
                         $dataCaja["productoCantidad"] = "";
                         $dataCaja["productoPrecio"] = "";
-                        foreach($data["producto-identificador"] AS $key => $value){
-                            $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["producto"];
+                        foreach($data["producto-identificador"] AS $key => $value){ 
+                            $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value][($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC"];
                             $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
                             $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["stock"];
                             $dataProducto[$key]["precio"] = trim($data["producto-precio-unitario"][$key]); 
                             $dataProducto[$key]["cantidad"] = trim($data["producto-cantidad"][$key]);
-                            $dataProducto[$key]["nombre"] = ($value == 0) ? $data["producto-descripcion"][$key] : $_SESSION["lista"]["producto"][$dataProducto[$key]["id"]]["nombre"];
+                            $dataProducto[$key]["tipo"] = $data["producto-tipo"][$key];
+                            $dataProducto[$key]["nombre"] = ($value == 0) ? $data["producto-descripcion"][$key] : $_SESSION["lista"]["producto"][$dataProducto[$key]["tipo"]][$dataProducto[$key]["id"]]["nombre"];
                             $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
                             $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];
                             if($value != 0){
@@ -38,13 +40,13 @@
                             if(strlen($dataCaja["producto"]) > 0){
                                 $dataCaja["producto"] .= ",";
                             }
-                            $dataCaja["producto"] .= $value;
                             if(strlen($dataCaja["productoCantidad"]) > 0){
                                 $dataCaja["productoCantidad"] .= ",";
                             }
                             if(strlen($dataCaja["productoPrecio"]) > 0){
                                 $dataCaja["productoPrecio"] .= ",";
                             }
+                            $dataCaja["producto"] .= (($data["producto-tipo"][$key] == "codificado") ? "" : "*").$value;
                             $dataCaja["productoPrecio"] .= $dataProducto[$key]["precio"];
                             $dataCaja["productoCantidad"] .= $data["producto-cantidad"][$key];
                         }
@@ -73,9 +75,15 @@
                             $query = DataBase::insert("compañia_sucursal_venta", "nComprobante,producto,productoCantidad,productoPrecio,pago,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."','".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                             if($query){
                                 $idVenta = DataBase::getLastId();
-                                $stockRestar = Compania::stockRestar($dataCaja["producto"], $dataCaja["productoCantidad"]);
+                                $stockRestar = Compania::stockRestar($dataCaja["producto"], $dataCaja["productoCantidad"]); 
+                                $productoStockRestar = "";
+                                foreach($stockRestar AS $key => $value){
+                                    if(strlen($productoStockRestar) > 0){ $productoStockRestar .= ","; }
+                                    $productoStockRestar .= (is_bool($value["status"]) && $value["status"]) ? 1 : 0;
+
+                                }
                                 if($stockRestar){
-                                    $query = DataBase::update("compañia_sucursal_venta", "procesadoStock = 1", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                    $query = DataBase::update("compañia_sucursal_venta", "procesadoStock = '".$productoStockRestar."'", "id = '".$idVenta."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                                     if(!$query){
                                         Sistema::debug('error', 'venta.class.php - registrar - Error al procesar stock. Ref.: '.$idVenta);
                                     }
@@ -227,13 +235,20 @@
                                 <?php
                                     if(is_array($dataStock) && count($dataStock) > 0){
                                         foreach($dataStock AS $key => $value){
+                                            if((is_numeric($value["producto"]) && $value["producto"] > 0)){
+                                                $idProducto =  $value["producto"];
+                                                $tipo = "codificado";
+                                            }else{
+                                                $idProducto =  $value["productoNC"];
+                                                $tipo = "noCodificado";
+                                            }
                                             ?>
-                                            <li class="list-group-item" id="c-p-c-b-<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>" style="display: none"  data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-precio-mayorista="<?php echo $value["precioMayorista"] ?>" data-precio-kiosco="<?php echo $value["precioKiosco"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
-                                                <div class="d-flex justify-content-between align-items-center" data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$value["producto"]]["nombre"] ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-precio-mayorista="<?php echo $value["precioMayorista"] ?>" data-precio-kiosco="<?php echo $value["precioKiosco"] ?>" data-bar-code="<?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>">
+                                            <li class="list-group-item" id="c-p-c-b-<?php echo $baseProductos[$tipo][$idProducto]["codigoBarra"] ?>" style="display: block"  data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$tipo][$idProducto]["nombre"] ?>" data-producto-tipo="<?php echo $tipo ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-precio-mayorista="<?php echo $value["precioMayorista"] ?>" data-precio-kiosco="<?php echo $value["precioKiosco"] ?>" data-bar-code="<?php echo (is_numeric($baseProductos[$tipo][$idProducto]["codigoBarra"])) ? (($tipo == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$baseProductos[$tipo][$idProducto]["codigoBarra"] : "NULL" ?>">
+                                                <div class="d-flex justify-content-between align-items-center" data-id-producto="<?php echo $value["id"] ?>" data-producto="<?php echo $baseProductos[$tipo][$idProducto]["nombre"] ?>" data-producto-tipo="<?php echo $tipo ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-precio-mayorista="<?php echo $value["precioMayorista"] ?>" data-precio-kiosco="<?php echo $value["precioKiosco"] ?>" data-bar-code="<?php echo (is_numeric($baseProductos[$tipo][$idProducto]["codigoBarra"])) ? (($tipo == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$baseProductos[$tipo][$idProducto]["codigoBarra"] : "NULL" ?>">
                                                     <div class="d-flex justify-content-between">
                                                         <div>
-                                                            <?php echo $baseProductos[$value["producto"]]["codigoBarra"] ?>
-                                                            <?php echo $baseProductos[$value["producto"]]["nombre"] ?>
+                                                            <?php echo (is_numeric($baseProductos[$tipo][$idProducto]["codigoBarra"])) ? (($tipo == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$baseProductos[$tipo][$idProducto]["codigoBarra"] : "NULL" ?>
+                                                            <?php echo $baseProductos[$tipo][$idProducto]["nombre"] ?>
                                                         </div>
                                                         <div class="d-flex justify-content-around"> 
                                                             <span class="badge badge-primary badge-pill">Stock: <?php echo $value["stock"] ?></span>
@@ -339,11 +354,15 @@
                         $("#producto").focus();
                     })
 
-                    $("#producto").on("keypress", (e) => {
+                    $("#producto").on("keydown", (e) => {
                         let keycode = (e.keyCode ? e.keyCode : e.which);
                         let barcode = $("#producto").val();
-                        //console.log(keycode);
+                        let strokes = [96,97,98,99,100,101,102,103,104,105]
+                        console.log(keycode);
                         switch(keycode){
+                            case 45:
+                                $("#producto").val("PFC-<?php echo $_SESSION["usuario"]->getCompañia() ?>-").focus();    
+                            break;
                             case 13:
                                 if(barcode.length > 0){
                                     let lista = [...document.getElementById("container-producto-lista").childNodes];
@@ -360,7 +379,7 @@
                                     ventaRegistrar();
                                 }
                             break;
-                            case 45: 
+                            case 46: 
                                 e.preventDefault();
                                 $("#producto").val("").focus();
                             break;
