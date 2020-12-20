@@ -1260,7 +1260,7 @@
                         Producto::corroboraExistenciaFormulario();
                     }else{
                         Session::iniciar();
-                        if($codificado){
+                        if(false){
                             if(isset($data["tarea"]) && (is_null($data["tarea"]) || strlen($data["tarea"]) == 0)){
                                 $_SESSION["usuario"]->tarea("Registro de producto ".(($codificado) ? "codificado" : "no codificado")." [".$data["codigo"]."]", ["codigo" => $data["codigo"], "accion" => "productoRegistroFormulario(false, ".$data["codigo"].", 'Registro de producto ".(($codificado) ? "codificado" : "no codificado")." [".$data["codigo"]."]')"]);
                                 echo '<script>loadUsuarioTareasPendientes();</script>';
@@ -1522,7 +1522,7 @@
                             <script> 
                                 $(document).ready(() => {
                                     let codificado = <?php echo ($codificado) ? "true" : "false"; ?>;
-                                    if(codificado){
+                                    if(false){
                                         $("#producto-registro-formulario-form input").on('focusout', (e) => {
                                             tareaAgregarData('Registro de producto <?php echo ($codificado) ? "codificado" : "no codificado" ?> [<?php echo $data["codigo"] ?>]', e.currentTarget.id, e.currentTarget.value, '#producto-registro-debug');
                                         });

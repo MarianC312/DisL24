@@ -1,5 +1,56 @@
 <?php
     class Compania{ 
+        public static function sucursalCajaData($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $query = DataBase::select("compañia_sucursal_caja", "*", "sucursal = '".((is_numeric($idSucursal)) ? $idSucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'compania.class.php - sucursalCajaData - Error al consultar la información de las cajas. Ref.: '.DataBase::getError());
+                }
+                return false;
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalCajaData - Usuario no logueado.');
+            }
+        }
+
+        public static function cajaCorroboraExistencia($idCaja, $idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idCaja) && is_numeric($idCaja) && $idCaja > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_caja", "id", "id = '".$idCaja."' AND sucursal = '".((is_numeric($idSucursal)) ? $idSucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            return true;
+                        }else{
+                            Sistema::debug('error', 'compania.class.php - cajaCorroboraExistencia - Caja no encontrada. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'compania.class.php - cajaCorroboraExistencia - Error al consultar la información de la caja. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - cajaCorroboraExistencia - Error en identificador de caja. Ref.: '.$idCaja);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - cajaCorroboraExistencia - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function corroboraExistencia($idCompañia){
             if(Sistema::usuarioLogueado()){
                 if(isset($idCompañia) && is_numeric($idCompañia) && $idCompañia > 0){
@@ -464,9 +515,6 @@
                                             $productoSubcategoria = $_SESSION["lista"]["producto"]["subcategoria"]; 
                                             $counter = 0;
                                             foreach($data AS $key => $value){
-                                                echo '<pre>';
-                                                print_r($value);
-                                                echo '</pre>';
                                                 $enStock = (Sistema::in_array_r($value["id"], $stockProducto)) ? true : false;
                                                 if($enStock){
                                                     $stockKey = "";

@@ -112,6 +112,31 @@
             }
         } 
         
+        public static function operador($idCompañia = null){
+            Session::iniciar();
+            $query = DataBase::select("usuario", "id,nombre,email,actividadJornada,actividadCaja,actividadFechaInicio,actividadFechaFin,sucursal,compañia,rol", ((is_numeric($idCompañia)) ? "compañia = '".$idCompañia."'" : "1"), "ORDER BY nombre ASC");
+            if($query){
+                if(DataBase::getNumRows($query) > 0){
+                    $data = [];
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    return 0;
+                }
+            }else{
+                return false;
+            }
+        } 
+        
         public static function compañia($idCompañia = null){
             Session::iniciar();
             $query = DataBase::select("compañia", "*", (($_SESSION["usuario"]->isAdmin()) ? "1" : ((is_numeric($idCompañia)) ? "id = '".$idCompañia."'" : "id = '".$_SESSION["usuario"]->getCompañia()."'")), "ORDER BY nombre ASC");

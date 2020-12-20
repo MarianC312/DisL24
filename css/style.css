@@ -335,6 +335,7 @@ body {
     min-width: 12vw;
     max-width: 25vw;
     min-height: 4vh;
+    display: none;
 }
 
 .index-container {
@@ -365,6 +366,7 @@ body {
 }
 
 .fly {
+    display: none !important;
     position: absolute !important;
     top: 4rem;
     right: 0;

@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.11.26g";
+        public static $version = "alpha-1.27.42t";
 
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );
@@ -159,6 +159,7 @@
                 switch($tipo){
                     case "error":
                         echo ($_SESSION["usuario"]->debug() == "error") ? '<script>console.log(Error: \n"'.$text.'")</script>' : '<script>console.log("Debug de errores inhabilitado.")</script>';
+                        exit;
                     break;
                     case "info":
                         echo ($_SESSION["usuario"]->debug() == "info") ? '<script>console.log(Info: \n"'.$text.'")</script>' : '<script>console.log("Debug de información inhabilitado.")</script>';
@@ -171,6 +172,7 @@
                     break;
                     case "all":
                         echo '<script>console.log('.mb_strtoupper($tipo).': \n"'.$text.'")</script>';
+                        if($tipo === "error") exit;
                     break;
                 }
             }
@@ -223,6 +225,16 @@
             return false;
         }
 
+        public static function controlActividadCaja(){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $data = $_SESSION["usuario"]->getCajaData();
+                if(!is_numeric($data["actividadCaja"]) || is_null($data["actividadFechaInicio"]) || date("Y-m-d", strtotime($data["actividadFechaInicio"])) != date("Y-m-d", strtotime("-3 hour"))) Caja::actividadFormulario();
+            }else{
+                Sistema::debug('error', 'sistema.class.php - controlActividadCaja - Usuario no logueado.');
+            }
+        }
+
         public static function reloadStaticData(){
             Sistema::debug('info', 'sistema.class.php - reloadStaticData - Inicio recarga de datos estáticos...');
             Session::iniciar();
@@ -236,8 +248,10 @@
             $_SESSION["lista"]["proveedor"] = Lista::proveedor();
             $_SESSION["lista"]["sucursal"] = Lista::sucursal();
             $_SESSION["lista"]["compañia"] = Lista::compañia();
+            $_SESSION["lista"]["operador"] = Lista::operador();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"] = Compania::data();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["caja"] = Compania::sucursalCajaData();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia());
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia(), 1);

@@ -4,7 +4,6 @@ const beep1 = new Audio("./sound/scanner-beep.mp3");
 
 const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo', 'precio', 'precioMayorista', 'precioKiosco']) => {
     tipo.map((data) => {
-        console.log("#producto-" + idProducto + " #" + data);
         replaceClass("#producto-" + idProducto + " #" + data, "opacity-0", "");
     })
 }
@@ -143,7 +142,8 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     let inputContainer2 = document.createElement("td");
     inputContainer2.className = "align-middle";
-    inputContainer2.innerHTML = dataset.producto;
+    inputContainer2.style.cssText = "line-height: 1em;";
+    inputContainer2.innerHTML = dataset.producto + "<br><small class='text-muted'>- " + dataset.barCode + " -</small>";
 
     let input5 = document.createElement("select");
     input5.className = "form-control";
@@ -282,7 +282,7 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     document.getElementById(idParent + "-agregados").appendChild(container);
 
-    if (dataset.barCode !== null) {
+    if (dataset.barCode !== null && false) {
         const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
         switch (true) {
             case (dataset.barCode.substring(0, 3) == "PFC"):
@@ -327,7 +327,7 @@ function ventaProductoAgregarInput(idParent, dataset) {
     let containerGeneral = document.getElementById("tabla-venta-productos");
     containerGeneral.scrollTop = containerGeneral.scrollHeight;
 
-    setTimeout($("#producto").focus(), 1000);
+    setTimeout(() => { $("#producto").focus() }, 1000);
 
     return cantidad;
 }
@@ -1398,13 +1398,45 @@ const clienteEditarFormulario = (idCliente = null) => {
     });
 }
 
-const cajaAccionRegistrar = () => {
+const cajaActividadFormulario = (div = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#caja-accion-form");
+    let divProcess = (div !== null) ? div : "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/venta/historial.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaActividadRegistrar = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#caja-actividad-form");
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
@@ -1434,7 +1466,140 @@ const cajaAccionRegistrar = () => {
     });
 }
 
-const ventaRegistrar = () => {
+const cajaAccionRegistrar = (idCaja) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#caja-accion-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "idCaja", value: idCaja });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const actividadJornadaVisualizar = (idJornada, div = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = (div !== null) ? div : "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/actividad-jornada-visualizar.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idJornada: idJornada },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaActividadCerrar = (div = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = (div !== null) ? div : "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./engine/caja/actividad-cerrar.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const ventaHistorial = (div = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = (div !== null) ? div : "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/venta/historial.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const ventaRegistrar = (idCaja) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1444,6 +1609,7 @@ const ventaRegistrar = () => {
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "idCaja", value: idCaja });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
     $.ajax({
@@ -1631,7 +1797,7 @@ const sistemaReloadStaticData = () => {
     });
 }
 
-const cajaHistorial = (div = "#container-caja-historial") => {
+const cajaHistorial = (idCaja, div = "#container-caja-historial") => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1652,7 +1818,7 @@ const cajaHistorial = (div = "#container-caja-historial") => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: {},
+        data: { idCaja: idCaja },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -1667,9 +1833,10 @@ const cajaHistorial = (div = "#container-caja-historial") => {
     });
 }
 
-const cajaGestion = () => {
+const cajaGestion = (idCaja = null, actividad = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
+        console.log("cajaGestion: SALI;");
         return;
     }
     me.data('requestRunning', true);
@@ -1684,7 +1851,7 @@ const cajaGestion = () => {
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: {},
+        data: { idCaja: idCaja, actividad: actividad },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -1692,6 +1859,7 @@ const cajaGestion = () => {
             setTimeout(function() {
                 $(divProcess).hide().html(data).fadeIn("slow");
             }, 1000);
+            me.data('requestRunning', false);
         }
     }).fail(function(jqXHR) {
         console.log(jqXHR.statusText);

@@ -1,7 +1,7 @@
 <?php
     class Usuario{
 
-        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $debug = false, $auth = false;
+        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false;
         private $debugTipo = [
             0 => "all",
             1 => "success",
@@ -20,6 +20,10 @@
             $this->email = $data["email"];
             $this->estado = $data["estado"];
             $this->admin = $data["admin"];
+            $this->actividadJornada = $data["actividadJornada"];
+            $this->actividadCaja = $data["actividadCaja"];
+            $this->actividadFechaInicio = $data["actividadFechaInicio"];
+            $this->actividadFechaFin = $data["actividadFechaFin"];
             $this->debug = $this->debugTipo[$data["debug"]];
             $this->auth = $auth;
         }
@@ -32,8 +36,106 @@
         function getEmail(){ return $this->email; }
         function getEstado(){ return $this->estado; }
         function getRol(){ return $this->rol; }
+        function getActividadCaja(){ return $this->actividadCaja; }
+        function getActividadFechaInicio(){ return $this->actividadFechaInicio; }
+        function getActividadFechaFin(){ return $this->actividadFechaFin; }
+        function getActividadJornada(){ return $this->actividadJornada; }
+        function getCajaData(){
+            $this->setDataActividadCaja();
+            return [
+                "actividadJornada" => $this->actividadJornada,
+                "actividadCaja" => $this->actividadCaja,
+                "actividadFechaInicio" => $this->actividadFechaInicio,
+                "actividadFechaFin" => $this->actividadFechaFin
+            ];
+        }
         function isAdmin(){ return $this->admin; }
         function debug(){ return $this->debug; }
+
+        function setActividadJornada($idJornada){ $this->actividadJornada = $idJornada; }
+        function setActividadCaja($idCaja){ $this->actividadCaja = $idCaja; }
+        function setActividadFechaInicio($fecha){ $this->actividadFechaInicio = $fecha; }
+        function setActividadFechaFin($fecha){ $this->actividadFechaFin = $fecha; }
+
+        function updateActividadJornada($idJornada){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idJornada) && is_numeric($idJornada) && $idJornada > 0){
+                    $query = DataBase::update("usuario", "actividadJornada = '".$idJornada."'", "id = '".$this->getId()."'");
+                    if($query){
+                        $this->setDataActividadCaja();
+                        return true;
+                    }else{
+                        Sistema::debug('error', 'usuario.class.php - updateActividadJornada - Error al actualizar datos de jornada. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'usuario.class.php - updateActividadJornada - Error en identificador de jornada. Ref.: '.$idJornada);
+                }
+            }else{
+                Sistema::debug('error', 'usuario.class.php - updateActividadJornada - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        function setDataActividadCaja(){
+            if(Sistema::usuarioLogueado()){
+                $query = DataBase::select("usuario", "actividadJornada,actividadCaja,actividadFechaInicio,actividadFechaFin", "id = '".$this->getId()."'", "");
+                if($query){
+                    if(DataBase::getNumRows($query) == 1){
+                        $dataQuery = DataBase::getArray($query);
+                        $this->setActividadJornada($dataQuery["actividadJornada"]);
+                        $this->setActividadCaja($dataQuery["actividadCaja"]);
+                        $this->setActividadFechaInicio($dataQuery["actividadFechaInicio"]);
+                        $this->setActividadFechaFin($dataQuery["actividadFechaFin"]);
+                        return true;
+                    }else{
+                        Sistema::debug('error', 'usuario.class.php - setDataActividadCaja - No se encontró la información del usuario. Ref.: '.DataBase::getNumRows($query));
+                    }
+                }else{
+                    Sistema::debug('error', 'usuario.class.php - setDataActividadCaja - Error al consultar la información de actividad del usuario. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'usuario.class.php - setDataActividadCaja - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        function actividadCajaLimpiar(){
+            if(Sistema::usuarioLogueado()){
+                $query = DataBase::update("usuario", "actividadJornada = NULL, actividadCaja = NULL, actividadFechaInicio = NULL, actividadFechaFin = NULL", "id = '".$this->getId()."'");
+                if($query){
+                    $this->setDataActividadCaja();
+                    return true;
+                }else{
+                    Sistema::debug('error', 'usuario.class.php - actividadCajaLimpiar - Error al limpiar los datos de actividad del usuario. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'usuario.class.php - actividadCajaLimpiar - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        function actividadCajaInicio($data){
+            if(Sistema::usuarioLogueado()){
+                if(Caja::corroboraLibre($data["actividadCaja"])){
+                    if(isset($data) && is_array($data) && count($data) == 1){
+                        $query = DataBase::update("usuario", "actividadCaja = '".$data["actividadCaja"]."'", "id = '".$this->getId()."'");
+                        if($query){
+                            $this->setDataActividadCaja();
+                            return true;
+                        }else{
+                            Sistema::debug('error', 'usuario.class.php - actividadCajaInicio - Error al updatear la información del usuario. Ref.: '.DataBase::getError());
+                        }
+                    }else{
+                        Sistema::debug('error', 'usuario.class.php - actividadCajaInicio - Error en la información recibida. Ref.: '.count($data));
+                    }
+                }else{
+                    Sistema::debug('error', 'usuario.class.php - actividadCajaInicio - Caja ocupada. Ref.: '.$data["actividadCaja"]);
+                }
+            }else{
+                Sistema::debug('error', 'usuario.class.php - actividadCajaInicio - Usuario no logueado.');
+            }
+            return false;
+        }
 
         function tarea($identificador, $data = null){
             if(isset($identificador) && !is_null($identificador) && strlen($identificador) > 0){
@@ -155,6 +257,7 @@
                 "admin" => $this->isAdmin(),
                 "email" => $this->getEmail(),
                 "estado" => $this->getEstado(),
+                "dataCaja" => $this->getCajaData(),
                 "auth" => $this->getAuth(),
                 "debug" => $this->debug()
             ];
@@ -179,9 +282,7 @@
             }else{
                 return $response;
             }
-        } 
-
-
+        }
 
         private static function getData($email){
             if(isset($email) && !is_null($email) && strlen($email) >= 7 && $email != ""){

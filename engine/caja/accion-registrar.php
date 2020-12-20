@@ -12,7 +12,15 @@
                 }
                 $data[$key] = $value;
             }
-            Caja::accionRegistrar($data);
+            Session::iniciar();
+            if($data["idCaja"] === $_SESSION["usuario"]->getActividadCaja()){
+                Caja::accionRegistrar($data);
+            }else{
+                $mensaje['tipo'] = 'danger';
+                $mensaje['cuerpo'] = 'Hubo un error al comprobar la caja de trabajo. <b>Intente nuevamente o contacte al administrador.</b>';
+                Alert::mensaje($mensaje);
+                Sistema::debug('error','engine > caja > accion-registrar.php - Error en identificador de caja. Ref.: '.$data["caja"].' | '.$_SESSION["usuario"]->getActividadCaja());
+            }
         }else{
             $mensaje['tipo'] = 'danger';
             $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';
