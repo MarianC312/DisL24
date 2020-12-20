@@ -1797,6 +1797,42 @@ const sistemaReloadStaticData = () => {
     });
 }
 
+const jornadaFormulario = (idJornada = null, div = "#right-content-data") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    if (!$(div).length === 0) {
+        me.data('requestRunning', false);
+        return;
+    }
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/jornada.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idJornada: idJornada },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const cajaHistorial = (idCaja, div = "#container-caja-historial") => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1814,7 +1850,7 @@ const cajaHistorial = (idCaja, div = "#container-caja-historial") => {
         url: "./includes/caja/historial.php",
         timeout: 45000,
         beforeSend: function() {
-            //$(divProcess).html(loading());
+            $(divProcess).html(loading());
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },

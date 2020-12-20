@@ -413,6 +413,7 @@
                                                         <a href="#/" onclick="ventaRegistrarFormulario()" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Nueva Venta</a>
                                                         <a href="#/" onclick="cajaGestion()" class="nav-item nav-link"><i class="fa fa-money" aria-hidden="true"></i> Caja</a>
                                                         <a href="#/" onclick="ventaHistorial()" class="nav-item nav-link"><i class="fa fa-money" aria-hidden="true"></i> Ventas</a>
+                                                        <a href="#/" onclick="jornadaFormulario()" class="nav-item nav-link"><i class="fa fa-clock-o" aria-hidden="true"></i> Jornadas</a>
                                                     </div>
                                                 </div>
                                                 <?php

@@ -732,6 +732,98 @@
             return false;
         }
 
+        public static function jornadaListaData($idJornada = null, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $query = DataBase::select("compañia_sucursal_caja_jornada", "*", ((is_numeric($idJornada)) ? "id = '".$idJornada."' AND " : "")."sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY fechaInicio DESC LIMIT 200");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'caja.class.php - jornadaListaData - Error al consultar la información. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'caja.class.php - jornadaListaData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function jornadaFormulario($idJornada = null){
+            if(Sistema::usuarioLogueado()){
+                $data = Caja::jornadaListaData($idJornada);
+                if(is_array($data)){
+                    if(count($data) > 0){
+                        Session::iniciar();
+                        ?>
+                        <div id="container-caja-actividad-jornada-formulario" class="mine-container">
+                            <div class="d-flex justify-content-between"> 
+                                <div class="titulo">Lista de jornadas de trabajo</div>
+                                <button type="button" onclick="$('#container-caja-actividad-jornada-formulario').remove()" class="btn delete"><i class="fa fa-times"></i></button>
+                            </div>
+                            <div class="p-1">
+                                <table id="tabla-jornada-trabajo" class="table table-hover w-100">
+                                    <thead>
+                                        <tr>
+                                            <td>N°</td>
+                                            <td>Operador</td>
+                                            <td>Caja</td>
+                                            <td>Sucursal</td>
+                                            <td>Período</td>
+                                            <td>Acción</td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                            foreach($data AS $key => $value){
+                                                ?>
+                                                <tr>
+                                                    <td><?php echo $value["id"] ?></td>
+                                                    <td><?php echo $_SESSION["lista"]["operador"][$value["operador"]]["nombre"] ?></td>
+                                                    <td><?php echo $value["caja"] ?></td>
+                                                    <td><?php echo $value["sucursal"] ?></td>
+                                                    <td><?php echo date("d/m/Y, H:i:s A", strtotime($value["fechaInicio"]))." - ".date("d/m/Y, H:i:s A", strtotime($value["fechaFin"])) ?></td>
+                                                    <td>
+                                                        <button type="button" onclick="actividadJornadaVisualizar(<?php echo $value["id"] ?>)" class="btn btn-success"><i class="fa fa-list-alt"></i> Ver</button>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            }
+                                        ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div> 
+                        <script>
+                            dataTableSet("#tabla-jornada-trabajo", false, [[5, 10, 25, 50, 100, -1],[5, 10, 25, 50, 100, "Todos"]], 10, [ 1, "desc" ]);
+                        </script>
+                        <?php
+                    }else{
+                        $mensaje['tipo'] = 'info';
+                        $mensaje['cuerpo'] = 'No se encontraron jornadas registradas.';
+                        Alert::mensaje($mensaje);
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información de las jornadas. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'caja.class.php - jornadaFormulario - Usuario no logueado.');
+            }
+        }
+
         public static function actividadJornadaVisualizar($idJornada, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idJornada) && is_numeric($idJornada) && $idJornada > 0){
