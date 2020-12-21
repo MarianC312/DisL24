@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.28.44t";
+        public static $version = "alpha-1.28.45a";
 
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );
@@ -199,7 +199,7 @@
         public static function compañiaSucursalCajaUpdate($data, $try = 0){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
-                    $update = Caja::update($data["monto"], $data["identificador"], $data["operador"], $data["sucursal"], $data["compañia"]);
+                    $update = Caja::update($data["idCaja"], $data["monto"], $data["identificador"], $data["operador"], $data["sucursal"], $data["compañia"]);
                     if($update){
                         if(!Sistema::compañiaSucursalCajaHistorialUpdate($data["identificador"])){
                             $mensaje['tipo'] = 'info';
@@ -211,7 +211,7 @@
                         $mensaje['tipo'] = 'danger';
                         $mensaje['cuerpo'] = 'Hubo un error al actualizar el monto de la caja. <b>Intente nuevamente o contacte al administrador.</b>';
                         Alert::mensaje($mensaje);
-                        Sistema::debug('error', 'sistema.class.php - compañiaSucursalCajaUpdate - Hubo un error al actualizar la caja. Ref.: false');
+                        Sistema::debug('error', 'sistema.class.php - compañiaSucursalCajaUpdate - Hubo un error al actualizar la caja. Ref.: '.DataBase::getError());
                     }
                 }else{
                     $mensaje['tipo'] = 'alert';

@@ -47,9 +47,9 @@
             return false;
         }
 
-        public static function update($monto, $accionId, $operador = null, $sucursal = null, $compañia = null){
+        public static function update($idCaja, $monto, $accionId, $operador = null, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
-                if(isset($monto) && is_numeric($monto) && $monto > 0 && isset($accionId) && is_numeric($accionId) && $accionId > 0){
+                if(isset($monto) && is_numeric($monto) && $monto >= 0 && isset($accionId) && is_numeric($accionId) && $accionId > 0){
                     Session::iniciar();
                     $getCajaAccionTipo = Caja::historialGetAccionTipo($accionId);
                     $cajaAccionTipo = Lista::cajaAccionTipo();
@@ -58,12 +58,12 @@
                             if($getCajaAccionTipo == $value["id"]){
                                 switch($value["actividad"]){
                                     case 1:
-                                        $query = DataBase::update("compañia_sucursal_caja", "monto = (monto + '".$monto."'), accion = '".$accionId."', operador = '".((is_numeric($operador)) ? $operador : $_SESSION["usuario"]->getId())."'", "sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
+                                        $query = DataBase::update("compañia_sucursal_caja", "monto = (monto + '".$monto."'), accion = '".$accionId."', operador = '".((is_numeric($operador)) ? $operador : $_SESSION["usuario"]->getId())."'", "id = '".$idCaja."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
                                     break 1;
                                     case 2:
                                         $cajaMonto = Caja::dataGetMonto($sucursal, $compañia);
                                         if($cajaMonto >= $monto){
-                                            $query = DataBase::update("compañia_sucursal_caja", "monto = (monto - '".$monto."'), accion = '".$accionId."', operador = '".((is_numeric($operador)) ? $operador : $_SESSION["usuario"]->getId())."'", "sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
+                                            $query = DataBase::update("compañia_sucursal_caja", "monto = (monto - '".$monto."'), accion = '".$accionId."', operador = '".((is_numeric($operador)) ? $operador : $_SESSION["usuario"]->getId())."'", "id = '".$idCaja."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
                                         }else{
                                             Sistema::debug('error', 'caja.class.php - update - No tiene fondos suficientes. Ref.: $'.$cajaMonto);
                                             return false;
@@ -109,7 +109,7 @@
                         foreach($cajaAccionTipo AS $key => $value){
                             if($data["tipo"] == $value["id"]){
                                 if($value["actividad"] == 2){ 
-                                    $cajaMonto = Caja::dataGetMonto($_SESSION["usuario"]->getSucursal(), $_SESSION["usuario"]->getCompañia());
+                                    $cajaMonto = Caja::dataGetMonto($data["idCaja"], $_SESSION["usuario"]->getSucursal(), $_SESSION["usuario"]->getCompañia());
                                     if($cajaMonto < $data["monto"]){
                                         $mensaje['tipo'] = 'info';
                                         $mensaje['cuerpo'] = 'No tiene fondos suficientes para realizar el movimiento.';
@@ -217,10 +217,10 @@
                             Session::iniciar();
                             if(Compania::cajaCorroboraExistencia($data["caja"])){
                                 if(Caja::corroboraLibre($data["caja"])){
-                                    if($_SESSION["usuario"]->actividadCajaInicio(["actividadCaja" => $data["caja"]])){
-                                        $bloqueaCaja = Caja::bloquear($data["caja"]);
-                                        $registraInicio = Caja::accionRegistrar(["idCaja" => $data["caja"], "tipo" => 6, "observacion" => "Apertura de caja.", "monto" => Caja::dataGetMonto($data["caja"]) ], false, false);
-                                        $registraJornada = Caja::jornadaRegistrar($data["caja"], $_SESSION["usuario"]->getActividadFechaInicio());
+                                    if($_SESSION["usuario"]->actividadCajaInicio(["actividadCaja" => $data["caja"]])){ //caja y finicio pero sin jornada
+                                        $bloqueaCaja = (Caja::bloquear($data["caja"])) ? true : false;
+                                        $registraInicio = (Caja::accionRegistrar(["idCaja" => $data["caja"], "tipo" => 6, "observacion" => "Apertura de caja.", "monto" => Caja::dataGetMonto($data["caja"]) ], false, false)) ? true : false;
+                                        $registraJornada = (Caja::jornadaRegistrar($data["caja"], $_SESSION["usuario"]->getActividadFechaInicio())) ? true : false;
                                         if($bloqueaCaja && $registraInicio && $registraJornada){ 
                                             echo '<script>setTimeout(() => { cajaGestion('.$data["caja"].','.$data["actividad"].') }, 350)</script>';
                                         }else{
@@ -450,6 +450,7 @@
                                     <tr>
                                         <td scope="col">N°</td>
                                         <td>Fecha</td>
+                                        <td>Operador</td>
                                         <td>Tipo</td>
                                         <td class="w-100">Descripción</td>
                                         <td>Monto $</td>
@@ -461,24 +462,47 @@
                                     <?php
                                         if(is_array($data)){
                                             if(count($data) > 0){
-                                                foreach($data AS $key => $value){ 
+                                                foreach($data AS $key => $value){
+                                                    switch($_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["actividad"]){
+                                                        case 1:
+                                                            $icon = "plus";
+                                                            $operador = "+";
+                                                            $color = "success";
+                                                            break;
+                                                        case 2:
+                                                            $icon = "minus";
+                                                            $operador = "-";
+                                                            $color = "danger";
+                                                            break;
+                                                        case 3:
+                                                            $icon = "exchange";
+                                                            $operador = "-";
+                                                            $color = "warning";
+                                                            break;
+                                                        case 4:
+                                                            $icon = "check-square";
+                                                            $operador = "";
+                                                            $color = "info";
+                                                            break;
+                                                    }
                                                     ?>
                                                     <tr>
                                                         <td><?php echo "#".$key ?></td>
-                                                        <td><?php echo date("d/m/Y", strtotime($value["fechaCarga"]))." ".date("H:i A", strtotime($value["fechaCarga"])) ?></td>
-                                                        <td><?php echo ($_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["actividad"] == 1) ? '<i class="fa fa-plus text-success"></i>' : '<i class="fa fa-minus text-danger"></i>' ?></td>
+                                                        <td><?php echo date("d/m/Y", strtotime($value["fechaCarga"]))." ".date("H:i A", strtotime($value["fechaCarga"])) ?></td> 
+                                                        <td><?php echo $_SESSION["lista"]["operador"][$value["operador"]]["nombre"] ?></td>
+                                                        <td><?php echo '<i class="fa fa-'.$icon.' text-'.$color.'"></i> '.$_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["accion"]; ?></td>
                                                         <td><?php echo nl2br($value["observacion"]) ?></td>
-                                                        <td><?php echo (($_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["actividad"] == 1) ? '<span class="text-success">+$'.round($value["monto"], 2).'</span>' : '<span class="text-danger">-$'.round($value["monto"], 2).'</span>') ?></td>
+                                                        <td><?php echo '<span class="text-'.$color.'">'.$operador.'$'.round($value["monto"], 2).'</span>' ?></td>
                                                         <td class="text-center"><?php echo ($value["procesado"] == 1 && !is_null($value["fechaModificacion"])) ? '<i class="fa fa-check-square-o text-success"></i>' : '<i class="fa fa-square-o text-info"></i>' ?></td>
                                                         <td>
-                                                            <div class="btn-group">
-                                                                <button type="button" id="detalle" class="btn btn-sm btn-outline-info"><i class="fa fa-expand"></i></button>
+                                                            <div class="btn-group"> 
                                                                 <?php
                                                                     if(is_numeric($value["venta"]) && $value["venta"] > 0){
+                                                                        echo '<button type="button" id="detalle" class="btn btn-sm btn-outline-info"><i class="fa fa-expand"></i></button>';
                                                                         echo '<button type="button" id="comprobante" onclick="facturaVisualizar('.$value["venta"].')" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>';
                                                                     }
-                                                                    if($actividad == 1){
-                                                                        echo '<button type="button" onclick="" id="anular" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i></button>';
+                                                                    if($actividad == 1 && ($value["tipo"] != 6 && $value["tipo"] != 7)){
+                                                                        echo '<button type="button" onclick="alert(\'Esta actividad se habilitará a la brevedad.\')" id="anular" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i></button>';
                                                                     }
                                                                 ?>
                                                             </div>
@@ -557,7 +581,7 @@
                             $dataQuery = DataBase::getArray($query);
                             return $dataQuery["operador"];
                         }else{
-                            Sistema::debug('error', 'caja.class.php - getOperador - No se encontró información de la caja. Ref.: '.DataBase::getNumRows($query));
+                            Sistema::debug('error', 'caja.class.php - getOperador - No se encontró información de la caja. Ref.: Caja: '.$idCaja.' - Error: '.DataBase::getNumRows($query));
                         }
                     }else{
                         Sistema::debug('error', 'caja.class.php - getOperador - Error al consultar la información de la caja. Ref.: '.DataBase::getError());
@@ -575,7 +599,7 @@
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
                 $data = $_SESSION["usuario"]->getCajaData();
-                $cajaOperador = Caja::getOperador((is_numeric($idCaja)) ? $idCaja : $data["actividadCaja"]);
+                $cajaOperador = Caja::getOperador((is_numeric($idCaja) && $idCaja > 0) ? $idCaja : $data["actividadCaja"]);
                 if(is_numeric($cajaOperador) && $cajaOperador > 0){
                     if(is_array($data) && count($data) == 4){
                         if(is_numeric($data["actividadCaja"]) 
@@ -616,8 +640,9 @@
                                         unset($data[$key][$iKey]);
                                     }
                                 }
-                                $data[$value["id"]]["movimientos"] = Caja::historialData($data[$idJornada]["caja"], $data[$idJornada]["fechaInicio"], $data[$idJornada]["fechaFin"], $data[$idJornada]["operador"], $data[$idJornada]["sucursal"], $data[$idJornada]["compañia"]);
-                                $data[$value["id"]]["ventas"] = Venta::historialData($data[$idJornada]["caja"], $data[$idJornada]["fechaInicio"], $data[$idJornada]["fechaFin"], $data[$idJornada]["operador"], $data[$idJornada]["sucursal"], $data[$idJornada]["compañia"]);
+                                $fechaFin = (strlen($data[$idJornada]["fechaFin"]) > 0) ? $data[$idJornada]["fechaFin"] : date("Y-m-d H:i:s", strtotime("-3 hour"));
+                                $data[$value["id"]]["movimientos"] = Caja::historialData($data[$idJornada]["caja"], $data[$idJornada]["fechaInicio"], $fechaFin, $data[$idJornada]["operador"], $data[$idJornada]["sucursal"], $data[$idJornada]["compañia"]);
+                                $data[$value["id"]]["ventas"] = Venta::historialData($data[$idJornada]["caja"], $data[$idJornada]["fechaInicio"], $fechaFin, $data[$idJornada]["operador"], $data[$idJornada]["sucursal"], $data[$idJornada]["compañia"]);
                                 $data[$value["id"]]["stats"] = [
                                     "caja" => [
                                         "efectivo" => [
@@ -793,7 +818,7 @@
                                                     <td><?php echo $_SESSION["lista"]["operador"][$value["operador"]]["nombre"] ?></td>
                                                     <td><?php echo $value["caja"] ?></td>
                                                     <td><?php echo $value["sucursal"] ?></td>
-                                                    <td><?php echo date("d/m/Y, H:i:s A", strtotime($value["fechaInicio"]))." - ".date("d/m/Y, H:i:s A", strtotime($value["fechaFin"])) ?></td>
+                                                    <td><?php echo date("d/m/Y, H:i:s A", strtotime($value["fechaInicio"]))." - ".((strlen($value["fechaFin"]) > 0 && $value["estado"] == 2) ? date("d/m/Y, H:i:s A", strtotime($value["fechaFin"])) : "EN CURSO") ?></td>
                                                     <td>
                                                         <button type="button" onclick="actividadJornadaVisualizar(<?php echo $value["id"] ?>)" class="btn btn-success"><i class="fa fa-list-alt"></i> Ver</button>
                                                     </td>
@@ -897,29 +922,29 @@
                                         if(str_replace("*", "", $jValue) == 0){
                                             $productoNombre = "varios";
                                             $productoCodigo = "Sin código";
-                                            $data[$idJornada]["stats"]["venta"]["tipo"]["varios"]["cantidad"] += $productoCantidad[$jKey];
-                                            $data[$idJornada]["stats"]["venta"]["tipo"]["varios"]["volumen"] += $productoPrecio[$jKey];
+                                            $tipo = "varios";
                                         }else{
                                             $productoNombre = $_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["nombre"];
-                                            $productoCodigo = ((strlen($_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"]) > 0) ? "PFC-".$dataCompañia["id"]."-".$_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"] : "Sin código");
-                                            $data[$idJornada]["stats"]["venta"]["tipo"]["compañia"]["cantidad"] += $productoCantidad[$jKey];
-                                            $data[$idJornada]["stats"]["venta"]["tipo"]["compañia"]["volumen"] += $productoPrecio[$jKey]; 
+                                            $productoCodigo = ((strlen($_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"]) > 0) ? "PFC-".$dataCompañia["id"]."-".$_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"] : "Sin código"); 
+                                            $tipo = "compañia";
                                         }
                                     }elseif($jValue > 0){
                                         $productoNombre = $_SESSION["lista"]["producto"]["codificado"][$jValue]["nombre"];
                                         $productoCodigo = $_SESSION["lista"]["producto"]["codificado"][$jValue]["codigoBarra"];
-                                        $data[$idJornada]["stats"]["venta"]["tipo"]["mine"]["cantidad"] += $productoCantidad[$jKey];
-                                        $data[$idJornada]["stats"]["venta"]["tipo"]["mine"]["volumen"] += $productoPrecio[$jKey];
+                                        $tipo = "mine";
                                     }
-                                    if(array_key_exists($jValue, $data[$idJornada]["stats"]["venta"]["producto"]["lista"])){
+                                    $data[$idJornada]["stats"]["venta"]["tipo"][$tipo]["cantidad"] += $productoCantidad[$jKey];
+                                    $data[$idJornada]["stats"]["venta"]["tipo"][$tipo]["volumen"] += $productoPrecio[$jKey] * $productoCantidad[$jKey];
+                                    if(array_key_exists($jValue, $data[$idJornada]["stats"]["venta"]["producto"]["lista"]) && $data[$idJornada]["stats"]["venta"]["producto"]["lista"][$jValue]["precio"] == $productoPrecio[$jKey]){
                                         $data[$idJornada]["stats"]["venta"]["producto"]["lista"][$jValue]["cantidad"] += $productoCantidad[$jKey]; 
                                     }else{
-                                        $data[$idJornada]["stats"]["venta"]["producto"]["lista"][$jValue] = [ 
+                                        array_push($data[$idJornada]["stats"]["venta"]["producto"]["lista"], [
+                                            "idProducto" => $jValue,
                                             "nombre" => $productoNombre,
                                             "codigo" => $productoCodigo,
                                             "cantidad" => $productoCantidad[$jKey],
                                             "precio" => $productoPrecio[$jKey]
-                                        ];
+                                        ]);
                                     }
                                     $data[$idJornada]["stats"]["venta"]["producto"]["volumen"] += $productoCantidad[$jKey];
                                 }
@@ -969,7 +994,7 @@
                                     <div style="display: flex; flex-direction: column; align-items: flex-end">
                                         <span><b>Actividad N°: </b><?php echo $idJornada ?></span>
                                         <span><b>Inicio: </b><?php echo date("d/m/Y, H:i:s A", strtotime($data[$idJornada]["fechaInicio"])) ?></span>
-                                        <span><b>Fin: </b><?php echo date("d/m/Y, H:i:s A", strtotime($data[$idJornada]["fechaFin"])) ?></span>
+                                        <span><b>Fin: </b><?php echo (strlen($data[$idJornada]["fechaFin"]) > 0) ? date("d/m/Y, H:i:s A", strtotime($data[$idJornada]["fechaFin"])) : date("d/m/Y, H:i:s A", strtotime("-3 hour")) ?></span>
                                     </div>
                                 </div>
                                 <div style="display: flex; justify-content: center; align-items: center; padding: 0.375em">
@@ -1062,23 +1087,24 @@
                                                     <br><br>
                                                     <u>Total vendidos:</u> <?php echo $data[$idJornada]["stats"]["venta"]["producto"]["volumen"] ?><br>
                                                     <br><br>
-                                                    <div style="margin-left: 0.5em;">
+                                                    <div style="margin-left: 0.5em; margin-bottom: 0em;">
                                                         <?php
-                                                            foreach($data[$idJornada]["stats"]["venta"]["producto"]["lista"] AS $key => $value){
-                                                                echo '<div style="margin-bottom: 0.5em; border-bottom: 1px dashed black; display: flex; flex-direction: column;">
-                                                                    <div style="display: flex; justify-content: space-between">
-                                                                        <span>'.mb_strtoupper($value["nombre"]).'</span>
-                                                                        <span></span>
-                                                                    </div>
-                                                                    <div style="display: flex; justify-content: space-between">
-                                                                        <span>['.$value["codigo"].'] '.$value["cantidad"].' X $ '.$value["precio"].'</span>
-                                                                        <span>$ '.round(($value["precio"] * $value["cantidad"]), 2).'</span>
-                                                                    </div>
-                                                                </div>';
+                                                            if(false){
+                                                                foreach($data[$idJornada]["stats"]["venta"]["producto"]["lista"] AS $key => $value){
+                                                                    echo '<div style="margin-bottom: 0.5em; border-bottom: 1px dashed black; display: flex; flex-direction: column;">
+                                                                        <div style="display: flex; justify-content: space-between">
+                                                                            <span>'.mb_strtoupper($value["nombre"]).'</span>
+                                                                            <span></span>
+                                                                        </div>
+                                                                        <div style="display: flex; justify-content: space-between">
+                                                                            <span>['.$value["codigo"].'] '.$value["cantidad"].' X $ '.$value["precio"].'</span>
+                                                                            <span>$ '.round(($value["precio"] * $value["cantidad"]), 2).'</span>
+                                                                        </div>
+                                                                    </div>';
+                                                                }
                                                             }
                                                         ?>
                                                     </div>
-                                                    <br><br>
                                                     <b>Detalle:</b><br>
                                                     <div style="margin-left: 0.5em; display: flex; flex-direction: column"> 
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">

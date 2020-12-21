@@ -42,6 +42,7 @@
                             <thead>
                                 <tr>
                                     <td scope="col">N°</td>
+                                    <td class="text-center">Caja</td>
                                     <td>Fecha</td>
                                     <td>Tipo</td>
                                     <td>Monto $</td>
@@ -55,7 +56,8 @@
                                             foreach($data AS $key => $value){ 
                                                 ?>
                                                 <tr id="venta-<?php echo $key ?>">
-                                                    <td><?php echo "#".$value["nComprobante"] ?></td>
+                                                    <td><?php echo "N° ".$value["nComprobante"] ?></td>
+                                                    <td class="text-center"><?php echo "#".$value["caja"] ?></td>
                                                     <td><?php echo date("d/m/Y", strtotime($value["fechaCarga"]))." ".date("H:i A", strtotime($value["fechaCarga"])) ?></td>
                                                     <td class="w-100"><?php echo $pago[$value["pago"]]["pago"] ?></td>
                                                     <td><?php echo "$".round($value["total"], 2); ?></td>
@@ -83,7 +85,7 @@
                                                                 }
                                                                 ?>
                                                                 <div class="row">
-                                                                    <div class="col-md-9 text-right"><?php echo $productoBase[$tipo][$iValue]["nombre"] ?></div>
+                                                                    <div class="col-md-9 text-right"><?php echo ($iValue == 0) ? "VARIOS" : $productoBase[$tipo][$iValue]["nombre"] ?></div>
                                                                     <div class="col-md-1 text-right"><?php echo $productoCantidad[$iKey]." X "?></div>
                                                                     <div class="col-md-1 text-left"><?php echo " $".$productoPrecio[$iKey] ?></div>
                                                                     <div class="col-md-1"><?php echo "$".round(($productoPrecio[$iKey] * $productoCantidad[$iKey]), 2); ?></div>
@@ -306,30 +308,30 @@
                             <button type="button" onclick="$('#container-venta-formulario').remove();" class="btn delete"><i class="fa fa-times"></i></button>
                         </div>
                         <script> 
-                            $(document).ready(function()
-                                {
-                                    $("#producto").on("keyup", 
-                                        function(){
-                                            $("#container-producto-lista").find("li").css({display: "none"});
-                                            $("#buscador-vacio").addClass("d-none");
-                                            var value = $(this).val().toLowerCase();
-                                            if(value.length > 0){ 
-                                                $("#container-producto-lista li").filter(function ()
-                                                {
-                                                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
-                                                });
-                                                let resultados = $('#container-producto-lista').find('li:visible');
-                                                if(resultados.length > 0){
-                                                    $("#buscador-vacio").addClass("d-none");
-                                                }else{
-                                                    $("#buscador-vacio").removeClass("d-none");
-                                                }
+                            $(document).ready(function(){
+                                $("#producto").on("keyup", 
+                                    function(){
+                                        return;
+                                        $("#container-producto-lista").find("li").css({display: "none"});
+                                        $("#buscador-vacio").addClass("d-none");
+                                        var value = $(this).val().toLowerCase();
+                                        if(value.length > 0){ 
+                                            $("#container-producto-lista li").filter(function ()
+                                            {
+                                                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                                            });
+                                            let resultados = $('#container-producto-lista').find('li:visible');
+                                            if(resultados.length > 0){
+                                                $("#buscador-vacio").addClass("d-none");
                                             }else{
-                                                $("#container-producto-lista").find("li").css({display: "none"});
+                                                $("#buscador-vacio").removeClass("d-none");
                                             }
+                                        }else{
+                                            $("#container-producto-lista").find("li").css({display: "none"});
                                         }
-                                    );
-                                }); 
+                                    }
+                                );
+                            }); 
                         </script>
                         <div id="venta-registro-process" style="display: none;"></div>
                         <form id="venta-registro-form" action="./engine/venta/registrar.php" form="#venta-registro-form" process="#venta-registro-process">
@@ -507,8 +509,7 @@
                         $("#producto").on("keydown", (e) => {
                             let keycode = (e.keyCode ? e.keyCode : e.which);
                             let barcode = $("#producto").val();
-                            let strokes = [96,97,98,99,100,101,102,103,104,105]
-                            console.log(keycode);
+                            let strokes = [96,97,98,99,100,101,102,103,104,105];
                             switch(keycode){
                                 case 45:
                                     $("#producto").val("PFC-<?php echo $_SESSION["usuario"]->getCompañia() ?>-").focus();    
@@ -516,15 +517,18 @@
                                 case 13:
                                     if(barcode.length > 0){
                                         let lista = [...document.getElementById("container-producto-lista").childNodes];
+                                        let search = false;
                                         lista.map((data, i) => {
                                             if(typeof data === 'object' && data.length > 0){
                                                 //console.log(i + " " + data.dataset);
                                             }else{
-                                                if(data.dataset.barCode === barcode){
+                                                if(data.dataset.barCode === barcode || 'PFC-<?php echo $_SESSION["usuario"]->getCompañia() ?>-' + data.dataset.barCode === barcode){
                                                     $("#" + data.id + " button").click();
+                                                    search = true;
                                                 }
                                             }
                                         });
+                                        if(!search) alert("Producto no encontrado.");
                                     }else{
                                         ventaRegistrar(<?php echo $idCaja ?>);
                                     }
