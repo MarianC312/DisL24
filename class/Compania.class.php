@@ -288,6 +288,7 @@
                         Session::iniciar();
                         $dataCompañia = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"][$_SESSION["usuario"]->getCompañia()];
                         $dataCompañiaStock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"];
+                        $credito = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"];
                         $prenComprobante = "";
                         for($i = 12; $i >= strlen($data[$idVenta]["nComprobante"]); $i--){
                             $prenComprobante .= "0";
@@ -334,6 +335,7 @@
                                     <div style="display: flex; flex-direction: column; align-items: flex-end">
                                         <span><b>Fecha: </b><?php echo date("d/m/Y", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
                                         <span><b>Hora: </b><?php echo date("H:i A", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
+                                        <span><b>Forma de Pago: </b><?php echo $_SESSION["lista"]["pago"][$data[$idVenta]["pago"]]["pago"] ?></span>
                                         <span><b>Comprobante N°:</b> #<?php echo $prenComprobante.$data[$idVenta]["nComprobante"] ?></span>
                                     </div>
                                 </div>
@@ -358,10 +360,10 @@
                                                     $value = str_replace("*", "", $value);
                                                     ?>
                                                     <tr style="border-bottom: 1px solid lightgray;">
-                                                        <td style="padding: 1.015em 0; "><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
-                                                        <td style="padding: 1.015em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
-                                                        <td style="padding: 1.015em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
-                                                        <td style="padding: 1.015em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
+                                                        <td style="padding: 0.215em 0; "><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
+                                                        <td style="padding: 0.215em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
+                                                        <td style="padding: 0.215em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
+                                                        <td style="padding: 0.215em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
                                                     </tr>
                                                     <?php
                                                     $total += $productoCantidad[$key] * $productoPrecio[$key];
@@ -369,27 +371,39 @@
                                             ?>
                                         </tbody>
                                         <tfoot style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; ">
-                                            <tr>
-                                                <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
-                                                <td style="padding: 1.015em 0; text-align: right">$ <?php echo round($total - ($total / 100 * 21), 2); ?></td>
+                                            <tr style="<?php echo ($data[$idVenta]["pago"] != 3) ? "display: none" : "" ?>">
+                                                <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
+                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($total, 2); ?></td>
                                             </tr>
                                             <tr>
-                                                <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
-                                                <td style="padding: 1.015em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
+                                                <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
+                                                <td style="padding: 0.215em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
                                             </tr>
                                             <?php
-                                                if($data[$idVenta]["iva"] == 1){
+                                                if($data[$idVenta]["pago"] == 3){
                                                     ?> 
                                                     <tr>
-                                                        <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Iva :</td>
-                                                        <td style="padding: 1.015em 0; text-align: right">% 21</td>
+                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Crédito:</td>
+                                                        <td style="padding: 0.215em 0; text-align: right"><?php echo $credito[$data[$idVenta]["credito"]]["cuotas"]." cuotas" ?></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Valor cuota:</td>
+                                                        <td style="padding: 0.215em 0; text-align: right"><?php echo round((($total * $credito[$data[$idVenta]["credito"]]["interes"]) / $credito[$data[$idVenta]["credito"]]["cuotas"]), 2); ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if($data[$idVenta]["iva"] == 1){
+                                                    ?> 
+                                                    <tr style="display: none">
+                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Iva :</td>
+                                                        <td style="padding: 0.215em 0; text-align: right">% 21</td>
                                                     </tr>
                                                     <?php
                                                 }
                                             ?>
                                             <tr>
-                                                <td style="padding: 1.015em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
-                                                <td style="padding: 1.015em 0; text-align: right">$ <?php echo round($total - ($total / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["descuento"] / 100 * (($data[$idVenta]["iva"] == 1) ? 21 : 0)), 2) ?></td>
+                                                <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
+                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round((($data[$idVenta]["pago"] == 3) ? round(($total * $credito[$data[$idVenta]["credito"]]["interes"]), 2) : $total) - ($total / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["descuento"] / 100 * (($data[$idVenta]["iva"] == 1) ? 21 : 0)), 2) ?></td>
                                             </tr>
                                         </tfoot>
                                     </table>

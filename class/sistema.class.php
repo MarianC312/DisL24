@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.28.45a";
+        public static $version = "alpha-1.33.48a";
 
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );
@@ -251,6 +251,7 @@
             $_SESSION["lista"]["operador"] = Lista::operador();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"] = Compania::data();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
+            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"] = Lista::compañiaCredito();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["caja"] = Compania::sucursalCajaData();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
             $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia());

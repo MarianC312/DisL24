@@ -61,7 +61,7 @@
                                         $query = DataBase::update("compañia_sucursal_caja", "monto = (monto + '".$monto."'), accion = '".$accionId."', operador = '".((is_numeric($operador)) ? $operador : $_SESSION["usuario"]->getId())."'", "id = '".$idCaja."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
                                     break 1;
                                     case 2:
-                                        $cajaMonto = Caja::dataGetMonto($sucursal, $compañia);
+                                        $cajaMonto = Caja::dataGetMonto($idCaja, $sucursal, $compañia);
                                         if($cajaMonto >= $monto){
                                             $query = DataBase::update("compañia_sucursal_caja", "monto = (monto - '".$monto."'), accion = '".$accionId."', operador = '".((is_numeric($operador)) ? $operador : $_SESSION["usuario"]->getId())."'", "id = '".$idCaja."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'"); 
                                         }else{
@@ -443,7 +443,7 @@
                     $data = Caja::historialData($idCaja);
                     ?>
                     <div class="mine-container">
-                        <div class="titulo">Historial de caja</div>
+                        <div class="titulo">Historial de caja Cod.: <?php echo $idCaja ?></div>
                         <div class="p-1">
                             <table id="tabla-caja-historial" class="table table-hover table-responsive w-100">
                                 <thead>
@@ -1012,8 +1012,7 @@
                                                 <td style="width: 100%; border-bottom: 1px solid black; padding: 2em 0.5em;">
                                                     <b>CAJA:</b>
                                                     <br><br>
-                                                    <u>Inicio Caja:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["efectivo"]["apertura"] ?><br>
-                                                    <u>Cierre Caja:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["efectivo"]["apertura"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["ingreso"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["egreso"] ?>
+                                                    <u>Inicio Caja:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["efectivo"]["apertura"] ?><br> 
                                                     <br><br>
                                                     <u>Ingresos:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["ingreso"] ?><br>
                                                     <u>Egresos:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["egreso"] ?>
@@ -1029,18 +1028,48 @@
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Pago:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"] ?></span>
                                                         </div>
+                                                        <div style="display: flex; flex-direction: column;">
+                                                            <?php
+                                                                foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                    if($value["tipo"] == 3){
+                                                                        echo '<div style="display: flex; flex-direction: column; padding: .25em 1.5em; border-bottom: 1px dashed black">
+                                                                            <div style="display: flex; justify-content: space-between">
+                                                                                <span style="">'.$value["observacion"].'</span>
+                                                                                <span>$ -'.$value["monto"].'</span>
+                                                                            </div>
+                                                                            <div style="display: flex; justify-content: space-between">
+                                                                                <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                            </div> 
+                                                                        </div>';
+                                                                    }
+                                                                }
+                                                            ?>
+                                                        </div>
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Retiro:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"] ?></span>
+                                                        </div>
+                                                        <div style="display: flex; flex-direction: column;">
+                                                            <?php
+                                                                foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                    if($value["tipo"] == 4){
+                                                                        echo '<div style="display: flex; flex-direction: column; padding: .25em 1.5em; border-bottom: 1px dashed black">
+                                                                            <div style="display: flex; justify-content: space-between">
+                                                                                <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
+                                                                                <span>$ -'.$value["monto"].'</span>
+                                                                            </div>
+                                                                            <div style="display: flex; justify-content: space-between">
+                                                                                <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                            </div> 
+                                                                        </div>';
+                                                                    }
+                                                                }
+                                                            ?>
                                                         </div>
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Venta:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["venta"]["volumen"] ?></span>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; margin-top: 2em; border-bottom: 1px dashed black">
-                                                            <u>Mov. Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["procesada"] ?><br>
-                                                        </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <u>Mov. No Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["no procesada"] ?><br>
-                                                        </div> 
                                                     </div>
                                                     <br><br>
                                                     <b>Recaudación:</b><br> 
@@ -1051,13 +1080,23 @@
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Débito:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["debito"] ?></span>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid black">
                                                             <u>Crédito:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["credito"] ?></span>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                        <div style="display: none; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Otro:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["otro"] ?></span>
                                                         </div>
+                                                        <div style="display: flex; justify-content: space-between;">
+                                                            <u>Total:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["efectivo"]["apertura"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["ingreso"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["egreso"] + $data[$idJornada]["stats"]["recaudacion"]["debito"] + $data[$idJornada]["stats"]["recaudacion"]["credito"] ?>
+                                                        </div>
                                                     </div>
+                                                    
+                                                    <div style="display: flex; justify-content: space-between; margin-top: 2em; border-bottom: 1px dashed black">
+                                                        <u>Mov. Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["procesada"] ?><br>
+                                                    </div>
+                                                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                        <u>Mov. No Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["no procesada"] ?><br>
+                                                    </div> 
                                                 </td>
                                             </tr>
                                             <tr>
@@ -1075,7 +1114,7 @@
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Crédito:</u> <span>Cant. <?php echo $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["cantidad"].": $ ".$data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] ?></span>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                        <div style="display: none; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Otro:</u> <span>Cant. <?php echo $data[$idJornada]["stats"]["venta"]["pago"]["otro"]["cantidad"].": $ ".$data[$idJornada]["stats"]["venta"]["pago"]["otro"]["volumen"] ?></span>
                                                         </div> 
                                                     </div>

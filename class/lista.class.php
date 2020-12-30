@@ -24,6 +24,29 @@
             }
         }
         
+        public static function compañiaCredito($row = "*", $compañia = null){
+            Session::iniciar();
+            $query = DataBase::select("sistema_compañia_credito", $row, "compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+            if($query){
+                $data = [];
+                if(DataBase::getNumRows($query) > 0){
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    }
+                }
+                return $data;
+            }else{
+                return false;
+            }
+        }
+        
         public static function compañiaCliente($row = "*", $compañia = null){
             Session::iniciar();
             $query = DataBase::select("cliente", $row, "compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");

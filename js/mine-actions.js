@@ -8,6 +8,15 @@ const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock
     })
 }
 
+const calculaPreTotal = () => {
+    let selector = document.getElementById("cuota");
+    let data = selector.options[selector.selectedIndex].dataset;
+    let preTotal = parseFloat($("#tabla-venta-productos #total").html()).toFixed(2);
+    let interes = parseFloat(data.interes).toFixed(4);
+    let nuevoValor = (preTotal * interes).toFixed(2);
+    $("#pre-total").html(nuevoValor + ' (' + data.cuotas + ' cuotas de $' + ((nuevoValor / data.cuotas).toFixed(2)) + ')');
+}
+
 const cajaCalculaTotal = () => {
     let data = document.getElementById("lista-productos-agregados").childNodes;
     let subtotal = 0.00;

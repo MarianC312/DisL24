@@ -72,6 +72,10 @@
     <!-- BarcodeJS -->
     <script src="./js/JsBarcode.all.min.js"></script>
 
+    <!-- Stepper -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/bs-stepper/dist/js/bs-stepper.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bs-stepper/dist/css/bs-stepper.min.css">
+
     <!-- MiNe -->
     <link rel="stylesheet" href="./css/style.css?v=<?php echo Sistema::$version ?>" />
     <script src="./js/mine-actions.js?v=<?php echo Sistema::$version ?>"></script>
