@@ -1,4 +1,9 @@
 :root {
+    --sec-main: #FFAA2B;
+    --sec-sec: #F7F0E6;
+    --sec-acc: #FF2B2B;
+    --sec-blue: #2b80ff;
+    --sec-pink: #ff2b80;
     --gray: #f9fbfd;
     --green: #28a745;
     --green-2: #43F900;
@@ -181,6 +186,27 @@
     }
 }
 
+.page-item.active .page-link {
+    color: #FFF !important;
+    background-color: var(--sec-blue) !important;
+    border-color: var(--sec-blue) !important;
+}
+
+.page-link {
+    color: var(--sec-blue) !important;
+}
+
+.btn-outline-info {
+    color: var(--sec-blue) !important;
+    border-color: var(--sec-blue) !important;
+}
+
+.btn-outline-info:hover {
+    color: #FFF !important;
+    background-color: var(--sec-blue) !important;
+    border-color: var(--sec-blue) !important;
+}
+
 .opacity-0 {
     opacity: 0;
 }
@@ -291,6 +317,18 @@ body {
     background-image: url("../image/bg-general.png");
 }
 
+.bg-main {
+    background-color: var(--sec-main) !important;
+}
+
+.bg-sec {
+    background-color: var(--sec-sec) !important;
+}
+
+.bg-acc {
+    background-color: var(--sec-acc) !important;
+}
+
 .bg-red-1 {
     background-color: var(--mono-red-1) !important;
 }
@@ -321,6 +359,18 @@ body {
 
 .bg-orange-7 {
     background-color: var(--mono-orange-7) !important;
+}
+
+.text-main {
+    color: var(--sec-main) !important;
+}
+
+.text-sec {
+    color: var(--sec-sec) !important;
+}
+
+.text-acc {
+    color: var(--sec-acc) !important;
 }
 
 .text-red {
@@ -441,7 +491,7 @@ body {
 
 #main-body #left-content>div nav {
     min-height: 100%;
-    background-color: var(--mono-orange-7) !important;
+    background-color: var(--sec-sec) !important;
 }
 
 #main-body #left-content>div>div>div {
@@ -478,7 +528,7 @@ body {
 }
 
 .bg-orange .dropdown-menu {
-    background-color: var(--mono-orange-7);
+    background-color: var(--sec-main);
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;
 }
 
@@ -525,8 +575,17 @@ body {
     border-radius: 0.375em;
 }
 
+.mine-container.sm {
+    margin: 0.325em 0.155em;
+    background-color: var(--sec-sec)
+}
+
 .header .dropdown .dropdown-menu {
     min-width: 30vw;
+}
+
+.bg-orange .dropdown-menu .dropdown-item:hover {
+    color: var(--sec-acc);
 }
 
 .bg-orange .dropdown-menu .dropdown-item.active,
@@ -542,7 +601,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #FFF;
+    background-color: var(--sec-sec);
     color: var(--white);
     box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;
 }
@@ -599,6 +658,17 @@ body {
 }
 
 @media screen and (max-width: 599px) {
+    #main-body {
+        flex-direction: column;
+    }
+    #head-footer {
+        display: block;
+        position: fixed;
+        bottom: 0;
+        background-color: var(--sec-sec);
+        margin-bottom: 0 !important;
+        padding-bottom: 0.35em;
+    }
     .card .card-body .form-header {
         padding: 0.45rem;
     }

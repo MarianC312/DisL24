@@ -53,7 +53,7 @@
                     <i class="fa fa-caret-down"></i>
                 </button>
                 <div class="dropdown-menu" style="min-width: auto" aria-labelledby="dropdownMenuButton-<?php echo $data["id"] ?>">
-                    <a class="dropdown-item" onclick="alert('Contenido en desarrollo...')" href="#/"><i class="fa fa-cog"></i> Configurar cuenta</a>
+                    <a class="dropdown-item" onclick="compañiaAdministracion()" href="#/"><i class="fa fa-cog"></i> Configurar compañía</a>
                     <a class="dropdown-item" onclick="alert('Contenido en desarrollo...')" href="#/"><i class="fa fa-unlock-alt"></i> Cambiar contraseña</a>
                     <a class="dropdown-item" onclick="alert('Contenido en desarrollo...')" href="#/"><i class="fa fa-envelope"></i> Ver mensajes</a>
                     <div class="dropdown-divider"></div>
@@ -407,8 +407,8 @@
                                         <?php
                                             if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1 || $_SESSION["usuario"]->getRol() == 2){
                                                 ?>
-                                                <a href="#/" onclick="setCollapse('venta-collapse'); swapClass('#menu-venta','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#venta-collapse','bg-orange-6')" id="menu-venta" class="nav-item nav-link <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#venta-collapse" aria-controls="venta-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-shopping-basket" aria-hidden="true"></i> Ventas</a>
-                                                <div class="collapse w-100 <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="venta-collapse">
+                                                <a href="#/" onclick="setCollapse('venta-collapse'); swapClass('#menu-venta','bg-main text-acc font-weight-bold'); swapClass('#venta-collapse','bg-main')" id="menu-venta" class="nav-item nav-link <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'bg-main text-acc font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#venta-collapse" aria-controls="venta-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-shopping-basket" aria-hidden="true"></i> Ventas</a>
+                                                <div class="collapse w-100 <?php echo (isset($opcion["venta-collapse"]) && $opcion["venta-collapse"]) ? 'show bg-main' : ''; ?>" id="venta-collapse">
                                                     <div class="d-flex flex-column ml-3"> 
                                                         <a href="#/" onclick="ventaRegistrarFormulario()" class="nav-item nav-link"><i class="fa fa-caret-right"></i> Nueva Venta</a>
                                                         <a href="#/" onclick="cajaGestion()" class="nav-item nav-link"><i class="fa fa-money" aria-hidden="true"></i> Caja</a>
@@ -420,8 +420,8 @@
                                             }
                                             if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1 || $_SESSION["usuario"]->getRol() == 3){
                                                 ?>
-                                                <a href="#/" onclick="setCollapse('producto-collapse'); swapClass('#menu-producto','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#producto-collapse','bg-orange-6')" id="menu-producto" class="nav-item nav-link <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
-                                                <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="producto-collapse">
+                                                <a href="#/" onclick="setCollapse('producto-collapse'); swapClass('#menu-producto','bg-main text-acc font-weight-bold'); swapClass('#producto-collapse','bg-main')" id="menu-producto" class="nav-item nav-link <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'bg-main text-acc font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#producto-collapse" aria-controls="producto-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-product-hunt"></i> Productos</a>
+                                                <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show bg-main' : ''; ?>" id="producto-collapse">
                                                     <div class="d-flex flex-column ml-3">
                                                         <a href="#/" onclick="compañiaStock()" class="nav-item nav-link"><i class="fa fa-truck"></i> Mi stock</a>
                                                     </div>
@@ -430,8 +430,8 @@
                                             }
                                             if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1){
                                                 ?>
-                                                <a href="#/" onclick="setCollapse('clientes-collapse'); swapClass('#menu-clientes','bg-orange-6 text-red-5 font-weight-bold'); swapClass('#clientes-collapse','bg-orange-6')" id="menu-clientes" class="nav-item nav-link <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#clientes-collapse" aria-controls="clientes-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-user"></i> Clientes</a>
-                                                <div class="collapse w-100 <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="clientes-collapse">
+                                                <a href="#/" onclick="setCollapse('clientes-collapse'); swapClass('#menu-clientes','bg-main text-acc font-weight-bold'); swapClass('#clientes-collapse','bg-main')" id="menu-clientes" class="nav-item nav-link <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'bg-main text-acc font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#clientes-collapse" aria-controls="clientes-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-user"></i> Clientes</a>
+                                                <div class="collapse w-100 <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'show bg-main' : ''; ?>" id="clientes-collapse">
                                                     <div class="d-flex flex-column ml-3"> 
                                                         <a href="#/" onclick="clienteRegistroFormulario()" class="nav-item nav-link"><i class="fa fa-user-plus"></i> Nuevo cliente</a>
                                                         <a href="#/" onclick="clienteBuscarFormulario()" class="nav-item nav-link"><i class="fa fa-search"></i> Buscar cliente</a>
@@ -442,8 +442,8 @@
                                             }
                                             if($_SESSION["usuario"]->isAdmin()){
                                                 ?>
-                                                <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-orange-6'); swapClass('#administracion-collapse','bg-orange-6')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-orange-6 text-red-5 font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
-                                                <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-orange-6' : ''; ?>" id="administracion-collapse">                                            
+                                                <a href="#/" onclick="setCollapse('administracion-collapse'); swapClass('#menu-administracion','bg-main'); swapClass('#administracion-collapse','bg-main')" id="menu-administracion" class="nav-item nav-link <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'bg-main text-acc font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#administracion-collapse" aria-controls="administracion-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-cogs"></i> Administración</a> 
+                                                <div class="collapse w-100 <?php echo (isset($opcion["administracion-collapse"]) && $opcion["administracion-collapse"]) ? 'show bg-main' : ''; ?>" id="administracion-collapse">                                            
                                                     <div class="d-flex flex-column ml-3"> 
                                                             <a href="#/" onclick="administracionProducto()" class="nav-item nav-link"><i class="fa fa-barcode"></i> Producto</a>
                                                             <a href="#/" onclick="administracionCliente()" class="nav-item nav-link"><i class="fa fa-user"></i> Cliente</a>
@@ -457,7 +457,7 @@
                                         <a href="#/" onclick="requestLogout()" class="nav-item nav-link"><i class="fa fa-sign-out"></i> Salir</a>
                                     </div>
                                 </div>
-                                <div class="mt-auto w-100 text-center mb-2" style="font-size: 12.5px; line-height: 1em;">
+                                <div id="head-footer" class="mt-auto w-100 text-center mb-2" style="font-size: 12.5px; line-height: 1em;">
                                     <div class="dropdown-divider border-danger"></div>
                                     <strong>2020 <i class="fa fa-copyright"></i> EFECE</strong><br>
                                     Soluciones Informáticas<br>

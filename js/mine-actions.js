@@ -2,19 +2,108 @@ const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></spa
 
 const beep1 = new Audio("./sound/scanner-beep.mp3");
 
+const charter = () => {
+    //<canvas id="myChart"></canvas>
+    var ctx = document.getElementById('myChart').getContext('2d');
+    let chartType = ['line', 'bar', 'radar', 'pie', 'doughnut', 'polarArea', 'bubble'];
+    var myChart = new Chart(ctx, {
+        type: chartType[1],
+        data: {
+            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
+            datasets: [{
+                label: '# of Votes',
+                data: [12, 19, 3, 5, 2, 3],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+}
+
 const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock', 'minimo', 'maximo', 'precio', 'precioMayorista', 'precioKiosco']) => {
     tipo.map((data) => {
         replaceClass("#producto-" + idProducto + " #" + data, "opacity-0", "");
     })
 }
 
-const calculaPreTotal = () => {
-    let selector = document.getElementById("cuota");
-    let data = selector.options[selector.selectedIndex].dataset;
-    let preTotal = parseFloat($("#tabla-venta-productos #total").html()).toFixed(2);
-    let interes = parseFloat(data.interes).toFixed(4);
-    let nuevoValor = (preTotal * interes).toFixed(2);
-    $("#pre-total").html(nuevoValor + ' (' + data.cuotas + ' cuotas de $' + ((nuevoValor / data.cuotas).toFixed(2)) + ')');
+const ventaPagoReset = () => {
+    $("#container-pago-1, #container-pago-2, #container-pago-3, #container-pago-4, #container-pago-5, #container-pago-6, #container-pago-7").addClass("d-none").find("*").attr("disabled", true).find("input").val("0");
+    $("#container-pago-3 #cuota, #container-pago-5 #cuota, #container-pago-6 #cuota").val("1");
+    $("#pre-total").html($("#tabla-venta-productos #total").html());
+    $("#pre-pagar").html($("#tabla-venta-productos #total").html());
+    $("#pre-vuelto").html("0")
+}
+
+const calculaPreTotal = (container) => {
+    console.log(container);
+    let selector, data, debito, preTotal = parseFloat($("#tabla-venta-productos #total").html()).toFixed(2),
+        interes, nuevoValor, resto;
+    switch (parseInt($("#pago").val())) {
+        case 3:
+            selector = document.getElementById(container).querySelector("#cuota");
+            data = selector.options[selector.selectedIndex].dataset;
+            interes = parseFloat(data.interes).toFixed(4);
+            nuevoValor = (preTotal * interes).toFixed(2);
+            $("#pre-total").html(nuevoValor);
+            $("#container-pre-obs").html('(' + data.cuotas + ' cuotas de $' + ((nuevoValor / data.cuotas).toFixed(2)) + ')');
+            break;
+        case 4:
+            contado = parseFloat($("#" + container + " #monto-contado").val());
+            debito = parseFloat($("#" + container + " #monto-debito").val());
+            $("#pre-total").html(preTotal);
+            $("#container-pre-obs").html('($' + contado + ' contado + $' + debito + ' débito)');
+            break;
+        case 5:
+            selector = document.getElementById(container).querySelector("#cuota");
+            data = selector.options[selector.selectedIndex].dataset;
+            contado = parseFloat($("#" + container + " #monto-contado").val());
+            credito = parseFloat($("#" + container + " #monto-credito").val());
+            interes = parseFloat(data.interes).toFixed(4);
+            nuevoValor = parseFloat(((credito * interes) + contado).toFixed(2));
+            //console.log(credito + " X " + interes + " + " + contado + " + " + resto + " = " + nuevoValor);
+            $("#pre-total").html(nuevoValor);
+            $("#container-pre-obs").html('($' + contado + ' contado + $' + credito + ' en ' + data.cuotas + ' cuotas de $' + (((credito * interes) / data.cuotas).toFixed(2)) + ')');
+            break;
+        case 6:
+            selector = document.getElementById(container).querySelector("#cuota");
+            data = selector.options[selector.selectedIndex].dataset;
+            debito = parseFloat($("#" + container + " #monto-debito").val());
+            credito = parseFloat($("#" + container + " #monto-credito").val());
+            interes = parseFloat(data.interes).toFixed(4);
+            nuevoValor = parseFloat(((credito * interes) + debito).toFixed(2));
+            //console.log(credito + " X " + interes + " + " + debito + " + " + resto + " = " + nuevoValor);
+            $("#pre-total").html(nuevoValor);
+            $("#container-pre-obs").html('($' + debito + ' débito + $' + credito + ' en ' + data.cuotas + ' cuotas de $' + (((credito * interes) / data.cuotas).toFixed(2)) + ')')
+            break;
+        default:
+            console.log("no " + parseInt($("#pago").val()) + " " + $("#pago").val());
+            break;
+    }
+
 }
 
 const cajaCalculaTotal = () => {
@@ -587,13 +676,109 @@ const requestLogin = () => {
     });
 }
 
-const compañiaFacturacion = () => {
+const compañiaAdministracion = (div = "#right-content-data") => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let divProcess = "#right-content-data";
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/administracion/gestionar.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaAdministracionUsuario = (div = "#right-content-data") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/administracion/usuario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaAdministracionSucursal = (div = "#right-content-data") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/administracion/sucursal.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaFacturacion = (div = "#right-content-data") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = div;
     let divForm = "";
     $.ajax({
         type: "POST",
@@ -1645,7 +1830,7 @@ const ventaRegistrar = (idCaja) => {
     });
 }
 
-const ventaRegistrarFormulario = (div = null) => {
+const ventaRegistrarFormulario = (div = null, small = false) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1662,7 +1847,7 @@ const ventaRegistrarFormulario = (div = null) => {
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: {},
+        data: { small: small },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -1677,7 +1862,7 @@ const ventaRegistrarFormulario = (div = null) => {
     });
 }
 
-const cajaAccionRegistrarFormulario = (div = null) => {
+const cajaAccionRegistrarFormulario = (div = null, small = false) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1694,7 +1879,7 @@ const cajaAccionRegistrarFormulario = (div = null) => {
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: {},
+        data: { small: small },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -1842,7 +2027,7 @@ const jornadaFormulario = (idJornada = null, div = "#right-content-data") => {
     });
 }
 
-const cajaHistorial = (idCaja, div = "#container-caja-historial") => {
+const cajaHistorial = (idCaja, div = "#container-caja-historial", small = false) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -1863,7 +2048,7 @@ const cajaHistorial = (idCaja, div = "#container-caja-historial") => {
             //$(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: { idCaja: idCaja },
+        data: { idCaja: idCaja, small: small },
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -1960,6 +2145,38 @@ const adminUsuarioGestionar = () => {
     $.ajax({
         type: "POST",
         url: "./includes/administracion/usuario/gestionar.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const configurarCompañia = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/administracion/compania/gestionar.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());

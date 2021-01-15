@@ -347,14 +347,14 @@
             }
         }
 
-        public static function accionRegistrarFormulario(){
+        public static function accionRegistrarFormulario($small = false){
             if(Sistema::usuarioLogueado()){
                 Sistema::controlActividadCaja();
                 if(Caja::corroboraAcceso()){
                     $idCaja = $_SESSION["usuario"]->getActividadCaja();
                     $accion = $_SESSION["lista"]["caja"]["accion"]["tipo"];
                     ?>
-                    <div id="container-caja-accion-formulario" class="mine-container">
+                    <div id="container-caja-accion-formulario" class="mine-container <?php echo ($small) ? "sm" : "" ?>">
                         <div class="d-flex justify-content-between"> 
                             <div class="titulo">Acción en caja N° <?php echo $idCaja ?></div>
                             <button type="button" onclick="$('#container-caja-accion-formulario').remove()" class="btn delete"><i class="fa fa-times"></i></button>
@@ -368,7 +368,7 @@
                                         <?php
                                             if(is_array($accion) && count($accion) > 0){
                                                 foreach($accion AS $key => $value){
-                                                    if($key == 6 || $key == 7) continue;
+                                                    if($key >= 5) continue;
                                                     echo '<option value="'.$key.'">'.$value["accion"].'</option>';
                                                 }
                                             }
@@ -404,11 +404,11 @@
             }
         }
 
-        public static function historialData($idCaja, $fechaInicio = null, $fechaFin = null, $operador = null, $sucursal = null, $compañia = null){
+        public static function historialData($idCaja, $fechaInicio = null, $fechaFin = null, $operador = null, $sucursal = null, $compañia = null, $limit = 250){
             if(Sistema::usuarioLogueado()){
                 if(isset($idCaja) && is_numeric($idCaja) && $idCaja > 0){
                     Session::iniciar();
-                    $query = DataBase::select("compañia_sucursal_caja_historial", "*", "caja = '".$idCaja."' AND ".((!is_null($fechaInicio) && !is_null($fechaFin)) ? " fechaCarga BETWEEN '".$fechaInicio."' AND '".$fechaFin."' AND " : "")." ".((!is_null($operador)) ? " operador = '".$operador."' AND " : "")." sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY fechaCarga DESC LIMIT 250");
+                    $query = DataBase::select("compañia_sucursal_caja_historial", "*", "caja = '".$idCaja."' AND ".((!is_null($fechaInicio) && !is_null($fechaFin)) ? " fechaCarga BETWEEN '".$fechaInicio."' AND '".$fechaFin."' AND " : "")." ".((!is_null($operador)) ? " operador = '".$operador."' AND " : "")." sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY fechaCarga DESC LIMIT ".$limit);
                     if($query){
                         $data = [];
                         if(DataBase::getNumRows($query) > 0){
@@ -436,23 +436,20 @@
             return false;
         }
 
-        public static function historial($idCaja, $actividad = 2, $sucursal = null, $compañia = null){
+        public static function historial($idCaja, $actividad = 2, $small = false, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idCaja) && is_numeric($idCaja) && $idCaja > 0){
                     Session::iniciar();
-                    $data = Caja::historialData($idCaja);
+                    $data = Caja::historialData($idCaja, null, null, null, null, null, ($small) ? 5 : 250);
                     ?>
-                    <div class="mine-container">
-                        <div class="titulo">Historial de caja Cod.: <?php echo $idCaja ?></div>
+                    <div class="mine-container sm">
+                        <div class="titulo">Actividad caja #<?php echo $idCaja ?></div>
                         <div class="p-1">
-                            <table id="tabla-caja-historial" class="table table-hover table-responsive w-100">
+                            <table id="tabla-caja-historial" class="table table-hover <?php echo (!$small) ? "table-responsive" : "" ?> w-100">
                                 <thead>
                                     <tr>
-                                        <td scope="col">N°</td>
-                                        <td>Fecha</td>
                                         <td>Operador</td>
                                         <td>Tipo</td>
-                                        <td class="w-100">Descripción</td>
                                         <td>Monto $</td>
                                         <td>Verif.</td>
                                         <td class="text-right" style="width: fit-content">Acciones</td>
@@ -487,18 +484,15 @@
                                                     }
                                                     ?>
                                                     <tr>
-                                                        <td><?php echo "#".$key ?></td>
-                                                        <td><?php echo date("d/m/Y", strtotime($value["fechaCarga"]))." ".date("H:i A", strtotime($value["fechaCarga"])) ?></td> 
                                                         <td><?php echo $_SESSION["lista"]["operador"][$value["operador"]]["nombre"] ?></td>
                                                         <td><?php echo '<i class="fa fa-'.$icon.' text-'.$color.'"></i> '.$_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["accion"]; ?></td>
-                                                        <td><?php echo nl2br($value["observacion"]) ?></td>
                                                         <td><?php echo '<span class="text-'.$color.'">'.$operador.'$'.round($value["monto"], 2).'</span>' ?></td>
                                                         <td class="text-center"><?php echo ($value["procesado"] == 1 && !is_null($value["fechaModificacion"])) ? '<i class="fa fa-check-square-o text-success"></i>' : '<i class="fa fa-square-o text-info"></i>' ?></td>
-                                                        <td>
+                                                        <td class="d-flex justify-content-end">
                                                             <div class="btn-group"> 
                                                                 <?php
-                                                                    if(is_numeric($value["venta"]) && $value["venta"] > 0){
-                                                                        echo '<button type="button" id="detalle" class="btn btn-sm btn-outline-info"><i class="fa fa-expand"></i></button>';
+                                                                    echo '<button type="button" onclick="$(\'#mov-data-'.$key.'\').toggleClass(\'d-none\')" id="detalle" class="btn btn-sm btn-outline-info"><i class="fa fa-expand"></i></button>';
+                                                                    if(is_numeric($value["venta"]) && $value["venta"] > 0){ 
                                                                         echo '<button type="button" id="comprobante" onclick="facturaVisualizar('.$value["venta"].')" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>';
                                                                     }
                                                                     if($actividad == 1 && ($value["tipo"] != 6 && $value["tipo"] != 7)){
@@ -507,6 +501,13 @@
                                                                 ?>
                                                             </div>
                                                         </td>
+                                                    </tr>
+                                                    <tr id="mov-data-<?php echo $key ?>" class="d-none" style="background-color: var(--sec-main)"> 
+                                                        <td><?php echo "#".$key ?></td>
+                                                        <td colspan="3"><?php echo nl2br($value["observacion"]) ?></td>
+                                                        <td><?php echo date("d/m/Y", strtotime($value["fechaCarga"]))." ".date("H:i A", strtotime($value["fechaCarga"])) ?></td> 
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
                                                     </tr>
                                                     <?php
                                                 }
@@ -543,7 +544,13 @@
                         </div>
                     </div>
                     <script>
-                        dataTableSet("#tabla-caja-historial", false, [[5, 10, 25, 50, 100, -1],[5, 10, 25, 50, 100, "Todos"]], 10, [ 1, "desc" ]);
+                        <?php
+                            if(!$small){
+                                ?> 
+                                dataTableSet("#tabla-caja-historial", false, [[5, 10, 25, 50, 100, -1],[5, 10, 25, 50, 100, "Todos"]], 5, [ 1, "desc" ]);
+                                <?php
+                            }
+                        ?>
                         tippy('#anular', {
                             content: 'Anular venta',
                             delay: [150,150],
@@ -857,6 +864,7 @@
                         if(count($data) > 0){
                             Session::iniciar(); 
                             $dataCompañia = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"][$_SESSION["usuario"]->getCompañia()];
+                            $compañiaCredito = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"];
                             $operador = $_SESSION["lista"]["operador"];
                             foreach($data[$idJornada]["movimientos"] AS $key => $value){ 
                                 $montoRedondeado = round($value["monto"], 2);
@@ -899,7 +907,10 @@
                             }
                             foreach($data[$idJornada]["ventas"] AS $key => $value){
                                 $data[$idJornada]["stats"]["venta"]["volumen"]++;
-                                $montoRedondeado = round($value["total"], 2);
+                                $contado = round($value["contado"], 2);
+                                $debito = round($value["debito"], 2);
+                                $credito = ($value["pago"] == 3 || $value["pago"] == 5 || $value["pago"] == 6 || $value["pago"] == 7) ? round(($value["credito"] * $compañiaCredito[$value["financiacion"]]["interes"]), 2) : $value["credito"];
+                                $total = round($value["total"], 2);
                                 $producto = explode(",", $value["producto"]);
                                 $productoCantidad = explode(",", $value["productoCantidad"]);
                                 $productoPrecio = explode(",", $value["productoPrecio"]);
@@ -920,7 +931,7 @@
                                 foreach($producto AS $jKey => $jValue){ 
                                     if($jValue[0] == "*"){
                                         if(str_replace("*", "", $jValue) == 0){
-                                            $productoNombre = "varios";
+                                            $productoNombre = "Varios";
                                             $productoCodigo = "Sin código";
                                             $tipo = "varios";
                                         }else{
@@ -949,25 +960,46 @@
                                     $data[$idJornada]["stats"]["venta"]["producto"]["volumen"] += $productoCantidad[$jKey];
                                 }
                                 switch($value["pago"]){
-                                    case 1:
-                                        $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $montoRedondeado;
-                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $montoRedondeado;
+                                    case 1: //Contado efectivo
+                                        $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $contado;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $contado;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["cantidad"]++;
                                         break;
-                                    case 2:
-                                        $data[$idJornada]["stats"]["recaudacion"]["debito"] += $montoRedondeado;
-                                        $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $montoRedondeado;
+                                    case 2: //Débito
+                                        $data[$idJornada]["stats"]["recaudacion"]["debito"] += $debito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["cantidad"]++;
                                         break;
-                                    case 3:
-                                        $data[$idJornada]["stats"]["recaudacion"]["credito"] += $montoRedondeado;
-                                        $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $montoRedondeado;
+                                    case 3: //Crédito
+                                        $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["cantidad"]++;
                                         break;
-                                    case 4:
-                                        $data[$idJornada]["stats"]["recaudacion"]["otro"] += $montoRedondeado;
-                                        $data[$idJornada]["stats"]["venta"]["pago"]["otro"]["volumen"] += $montoRedondeado;
-                                        $data[$idJornada]["stats"]["venta"]["pago"]["otro"]["cantidad"]++;
+                                    case 4: //Contado + débito
+                                        $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $contado;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $contado;
+                                        $data[$idJornada]["stats"]["recaudacion"]["debito"] += $debito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
+                                        break;
+                                    case 5: //Contado + crédito
+                                        $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $contado;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $contado;
+                                        $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
+                                        break;
+                                    case 6: //Débito + crédito
+                                        $data[$idJornada]["stats"]["recaudacion"]["debito"] += $debito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
+                                        $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
+                                        break;
+                                    case 7: //Contado + débito + crédito
+                                        $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $contado;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $contado;
+                                        $data[$idJornada]["stats"]["recaudacion"]["debito"] += $debito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
+                                        $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
                                         break;
                                 }
                             }
@@ -988,7 +1020,6 @@
                                     <div style="display: flex; flex-direction: column; padding: 1.5em 0; font-size: 1.1em;">
                                         <span><strong><?php echo "Sucursal ".Compania::sucursalGetNombre($data[$idJornada]["sucursal"]) ?></strong></span>
                                         <span><b>Código Caja:</b> <?php echo $data[$idJornada]["caja"] ?></span>
-                                        <span><b>Operador:</b> <?php echo $operador[$data[$idJornada]["operador"]]["nombre"] ?></span>
                                         <span><b>Codigo Operador:</b> OFC-<?php echo $operador[$data[$idJornada]["operador"]]["id"] ?></span>
                                     </div>
                                     <div style="display: flex; flex-direction: column; align-items: flex-end">
@@ -997,14 +1028,17 @@
                                         <span><b>Fin: </b><?php echo (strlen($data[$idJornada]["fechaFin"]) > 0) ? date("d/m/Y, H:i:s A", strtotime($data[$idJornada]["fechaFin"])) : date("d/m/Y, H:i:s A", strtotime("-3 hour")) ?></span>
                                     </div>
                                 </div>
-                                <div style="display: flex; justify-content: center; align-items: center; padding: 0.375em">
+                                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0.375em">
+                                    <span><b>Operador:</b> <?php echo $operador[$data[$idJornada]["operador"]]["nombre"] ?></span>
                                     <b>COMPROBANTE CIERRE DE CAJA</b>
                                 </div>
                                 <div>
                                     <table style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; width: 100%;">
                                         <thead style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
                                             <tr style="text-align: center; font-weight: bold; background-color: burlywood;">
-                                                <td style="width: 100%; padding: 1.1em;">Descripción</td>
+                                                <td style="width: 100%; padding: 1.1em;">
+                                                    Descripción
+                                                </td>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1014,9 +1048,11 @@
                                                     <br><br>
                                                     <u>Inicio Caja:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["efectivo"]["apertura"] ?><br> 
                                                     <br><br>
-                                                    <u>Ingresos:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["ingreso"] ?><br>
-                                                    <u>Egresos:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["egreso"] ?>
-                                                    <br><br>
+                                                    <div style="display: none">
+                                                        <u>Ingresos:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["ingreso"] ?><br>
+                                                        <u>Egresos:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["egreso"] ?>
+                                                        <br><br>
+                                                    </div>
                                                     <b>Detalle:</b><br>
                                                     <div style="margin-left: 0.5em; display: flex; flex-direction: column;">
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
@@ -1026,56 +1062,72 @@
                                                             <u>Deposito:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"] ?></span>
                                                         </div>
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <u>Pago:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"] ?></span>
+                                                            <u>Pago:</u>
                                                         </div>
                                                         <div style="display: flex; flex-direction: column;">
-                                                            <?php
-                                                                foreach($data[$idJornada]["movimientos"] AS $key => $value){
-                                                                    if($value["tipo"] == 3){
-                                                                        echo '<div style="display: flex; flex-direction: column; padding: .25em 1.5em; border-bottom: 1px dashed black">
-                                                                            <div style="display: flex; justify-content: space-between">
-                                                                                <span style="">'.$value["observacion"].'</span>
-                                                                                <span>$ -'.$value["monto"].'</span>
-                                                                            </div>
-                                                                            <div style="display: flex; justify-content: space-between">
-                                                                                <span>'.$operador[$value["operador"]]["nombre"].'</span>
-                                                                                <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
-                                                                            </div> 
-                                                                        </div>';
+                                                            <div style="display: flex; flex-direction: column; padding: .25em 1.5em; border-bottom: 1px dashed black">
+                                                                <?php
+                                                                    foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                        if($value["tipo"] == 3){
+                                                                            echo '
+                                                                                <div style="display: flex; justify-content: space-between">
+                                                                                    <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
+                                                                                    <span style="font-size: 11.5px;">$ -'.$value["monto"].'</span>
+                                                                                </div>
+                                                                                <div style="display: none; justify-content: space-between">
+                                                                                    <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                    <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                                </div> 
+                                                                            ';
+                                                                        }
                                                                     }
-                                                                }
-                                                            ?>
+                                                                ?>
+                                                                <div style="display: flex; justify-content: space-between">
+                                                                    <span style="font-weight: bold;">Total Pagos:</span>
+                                                                    <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"] ?></span>
+                                                                </div>
+                                                            </div>
+                                                            
                                                         </div>
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <u>Retiro:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"] ?></span>
+                                                            <u>Retiro:</u>
                                                         </div>
                                                         <div style="display: flex; flex-direction: column;">
-                                                            <?php
-                                                                foreach($data[$idJornada]["movimientos"] AS $key => $value){
-                                                                    if($value["tipo"] == 4){
-                                                                        echo '<div style="display: flex; flex-direction: column; padding: .25em 1.5em; border-bottom: 1px dashed black">
-                                                                            <div style="display: flex; justify-content: space-between">
-                                                                                <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
-                                                                                <span>$ -'.$value["monto"].'</span>
-                                                                            </div>
-                                                                            <div style="display: flex; justify-content: space-between">
-                                                                                <span>'.$operador[$value["operador"]]["nombre"].'</span>
-                                                                                <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
-                                                                            </div> 
-                                                                        </div>';
+                                                            <div style="display: flex; flex-direction: column; padding: .25em 1.5em; border-bottom: 1px dashed black">
+                                                                <?php
+                                                                    foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                        if($value["tipo"] == 4){
+                                                                            echo '
+                                                                                <div style="display: flex; justify-content: space-between">
+                                                                                    <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
+                                                                                    <span style="font-size: 11.5px;">$ -'.$value["monto"].'</span>
+                                                                                </div>
+                                                                                <div style="display: none; justify-content: space-between">
+                                                                                    <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                    <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                                </div> 
+                                                                            ';
+                                                                        }
                                                                     }
-                                                                }
-                                                            ?>
+                                                                ?>
+                                                                <div style="display: flex; justify-content: space-between">
+                                                                    <span style="font-weight: bold;">Total Retiros:</span>
+                                                                    <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"] ?></span>
+                                                                </div>
+                                                            </div>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <u>Venta:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["venta"]["volumen"] ?></span>
+                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid black">
+                                                            <u>Venta contado:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["venta"]["volumen"] ?></span>
+                                                        </div>
+                                                        <div style="display: flex; justify-content: space-between;">
+                                                            <u>Efectivo:</u> <span>$ <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["venta"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["cobro"]["volumen"] ?></span>
                                                         </div>
                                                     </div>
                                                     <br><br>
                                                     <b>Recaudación:</b><br> 
                                                     <div style="margin-left: 0.5em; display: flex; flex-direction: column">
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <u>Efectivo:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["efectivo"] ?></span>
+                                                            <u>Contado:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["efectivo"] ?></span>
                                                         </div>
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>Débito:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["debito"] ?></span>
@@ -1083,23 +1135,13 @@
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px solid black">
                                                             <u>Crédito:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["credito"] ?></span>
                                                         </div>
-                                                        <div style="display: none; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <u>Otro:</u> <span>$ <?php echo $data[$idJornada]["stats"]["recaudacion"]["otro"] ?></span>
-                                                        </div>
                                                         <div style="display: flex; justify-content: space-between;">
-                                                            <u>Total:</u> $ <?php echo $data[$idJornada]["stats"]["caja"]["efectivo"]["apertura"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["ingreso"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["egreso"] + $data[$idJornada]["stats"]["recaudacion"]["debito"] + $data[$idJornada]["stats"]["recaudacion"]["credito"] ?>
+                                                            <u>Gran Total:</u> $ <?php echo $data[$idJornada]["stats"]["recaudacion"]["efectivo"] + $data[$idJornada]["stats"]["recaudacion"]["debito"] + $data[$idJornada]["stats"]["recaudacion"]["credito"] ?>
                                                         </div>
                                                     </div>
-                                                    
-                                                    <div style="display: flex; justify-content: space-between; margin-top: 2em; border-bottom: 1px dashed black">
-                                                        <u>Mov. Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["procesada"] ?><br>
-                                                    </div>
-                                                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                        <u>Mov. No Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["no procesada"] ?><br>
-                                                    </div> 
                                                 </td>
                                             </tr>
-                                            <tr>
+                                            <tr style="display: none">
                                                 <td style="width: 100%; border-bottom: 1px solid black; padding: 2em 0.5em;">
                                                     <b>VENTAS:</b>
                                                     <br><br>
@@ -1122,10 +1164,13 @@
                                             </tr>
                                             <tr>
                                                 <td style="width: 100%; border-bottom: 1px solid black; padding: 2em 0.5em;">
-                                                    <b>PRODUCTOS:</b>
-                                                    <br><br>
-                                                    <u>Total vendidos:</u> <?php echo $data[$idJornada]["stats"]["venta"]["producto"]["volumen"] ?><br>
-                                                    <br><br>
+                                                    <b>CONTROL:</b><br>
+                                                    <div>
+                                                        <u>CANT. VENTAS:</u> <span><?php echo $data[$idJornada]["stats"]["venta"]["volumen"] ?></span>
+                                                    </div>
+                                                    <div>
+                                                        <u>CANT. PRODUCTOS VENDIDOS:</u> <span><?php echo $data[$idJornada]["stats"]["venta"]["producto"]["volumen"] ?></span>
+                                                    </div>
                                                     <div style="margin-left: 0.5em; margin-bottom: 0em;">
                                                         <?php
                                                             if(false){
@@ -1144,8 +1189,13 @@
                                                             }
                                                         ?>
                                                     </div>
-                                                    <b>Detalle:</b><br>
-                                                    <div style="margin-left: 0.5em; display: flex; flex-direction: column"> 
+                                                    <div style="display: flex; justify-content: space-between; margin-top: 2em; border-bottom: 1px dashed black">
+                                                        <u>Mov. Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["procesada"] ?><br>
+                                                    </div>
+                                                    <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                        <u>Mov. No Verificados:</u> <?php echo $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["no procesada"] ?><br>
+                                                    </div> 
+                                                    <div style="display: none; flex-direction: column"> 
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
                                                             <u>MiNe:</u> <span>Cant. <?php echo $data[$idJornada]["stats"]["venta"]["tipo"]["mine"]["cantidad"].": $ ".$data[$idJornada]["stats"]["venta"]["tipo"]["mine"]["volumen"] ?></span>
                                                         </div>
@@ -1323,20 +1373,35 @@
                                 if($actividad === 1){
                                     ?>
                                     <div class="btn-group">
-                                        <button type="button" onclick="ventaRegistrarFormulario('#container-caja-accion')" class="btn btn-outline-info"><i class="fa fa-plus"></i> Venta</button>
-                                        <button type="button" onclick="cajaAccionRegistrarFormulario()" class="btn btn-outline-info"><i class="fa fa-level-down"></i> Movimiento</button>
+                                        <button type="button" onclick="ventaRegistrarFormulario('#container-caja-accion', true)" class="btn btn-outline-info"><i class="fa fa-plus"></i> Venta</button>
+                                        <button type="button" onclick="cajaAccionRegistrarFormulario(null, true)" class="btn btn-outline-info"><i class="fa fa-level-down"></i> Movimiento</button>
                                         <button type="button" onclick="cajaActividadCerrar('#container-caja-accion')" class="btn btn-outline-info"><i class="fa fa-file-text"></i> Cierre</button>
                                     </div>
                                     <?php
                                 }
                             ?>
                         </div>
-                        <div style="font-weight: bold; font-size: 2em; color: var(--mono-green-1);">
-                            Monto en caja $ <span id="caja-monto"><?php echo Caja::dataGetMonto($idCaja); ?></span>
+                        <div class="d-flex">
+                            <div class="w-25 d-flex justify-content-start">
+                                <div class="d-flex justify-content-start p-4 mine-container sm w-100" style="height: min-content;">
+                                    <i class="fa fa-2x fa-mouse-pointer text-secondary mr-2 p-3"></i>
+                                    <div class="d-flex flex-column">
+                                        <span class="text-muted h5 font-weight-bold mb-2 text-secondary">Balance Caja</span>
+                                        <span class="h4 font-weight-bold">$ <span id="caja-monto"><?php echo number_format(Caja::dataGetMonto($idCaja), 2, ",", "."); ?></span></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="w-75" id="container-caja-accion">
+                                <span class="text-muted w-100 text-center">Aguardando tarea a realizar...</span>
+                            </div>
                         </div>
-                        <div id="container-caja-accion"></div>
-                        <div id="container-caja-historial" class="p-1">
-                            <?php Caja::historial($idCaja, $actividad) ?>
+                        <div class="d-flex justify-content-between"> 
+                            <div class="w-50" id="container-caja-historial">
+                                <?php Caja::historial($idCaja, $actividad, true) ?>
+                            </div>
+                            <div class="w-50" id="container-ventas-historial">
+                                <?php Venta::historial($idCaja, $actividad, true) ?>
+                            </div>
                         </div>
                     </div>
                     <?php

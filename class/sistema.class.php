@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.33.48a";
+        public static $version = "alpha-1.57.85a";
 
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );

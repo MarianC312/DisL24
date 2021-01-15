@@ -21,13 +21,12 @@
             <?php Componente::menu(); ?>
         </div>
         <div id="right-content" class="flex-grow-1">
-                <?php Componente::headerUsuario() ?>
-                <div id="right-content-process"></div>
-                <div id="right-content-data">
-                    <?php
-                        Alert::building();
-                    ?>
-                </div>
+            <?php Componente::headerUsuario() ?>
+            <div id="right-content-process"></div>
+            <div id="right-content-data">
+                <?php
+                    Alert::building();
+                ?>
             </div>
         </div>
     </div>

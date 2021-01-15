@@ -1,5 +1,74 @@
 <?php
     class Compania{ 
+        public static function configurar($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $compañia = (is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia();
+                if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1){
+                    ?>
+                    <div class="mine-container">
+                        <nav class="navbar navbar-expand navbar-dark bg-red-1">
+                            <a class="navbar-brand" href="#"><img src="./image/compañia/<?php echo $compañia ?>/logo.png" height="35" /> <?php echo $_SESSION["lista"]["compañia"][$compañia]["nombre"] ?></a>
+                            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCompania" aria-controls="navbarCompania" aria-expanded="false" aria-label="Toggle navigation">
+                                <span class="navbar-toggler-icon"></span>
+                            </button>
+
+                            <div class="collapse navbar-collapse" id="navbarCompania">
+                                <ul class="navbar-nav justify-content-end">
+                                    <li class="nav-item active">
+                                        <a class="nav-link" href="#/"><i class="fa fa-home"></i> Dashboard <span class="sr-only">(current)</span></a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#/"><i class="fa fa-bar-chart"></i> Estadísticas</a>
+                                    </li>
+                                    <li class="nav-item dropdown">
+                                        <a class="nav-link dropdown-toggle" href="#/" id="navbarCompaniaDD1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i class="fa fa-cogs"></i> Administración</a>
+                                        <div class="dropdown-menu" aria-labelledby="navbarCompaniaDD1">
+                                            <a class="dropdown-item" href="#/" onclick="compañiaAdministracionUsuario('#administracion-cliente-process')"><i class="fa fa-users"></i> Usuarios</a>
+                                            <a class="dropdown-item" href="#/" onclick="compañiaAdministracionSucursal('#administracion-cliente-process')"><i class="fa fa-building"></i> Sucursales</a>
+                                            <a class="dropdown-item" href="#/" onclick="compañiaFacturacion('#administracion-cliente-process')"><i class="fa fa-file-pdf-o"></i> Facturación</a>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+                        <div id="administracion-cliente-process" class="p-2"></div>
+                    </div>
+                    <?php
+                }else{
+                    Sistema::debug('error', 'compania.class.php - configurar - Acceso denegado. Ref.: '.$_SESSION["usuario"]->getRol());
+                    $mensaje['tipo'] = 'warning';
+                    $mensaje['cuerpo'] = 'No tenés acceso a esta sección. Si consideras esto un error, <b>contacta al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - configurar - Usuario no logueado.');
+            }
+        }
+
+        public static function productoData($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                return $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"];
+            }else{
+                Sistema::debug('error', 'compania.class.php - productoData - Usuario no logueado.');
+            }
+        }
+        public static function estadisticaData($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $producto = Compania::productoData();
+                $productoMN = array_filter($producto, function($data){
+                    return (is_numeric($data["producto"]));
+                });
+                $productoNC = array_filter($producto, function($data){
+                    return (is_numeric($data["productoNC"]));
+                });
+            }else{
+                Sistema::debug('error', 'compania.class.php - estadistica - Usuario no logueado.');
+            }
+        }
+
         public static function sucursalCajaData($idSucursal = null, $idCompañia = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
@@ -360,7 +429,7 @@
                                                     $value = str_replace("*", "", $value);
                                                     ?>
                                                     <tr style="border-bottom: 1px solid lightgray;">
-                                                        <td style="padding: 0.215em 0; "><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
+                                                        <td style="padding: 0.215em 0; line-height: 0.8em;"><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
                                                         <td style="padding: 0.215em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
                                                         <td style="padding: 0.215em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
                                                         <td style="padding: 0.215em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
@@ -371,24 +440,36 @@
                                             ?>
                                         </tbody>
                                         <tfoot style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; ">
-                                            <tr style="<?php echo ($data[$idVenta]["pago"] != 3) ? "display: none" : "" ?>">
+                                            <tr style="margin-bottom: 1em; <?php echo ($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4) ? "display: none" : "" ?>">
                                                 <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
-                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($total, 2); ?></td>
+                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["subtotal"], 2); ?></td>
                                             </tr>
-                                            <tr>
+                                            <tr class="margin-bottom: 1em; <?php echo ($data[$idVenta]["descuento"] == 0) ? "d-none" : "" ?>">
                                                 <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
                                                 <td style="padding: 0.215em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
                                             </tr>
                                             <?php
-                                                if($data[$idVenta]["pago"] == 3){
+                                                if($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 5){
+                                                    ?> 
+                                                    <tr>
+                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Contado:</td>
+                                                        <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["contado"], 2); ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if($data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 6){
+                                                    ?> 
+                                                    <tr>
+                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Débito:</td>
+                                                        <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["debito"], 2); ?></td>
+                                                    </tr>
+                                                    <?php
+                                                }
+                                                if($data[$idVenta]["pago"] == 3 || $data[$idVenta]["pago"] == 5 || $data[$idVenta]["pago"] == 6){
                                                     ?> 
                                                     <tr>
                                                         <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Crédito:</td>
-                                                        <td style="padding: 0.215em 0; text-align: right"><?php echo $credito[$data[$idVenta]["credito"]]["cuotas"]." cuotas" ?></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Valor cuota:</td>
-                                                        <td style="padding: 0.215em 0; text-align: right"><?php echo round((($total * $credito[$data[$idVenta]["credito"]]["interes"]) / $credito[$data[$idVenta]["credito"]]["cuotas"]), 2); ?></td>
+                                                        <td style="padding: 0.215em 0; text-align: right; line-height: 0.8em;">$ <?php echo round(($data[$idVenta]["credito"] * $credito[$data[$idVenta]["financiacion"]]["interes"]), 2)."<br>".$credito[$data[$idVenta]["financiacion"]]["cuotas"]." cuotas" ?></td>
                                                     </tr>
                                                     <?php
                                                 }
@@ -401,9 +482,9 @@
                                                     <?php
                                                 }
                                             ?>
-                                            <tr>
+                                            <tr style="margin-top: 1em; ">
                                                 <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
-                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round((($data[$idVenta]["pago"] == 3) ? round(($total * $credito[$data[$idVenta]["credito"]]["interes"]), 2) : $total) - ($total / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["descuento"] / 100 * (($data[$idVenta]["iva"] == 1) ? 21 : 0)), 2) ?></td>
+                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["total"] - ($data[$idVenta]["subtotal"] / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["subtotal"] / 100 * (($data[$idVenta]["iva"] == 1) ? 0 : 21)), 2) ?></td>
                                             </tr>
                                         </tfoot>
                                     </table>

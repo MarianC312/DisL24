@@ -2,7 +2,7 @@
     require_once 'autoload.class.php';
     if(Sistema::usuarioLogueado()){
         if(isset($_POST)){
-            Venta::registrarFormulario();
+            Venta::registrarFormulario($_POST["small"]);
         }else{
             $mensaje['tipo'] = 'danger';
             $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';
