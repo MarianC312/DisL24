@@ -1,5 +1,6 @@
 <?php
-    class Caja{
+    class Caja{ 
+
         public static function dataGetMonto($idCaja, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idCaja) && is_numeric($idCaja) && $idCaja > 0){
@@ -483,7 +484,7 @@
                                                             break;
                                                     }
                                                     ?>
-                                                    <tr>
+                                                    <tr id="mov-<?php echo $key ?>" class="<?php echo ($value["estado"] != 1) ? "anulado" : "" ?>">
                                                         <td><?php echo $_SESSION["lista"]["operador"][$value["operador"]]["nombre"] ?></td>
                                                         <td><?php echo '<i class="fa fa-'.$icon.' text-'.$color.'"></i> '.$_SESSION["lista"]["caja"]["accion"]["tipo"][$value["tipo"]]["accion"]; ?></td>
                                                         <td><?php echo '<span class="text-'.$color.'">'.$operador.'$'.round($value["monto"], 2).'</span>' ?></td>
@@ -495,12 +496,18 @@
                                                                     if(is_numeric($value["venta"]) && $value["venta"] > 0){ 
                                                                         echo '<button type="button" id="comprobante" onclick="facturaVisualizar('.$value["venta"].')" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>';
                                                                     }
-                                                                    if($actividad == 1 && ($value["tipo"] != 6 && $value["tipo"] != 7)){
-                                                                        echo '<button type="button" onclick="alert(\'Esta actividad se habilitará a la brevedad.\')" id="anular" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i></button>';
+                                                                    if(($value["tipo"] != 6 && $value["tipo"] != 7) && $value["estado"] == 1 && is_numeric($value["venta"]) && $value["venta"] > 0 && date("Y-m-d", strtotime($value["fechaCarga"])) == date("Y-m-d", strtotime("-3 hour"))){
+                                                                        echo '<button type="button" onclick="ventaAnularFormulario('.$value["venta"].')" id="anular" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i></button>';
                                                                     }
                                                                 ?>
                                                             </div>
                                                         </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td id="mov-<?php echo $key ?>-accion" style="display: none" colspan="4"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
+                                                        <td class="d-none"></td>
                                                     </tr>
                                                     <tr id="mov-data-<?php echo $key ?>" class="d-none" style="background-color: var(--sec-main)"> 
                                                         <td><?php echo "#".$key ?></td>
@@ -703,7 +710,8 @@
                                             "caja" => [
                                                 "procesada" => 0,
                                                 "no procesada" => 0
-                                            ]
+                                            ],
+                                            "anulada" => 0
                                         ],
                                         "pago" => [ 
                                             "efectivo" => [
@@ -718,7 +726,19 @@
                                                 "cantidad" => 0,
                                                 "volumen" => 0
                                             ],
-                                            "otro" => [
+                                            "efectivo + debito" => [
+                                                "cantidad" => 0,
+                                                "volumen" => 0
+                                            ],
+                                            "efectivo + credito" => [
+                                                "cantidad" => 0,
+                                                "volumen" => 0
+                                            ],
+                                            "debito + credito" => [
+                                                "cantidad" => 0,
+                                                "volumen" => 0
+                                            ],
+                                            "efectivo + debito + credito" => [
                                                 "cantidad" => 0,
                                                 "volumen" => 0
                                             ]
@@ -867,6 +887,10 @@
                             $compañiaCredito = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"];
                             $operador = $_SESSION["lista"]["operador"];
                             foreach($data[$idJornada]["movimientos"] AS $key => $value){ 
+                                if($value["estado"] != 1){
+
+                                    continue;
+                                }
                                 $montoRedondeado = round($value["monto"], 2);
                                 if($value["procesado"] == 1){
                                     $data[$idJornada]["stats"]["caja"]["movimiento"]["estado"]["procesada"]++;
@@ -906,6 +930,10 @@
                                 }
                             }
                             foreach($data[$idJornada]["ventas"] AS $key => $value){
+                                if($value["estado"] != 1){
+                                    $data[$idJornada]["stats"]["venta"]["estado"]["anulada"]++;
+                                    continue;
+                                }
                                 $data[$idJornada]["stats"]["venta"]["volumen"]++;
                                 $contado = round($value["contado"], 2);
                                 $debito = round($value["debito"], 2);
@@ -980,18 +1008,21 @@
                                         $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $contado;
                                         $data[$idJornada]["stats"]["recaudacion"]["debito"] += $debito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo + debito"]["cantidad"]++;
                                         break;
                                     case 5: //Contado + crédito
                                         $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $contado;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["efectivo"]["volumen"] += $contado;
                                         $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo + credito"]["cantidad"]++;
                                         break;
                                     case 6: //Débito + crédito
                                         $data[$idJornada]["stats"]["recaudacion"]["debito"] += $debito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
                                         $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["debito + credito"]["cantidad"]++;
                                         break;
                                     case 7: //Contado + débito + crédito
                                         $data[$idJornada]["stats"]["recaudacion"]["efectivo"] += $contado;
@@ -1000,6 +1031,7 @@
                                         $data[$idJornada]["stats"]["venta"]["pago"]["debito"]["volumen"] += $debito;
                                         $data[$idJornada]["stats"]["recaudacion"]["credito"] += $credito;
                                         $data[$idJornada]["stats"]["venta"]["pago"]["credito"]["volumen"] += $credito;
+                                        $data[$idJornada]["stats"]["venta"]["pago"]["efectivo + debito + credito"]["cantidad"]++;
                                         break;
                                 }
                             }
@@ -1166,7 +1198,8 @@
                                                 <td style="width: 100%; border-bottom: 1px solid black; padding: 2em 0.5em;">
                                                     <b>CONTROL:</b><br>
                                                     <div>
-                                                        <u>CANT. VENTAS:</u> <span><?php echo $data[$idJornada]["stats"]["venta"]["volumen"] ?></span>
+                                                        <u>VENTAS TOTALES:</u> <span><?php echo $data[$idJornada]["stats"]["venta"]["volumen"] ?></span><br>
+                                                        <u>VENTAS ANULADAS:</u> <span><?php echo $data[$idJornada]["stats"]["venta"]["estado"]["anulada"] ?></span>
                                                     </div>
                                                     <div>
                                                         <u>CANT. PRODUCTOS VENDIDOS:</u> <span><?php echo $data[$idJornada]["stats"]["venta"]["producto"]["volumen"] ?></span>
@@ -1382,7 +1415,7 @@
                             ?>
                         </div>
                         <div class="d-flex">
-                            <div class="w-25 d-flex justify-content-start">
+                            <div class="w-25 d-flex flex-column justify-content-start">
                                 <div class="d-flex justify-content-start p-4 mine-container sm w-100" style="height: min-content;">
                                     <i class="fa fa-2x fa-mouse-pointer text-secondary mr-2 p-3"></i>
                                     <div class="d-flex flex-column">
@@ -1390,6 +1423,7 @@
                                         <span class="h4 font-weight-bold">$ <span id="caja-monto"><?php echo number_format(Caja::dataGetMonto($idCaja), 2, ",", "."); ?></span></span>
                                     </div>
                                 </div>
+                                <canvas id="venta-chart-1"></canvas>
                             </div>
                             <div class="w-75" id="container-caja-accion">
                                 <span class="text-muted w-100 text-center">Aguardando tarea a realizar...</span>
@@ -1404,6 +1438,29 @@
                             </div>
                         </div>
                     </div>
+                    <script>
+                        $(document).ready(() => {
+                            return;
+                            let ventas = <?php echo Sistema::json_format(Venta::historialData()) ?>;
+                            console.log(ventas);
+                            let labels = ["Contado", "Débito", "Crédito", "Contado + Débito", "Contado + Crédito", "Débito + Crédito", "Efectivo + Débito + Crédito"];
+                            let datasets = [{
+                                label: "# de ventas",
+                                data: [8, 4, 12],
+                                backgroundColor: ['rgba(255, 99, 132, 0.8)',
+                                    'rgba(54, 162, 235, 0.8)',
+                                    'rgba(255, 206, 86, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(255, 206, 86, 1)'
+                                ],
+                                borderWidth: 1
+                            }];
+                            charter("venta-chart-1", 4);
+                        })
+                    </script>
                     <?php
                 }else{
                     Sistema::controlActividadCaja();

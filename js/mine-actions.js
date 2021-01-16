@@ -2,44 +2,31 @@ const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></spa
 
 const beep1 = new Audio("./sound/scanner-beep.mp3");
 
-const charter = () => {
+const charter = (container, tipo, labels = ["test 1", "test 2", "test 3"], datasets = [{
+    label: "# test X",
+    data: [8, 4, 12],
+    backgroundColor: ['rgba(255, 99, 132, 0.8)',
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 206, 86, 0.8)'
+    ],
+    borderColor: [
+        'rgba(255, 99, 132, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(255, 206, 86, 1)'
+    ],
+    borderWidth: 1
+}]) => {
     //<canvas id="myChart"></canvas>
-    var ctx = document.getElementById('myChart').getContext('2d');
+    var ctx = document.getElementById(container).getContext('2d');
     let chartType = ['line', 'bar', 'radar', 'pie', 'doughnut', 'polarArea', 'bubble'];
     var myChart = new Chart(ctx, {
-        type: chartType[1],
+        type: chartType[tipo],
         data: {
-            labels: ['Red', 'Blue', 'Yellow', 'Green', 'Purple', 'Orange'],
-            datasets: [{
-                label: '# of Votes',
-                data: [12, 19, 3, 5, 2, 3],
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)',
-                    'rgba(54, 162, 235, 0.2)',
-                    'rgba(255, 206, 86, 0.2)',
-                    'rgba(75, 192, 192, 0.2)',
-                    'rgba(153, 102, 255, 0.2)',
-                    'rgba(255, 159, 64, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)',
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(255, 206, 86, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 159, 64, 1)'
-                ],
-                borderWidth: 1
-            }]
+            labels: labels,
+            datasets: datasets
         },
         options: {
-            scales: {
-                yAxes: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
-            }
+
         }
     });
 }
@@ -1761,13 +1748,17 @@ const cajaActividadCerrar = (div = null) => {
     });
 }
 
-const ventaHistorial = (div = null) => {
-    var me = $(this);
-    if (me.data('requestRunning')) {
-        return;
-    }
-    me.data('requestRunning', true);
-    let divProcess = (div !== null) ? div : "#right-content-data";
+const cajaRefreshUI = (monto, idCaja) => {
+    let promise1 = cajaUpdateMonto(monto);
+    let promise2 = cajaHistorial(idCaja, "#container-caja-historial", true);
+    let promise3 = ventaHistorial(idCaja, "#container-ventas-historial", true);
+    Promise.all([promise1, promise2, promise3]).catch(function(err) {
+        console.log("Promise error: " + err);
+    });
+}
+
+const ventaHistorial = (idCaja = null, div = "#right-content-data", small = false) => {
+    let divProcess = div;
     let divForm = "";
     $.ajax({
         type: "POST",
@@ -1778,7 +1769,74 @@ const ventaHistorial = (div = null) => {
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: {},
+        data: { idCaja: idCaja, small: small },
+        complete: function() {},
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+    });
+}
+
+const ventaAnularFormulario = (idVenta, div = "#right-content-process") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/venta/anular-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idVenta: idVenta },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const ventaAnular = (idVenta, div = "#right-content-data") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#venta-anular-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "idVenta2", value: idVenta });
+    data.push({ name: "exceptions", value: ["observacion"] });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -2028,15 +2086,6 @@ const jornadaFormulario = (idJornada = null, div = "#right-content-data") => {
 }
 
 const cajaHistorial = (idCaja, div = "#container-caja-historial", small = false) => {
-    var me = $(this);
-    if (me.data('requestRunning')) {
-        return;
-    }
-    me.data('requestRunning', true);
-    if (!$(div).length === 0) {
-        me.data('requestRunning', false);
-        return;
-    }
     let divProcess = div;
     let divForm = "";
     $.ajax({
@@ -2049,9 +2098,7 @@ const cajaHistorial = (idCaja, div = "#container-caja-historial", small = false)
             $(divProcess).show(350);
         },
         data: { idCaja: idCaja, small: small },
-        complete: function() {
-            me.data('requestRunning', false);
-        },
+        complete: function() {},
         success: function(data) {
             setTimeout(function() {
                 $(divProcess).hide().html(data).fadeIn("slow");
@@ -2059,7 +2106,6 @@ const cajaHistorial = (idCaja, div = "#container-caja-historial", small = false)
         }
     }).fail(function(jqXHR) {
         console.log(jqXHR.statusText);
-        me.data('requestRunning', false);
     });
 }
 

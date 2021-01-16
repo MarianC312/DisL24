@@ -575,6 +575,41 @@ body {
     border-radius: 0.375em;
 }
 
+.anulado {
+    position: relative;
+}
+
+.anulado::after {
+    width: 100%;
+    background-color: rgba(65, 65, 65, 0.5);
+    content: "ANULADO";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: cornsilk;
+}
+
+.curtain {
+    position: absolute;
+    z-index: 10000;
+    top: 0;
+    left: 0;
+    margin: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .mine-container.sm {
     margin: 0.325em 0.155em;
     background-color: var(--sec-sec)

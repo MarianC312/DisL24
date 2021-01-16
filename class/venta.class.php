@@ -1,9 +1,81 @@
 <?php
     class Venta {
+        public static function cajaHistorialDataGetMonto($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_caja_historial", "monto", "venta = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["monto"];
+                        }else{
+                            Sistema::debug('info', 'venta.class.php - cajaHistorialDataGetMonto - No se encontró información del historial. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - cajaHistorialDataGetMonto - Error al consultar la información del historial. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error' , 'venta.class.php - cajaHistorialDataGetMonto - Identificador de venta incorrecto. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - cajaHistorialDataGetMonto - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function dataGetCaja($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_venta", "caja", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["caja"];
+                        }else{
+                            Sistema::debug('info', 'venta.class.php - dataGetCaja - No se encontró información de la venta. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - dataGetCaja - Error al consultar la información de la venta. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error' , 'venta.class.php - dataGetCaja - Identificador de venta incorrecto. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - dataGetCaja - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function dataGetPago($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_venta", "pago", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["pago"];
+                        }else{
+                            Sistema::debug('info', 'venta.class.php - dataGetPago - No se encontró información de la venta. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - dataGetPago - Error al consultar la información de la venta. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error' , 'venta.class.php - dataGetPago - Identificador de venta incorrecto. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - dataGetPago - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function historialData($idCaja = null, $fechaInicio = null, $fechaFin = null, $operador = null, $sucursal = null, $compañia = null, $limit = 250){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                $query = DataBase::select("compañia_sucursal_venta", "*", ((!is_null($idCaja)) ? "caja = '".$idCaja."' AND " : "").((!is_null($fechaInicio) && !is_null($fechaFin)) ? "fechaCarga BETWEEN '".$fechaInicio."' AND '".$fechaFin."' AND " : "").((!is_null($operador)) ? "operador = '".$operador."' AND " : "")."sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY fechaCarga DESC LIMIT ".$limit);
+                $query = DataBase::select("compañia_sucursal_venta", "*", ((!is_null($idCaja) && strlen($idCaja) > 0) ? "caja = '".$idCaja."' AND " : "").((!is_null($fechaInicio) && !is_null($fechaFin)) ? "fechaCarga BETWEEN '".$fechaInicio."' AND '".$fechaFin."' AND " : "").((!is_null($operador)) ? "operador = '".$operador."' AND " : "")."sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY fechaCarga DESC LIMIT ".$limit);
                 if($query){
                     $data = [];
                     if(DataBase::getNumRows($query) > 0){
@@ -28,14 +100,126 @@
             return false;
         }
 
+        public static function anularFormulario($idVenta){
+            if(Sistema::usuarioLogueado()){ 
+                ?>
+                <div class="curtain" id="container-venta-anular-formulario">
+                    <div class="mine-container w-50 h-50">
+                        <div class="d-flex justify-content-between"> 
+                            <div class="titulo">Anular venta N° <?php echo $idVenta ?></div>
+                            <button type="button" onclick="$('#container-venta-anular-formulario').remove()" class="btn delete"><i class="fa fa-times"></i></button>
+                        </div>
+                        <?php
+                            if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                                Session::iniciar();
+                                ?>
+                                <div id="venta-anular-process" style="display: none"></div>
+                                <form id="venta-anular-form" action="./engine/venta/anular.php" form="#venta-anular-form" process="#venta-anular-process">
+                                    <div class="form-group">
+                                        <label for="motivo">Motivo:</label>
+                                        <select class="form-control" id="motivo" name="motivo">
+                                            <option value=""> - Seleccionar una opción - </option>
+                                            <?php
+                                                if(is_array($_SESSION["lista"]["anulacion"])){
+                                                    if(count($_SESSION["lista"]["anulacion"]) > 0){
+                                                        foreach($_SESSION["lista"]["anulacion"] AS $key => $value){
+                                                            echo '<option value="'.$value["id"].'">'.$value["tipo"].'</option>';
+                                                        }
+                                                    }
+                                                }
+                                            ?>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="observacion">Observaciones:</label>
+                                        <textarea class="form-control" id="observacion" name="observacion" rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group d-none">
+                                        <label class="col-form-label" for="idVenta">Identificador:</label>
+                                        <input type="text" class="form-control" value="<?php echo $idVenta ?>" id="idVenta" name="idVenta" readonly>
+                                    </div>
+                                    <button type="button" class="btn btn-success" onclick="ventaAnular(<?php echo $idVenta ?>)">Registrar</button>
+                                </form>
+                                <?php
+                            }else{
+                                $mensaje['tipo'] = 'danger';
+                                $mensaje['cuerpo'] = 'Hubo un error con la información recibida. <b>Intente nuevamente o contacte al administrador.</b>';
+                                Alert::mensaje($mensaje);
+                            }
+                        ?>
+                    </div>
+                </div>
+                <?php
+            }else{
+                Sistema::debug('error', 'venta.class.php - anularFormulario - Usuario no logueado.');
+            }
+        }
+
+        public static function anular($data, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    $idVenta = $data["idVenta"]; 
+                    Session::iniciar();
+                    $pago = Venta::dataGetPago($idVenta);
+                    $caja = Venta::dataGetCaja($idVenta);
+                    if(is_numeric($pago) && array_key_exists($pago, $_SESSION["lista"]["pago"]) && is_numeric($caja) && Compania::cajaCorroboraExistencia($caja)){
+                        $query = DataBase::update("compañia_sucursal_venta", "estado = 0, anuladoMotivo = '".$data["motivo"]."', anuladoObservacion = ".((!is_null($data["observacion"]) && strlen($data["observacion"]) > 0) ? "'".$data["observacion"]."'" : "NULL").", anuladoOperador = '".$_SESSION["usuario"]->getId()."'", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'");
+                        if($query){
+                            if($pago == 1 || $pago == 4 || $pago == 5 || $pago == 7){
+                                $query = DataBase::update("compañia_sucursal_caja_historial", "estado = 0, observacion = CONCAT('[ANULADA] ', observacion)", "venta = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'");
+                                if($query){
+                                    $monto = Venta::cajaHistorialDataGetMonto($idVenta);
+                                    if(is_numeric($monto) && $monto >= 0){
+                                        $query = DataBase::update("compañia_sucursal_caja", "monto = monto - '".$monto."'", "id = '".$caja."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'");
+                                        if(!$query){
+                                            $mensaje['tipo'] = 'danger';
+                                            $mensaje['cuerpo'] = 'Hubo un error al descontar el monto [$'.$monto.'] de la caja. Realícelo manualmente con un movimiento de corrección en caja o contacte al administrador.';
+                                            Alert::mensaje($mensaje);
+                                        }
+                                    }else{
+                                        $mensaje['tipo'] = 'danger';
+                                        $mensaje['cuerpo'] = 'Hubo un error al descontar el monto [$'.$monto.'] de la caja. Realícelo manualmente con un movimiento de corrección en caja o contacte al administrador.';
+                                        Alert::mensaje($mensaje);
+                                    }
+                                }else{
+                                    $mensaje['tipo'] = 'danger';
+                                    $mensaje['cuerpo'] = 'Hubo un error al anular el movimiento en caja. <b>Contacte al administrador a la brevedad.</b>';
+                                    Alert::mensaje($mensaje);
+                                }
+                            }
+                            echo '<script>setTimeout(() => { cajaRefreshUI('.Caja::dataGetMonto($caja).', '.$caja.') }, 250)</script>';
+                            $mensaje['tipo'] = 'success';
+                            $mensaje['cuerpo'] = 'Venta anulada satisfactoriamente!';
+                            Alert::mensaje($mensaje);
+                        }else{
+                            $mensaje['tipo'] = 'danger';
+                            $mensaje['cuerpo'] = 'Hubo un error al anular la venta. <b>Intente nuevamente o contacte al administrador.</b>';
+                            Alert::mensaje($mensaje);
+                        }
+                    }else{
+                        $mensaje['tipo'] = 'warning';
+                        $mensaje['cuerpo'] = 'No se pudo comprobar la información de la venta. <b>Intente nuevamente o contacte al administrador.</b>';
+                        Alert::mensaje($mensaje);
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al realizar el movimiento, el identificador de venta es incorrecto. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - anular - Usuario no logueado.');
+            }
+        }
+
         public static function historial($idCaja = null, $actividad = null, $small = false){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                $data = Venta::historialData($idCaja, null, null, null, null, null, ($small) ? 5 : 250);
+                $small = ($small === true || $small == "true" || $small == 1) ? true : false;
+                $data = Venta::historialData($idCaja, null, null, null, null, null, ($small === true) ? 5 : 250);
                 $pago = $_SESSION["lista"]["pago"];
                 $productoBase = $_SESSION["lista"]["producto"];
                 ?>
-                <div class="mine-container <?php echo ($small) ? "sm" : "" ?>">
+                <div class="mine-container <?php echo ($small === true) ? "sm" : "" ?>">
                     <div class="titulo">Historial de ventas</div>
                     <div class="p-1">
                         <table id="tabla-venta-historial" class="table table-hover table-responsive w-100">
@@ -51,9 +235,9 @@
                                 <?php
                                     if(is_array($data)){
                                         if(count($data) > 0){
-                                            foreach($data AS $key => $value){ 
+                                            foreach($data AS $key => $value){
                                                 ?>
-                                                <tr id="venta-<?php echo $key ?>">
+                                                <tr id="venta-<?php echo $key ?>" class="<?php echo ($value["estado"] != 1) ? "anulado" : "" ?>">
                                                     <td class="text-center"><?php echo "#".$value["caja"] ?></td>
                                                     <td class="w-100"><?php echo $pago[$value["pago"]]["pago"] ?></td>
                                                     <td><?php echo "$".round($value["total"], 2); ?></td>
@@ -63,7 +247,11 @@
                                                             if(is_numeric($value["nComprobante"]) && $value["nComprobante"] > 0){
                                                                 echo '<button type="button" onclick="facturaVisualizar('.$value["id"].')" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>';
                                                             }
+                                                            if($value["estado"] == 1 && date("Y-m-d", strtotime($value["fechaCarga"])) == date("Y-m-d")){
+                                                                echo '<button type="button" onclick="ventaAnularFormulario('.$value['id'].')" id="anular" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i></button>';
+                                                            }
                                                         ?>
+                                                        
                                                     </td>
                                                 </tr>
                                                 <tr id="venta-<?php echo $key ?>-productos" class="d-none" style="background-color: var(--sec-main)">
@@ -127,14 +315,9 @@
                     </div>
                 </div>
                 <script>
-                    <?php
-                        if(!$small){
-                            ?>
-                            dataTableSet("#tabla-venta-historial", false, [[5, 10, 25, 50, 100, -1],[5, 10, 25, 50, 100, "Todos"]], 10, [ 1, "desc" ]);
-                            <?php
-                        }
-                    ?>
-                    
+                    if(<?php echo $small ?> === false){
+                        dataTableSet("#tabla-venta-historial", false, [[10, 20, 50, 100, 200, -1],[5, 10, 25, 50, 100, "Todos"]], 20, [ 1, "desc" ]);
+                    }
                 </script>
                 <?php
             }else{
@@ -264,8 +447,7 @@
                                         }
                                     }
                                     Compania::facturaVisualizar($idVenta);
-                                    echo '<script>cajaUpdateMonto('.Caja::dataGetMonto($data["idCaja"]).')</script>';
-                                    echo '<script>cajaHistorial('.$data["idCaja"].', "#container-caja-historial", true);</script>';
+                                    echo '<script>setTimeout(() => { cajaRefreshUI('.Caja::dataGetMonto($data["idCaja"]).', '.$data["idCaja"].') }, 250)</script>';
                                 }else{
                                     $mensaje['tipo'] = 'danger';
                                     $mensaje['cuerpo'] = 'Hubo un error al registrar la venta. <b>Intente nuevamente o contacte al administrador.</b>';
