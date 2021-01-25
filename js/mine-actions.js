@@ -37,17 +37,18 @@ const stockRegistroPRoductoListaFormularioSetStock = (idProducto, tipo = ['stock
     })
 }
 
-const ventaPagoReset = () => {
-    $("#container-pago-1, #container-pago-2, #container-pago-3, #container-pago-4, #container-pago-5, #container-pago-6, #container-pago-7").addClass("d-none").find("*").attr("disabled", true).find("input").val("0");
+const ventaPagoReset = (total = null) => {
+    var aPagar = parseFloat((total == null) ? $("#tabla-venta-productos #total").html() : total).toFixed(2);
+    $("#container-pago-1, #container-pago-2, #container-pago-3, #container-pago-4, #container-pago-5, #container-pago-6, #container-pago-7, #container-pago-8").addClass("d-none").find("*").attr("disabled", true).find("input").val("0");
     $("#container-pago-3 #cuota, #container-pago-5 #cuota, #container-pago-6 #cuota").val("1");
-    $("#pre-total").html($("#tabla-venta-productos #total").html());
-    $("#pre-pagar").html($("#tabla-venta-productos #total").html());
-    $("#pre-vuelto").html("0")
+    $("#container-pre-obs").html("");
+    $("#pre-total").html(aPagar);
+    $("#pre-pagar").html(aPagar);
+    $("#pre-vuelto").html("0");
 }
 
-const calculaPreTotal = (container) => {
-    console.log(container);
-    let selector, data, debito, preTotal = parseFloat($("#tabla-venta-productos #total").html()).toFixed(2),
+const calculaPreTotal = (container, total = null) => {
+    let selector, data, debito, preTotal = parseFloat((total == null) ? $("#tabla-venta-productos #total").html() : total).toFixed(2),
         interes, nuevoValor, resto;
     switch (parseInt($("#pago").val())) {
         case 3:
@@ -136,9 +137,10 @@ const cajaCalculaProductoPrecioBruto = (pos, idProducto) => {
 }
 
 const tailSelectSet = (componente, search = true, classNames = ["flex-grow-1, w-100"]) => {
-    tail.select(componente, {
+    return tail.select(componente, {
         search: search,
-        classNames: classNames
+        classNames: classNames,
+        deselect: true
     });
 }
 
@@ -474,17 +476,22 @@ const ventaRegistrarFormularioUpdatetipoProducto = () => {
     }
 }
 
-const ventaRegistrarFormularioUpdateBusquedaCliente = () => {
+const ventaRegistrarFormularioUpdateBusquedaCliente = (total = null) => {
     if ($('#tipoCliente').is(':checked')) {
-        $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeOut(100).find("*").prop("disabled", true);
+        $("#container-cliente:not(.tail-select)").fadeOut(100).find("*").prop("disabled", true);
         $("#tipoClienteLabel").html("Comprador ocasional");
     } else {
-        $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeIn("slow").find("*").prop("disabled", false);
+        $("#container-cliente:not(.tail-select)").fadeIn(100).find("*").prop("disabled", false);
         $("#tipoClienteLabel").html("Cliente");
     }
+    $("#pago").val("");
+    updatePago();
+    ventaPagoReset(total);
 }
 
 const ventaRegistrarFormularioUpdateBusqueda = () => {
+    console.log("cancelada!");
+    return;
     if ($('#tipoCliente1').is(':checked')) {
         $("#container-cliente").prop("selected", () => { return this.defaultSelected; }).fadeOut(100).find("*").prop("disabled", true);
     }
@@ -1579,6 +1586,38 @@ const clienteEditarFormulario = (idCliente = null) => {
     });
 }
 
+const cajaPagoFormulario = (idCaja, monto = null, idVenta = null, div = "#right-content-process") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/caja/pago-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idCaja: idCaja, monto: monto, idVenta: idVenta },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const cajaActividadFormulario = (div = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1757,6 +1796,37 @@ const cajaRefreshUI = (monto, idCaja) => {
     });
 }
 
+const clienteRefreshUI = (idCliente, div, small) => {
+    let clientePromise1 = clienteCompraLista(idCliente, div, small);
+    Promise.all([clientePromise1]).catch(function(err) {
+        console.log("Promise error: " + err);
+    });
+}
+
+const clienteCompraLista = (idCliente, div = "#right-content-data", small = false) => {
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/cliente/compra-lista.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idCliente: idCliente, small: small },
+        complete: function() {},
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+    });
+}
+
 const ventaHistorial = (idCaja = null, div = "#right-content-data", small = false) => {
     let divProcess = div;
     let divForm = "";
@@ -1835,6 +1905,43 @@ const ventaAnular = (idVenta, div = "#right-content-data") => {
             $(divProcess).html(loading());
             $(divForm).hide(350);
             $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const cajaPagoRegistrar = (idVenta) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#caja-pago-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "idVenta2", value: idVenta });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(150);
+            $(divProcess).show(150);
         },
         data: data,
         complete: function() {

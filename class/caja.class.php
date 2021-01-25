@@ -437,6 +437,764 @@
             return false;
         }
 
+        public static function pagoRegistrar($data, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>'; 
+                    Session::iniciar();
+                    if(Caja::corroboraAcceso()){
+                        $idCaja = $_SESSION["usuario"]->getActividadCaja();
+                        if(is_numeric($idCaja) && $idCaja > 0 && Compania::cajaCorroboraExistencia($idCaja)){
+                            $dataVenta = Venta::data($data["idVenta"]);
+                            if(is_array($dataVenta) && count($dataVenta) > 0){
+                                if($data["cliente"] === $dataVenta[$data["idVenta"]]["cliente"]){
+                                    $dataCliente = Cliente::data(["filtroOpcion" => 3, "id" => $data["cliente"]], ["id","nombre"]);
+                                    if(is_array($dataCliente) && count($dataCliente) > 0){
+                                        if($data["total"] === $dataVenta[$data["idVenta"]]["total"]){
+                                            if($dataVenta[$data["idVenta"]]["pago"] == 8){
+                                                $credito = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"];
+                                                $dataCaja = [];
+                                                $dataCaja["pago"] = $data["pago"];
+                                                $dataCaja["contado"] = (isset($data["monto-contado"])) ? $data["monto-contado"] : NULL;
+                                                $dataCaja["debito"] = (isset($data["monto-debito"])) ? $data["monto-debito"] : NULL;
+                                                $dataCaja["credito"] = (isset($data["monto-credito"])) ? $data["monto-credito"] : NULL;
+                                                $dataCaja["efectivo"] = (isset($data["monto-efectivo"])) ? $data["monto-efectivo"] : NULL;
+                                                $dataCaja["financiacion"] = (isset($data["cuota"]) && ($dataCaja["pago"] == 3 || $dataCaja["pago"] == 5 || $dataCaja["pago"] == 6)) ? $data["cuota"] : NULL;
+    
+                                                if($dataCaja["pago"] == 3 || $dataCaja["pago"] == 5 || $dataCaja["pago"] == 6){
+                                                    $totalCredito = $dataCaja["credito"] * $credito[$dataCaja["financiacion"]]["interes"];
+                                                }else{
+                                                    $totalCredito = 0;
+                                                }
+                        
+                                                $dataCaja["total"] = round($dataCaja["contado"] + $dataCaja["debito"] + $totalCredito, 2); 
+                                                
+                                                $query = DataBase::update("compañia_sucursal_venta", "pago = '".$dataCaja["pago"]."', contado = ".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["contado"]."'" : "NULL").", debito = ".((strlen($dataCaja["debito"]) > 0) ? "'".$dataCaja["debito"]."'" : "NULL").", credito = ".((strlen($dataCaja["credito"]) > 0) ? "'".$dataCaja["credito"]."'" : "NULL").", efectivo = ".((strlen($dataCaja["efectivo"]) > 0) ? "'".$dataCaja["efectivo"]."'" : "NULL").", financiacion = ".((is_numeric($dataCaja["financiacion"])) ? "'".$dataCaja["financiacion"]."'" : "NULL" ).", total = '".$dataCaja["total"]."'", "id = '".$data["idVenta"]."' AND pago = 8 AND cliente = '".$data["cliente"]."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'");
+                                                if($query){
+                                                    if($dataCaja["pago"] == 1 || $dataCaja["pago"] == 4 || $dataCaja["pago"] == 5){
+                                                        $cajaInsertData = [
+                                                            "idCaja" => $idCaja,
+                                                            "tipo" => 1,
+                                                            "observacion" => "Cobro cliente ".$dataCliente[$data["cliente"]]["nombre"]." ticket #".$dataVenta[$data["idVenta"]]["nComprobante"].", condición cobro ".$_SESSION["lista"]["pago"][$dataCaja["pago"]]["pago"],
+                                                            "monto" => ($dataCaja["pago"] == 1) ? $dataCaja["total"] : $dataCaja["contado"],
+                                                            "venta" => $data["idVenta"]
+                                                        ];
+                                                        $cajaUpdate = Caja::accionRegistrar($cajaInsertData, false);
+                                                        if($cajaUpdate){
+                                                            $query = DataBase::update("compañia_sucursal_venta", "procesadoCaja = 1", "id = '".$data["idVenta"]."' AND sucursal = '".$_SESSION["usuario"]->getSucursal()."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                                            if(!$query){
+                                                                Sistema::debug('error', 'venta.class.php - registrar - Error al procesar venta. Ref.: '.$data["idVenta"]);
+                                                            }
+                                                        }else{
+                                                            Sistema::debug('error', 'venta.class.php - registar - Error al registrar acción en caja.');
+                                                        }
+                                                    }
+                                                    $mensaje['tipo'] = 'success';
+                                                    $mensaje['cuerpo'] = 'Pago registrado satisfactoriamente!';
+                                                    Alert::mensaje($mensaje);
+                                                    echo '<script>setTimeout(() => { clienteRefreshUI('.$data["idCliente"].',"#cliente-container-compra", true) }, 350)</script>';
+                                                }else{
+                                                    Sistema::debug('error', 'caja.class.php - pagoRegistrar - Error al registrar pago. Ref.: '.DataBase::getError());
+                                                    $mensaje['tipo'] = 'danger';
+                                                    $mensaje['cuerpo'] = 'Hubo un error al registrar el pago. <b>Intente nuevamente o contacte al administrador.</b>';
+                                                    $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-danger">Regresar</button></div>';
+                                                    Alert::mensaje($mensaje);
+                                                }
+                                            }else{
+                                                $mensaje['tipo'] = 'warning';
+                                                $mensaje['cuerpo'] = 'La venta no se encuentra "a cuenta", no se puede procesar el pago. Si considera esto un error, <b>contacte al administrador.</b>';
+                                                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                                Alert::mensaje($mensaje);
+                                            }
+                                        }else{
+                                            $mensaje['tipo'] = 'warning';
+                                            $mensaje['cuerpo'] = 'El total a pagar no coincide con el total ingresado. <b>Intente nuevamente o contacte al administrador.</b>';
+                                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                            Alert::mensaje($mensaje);
+                                        }
+                                    }else{
+                                        $mensaje['tipo'] = 'danger';
+                                        $mensaje['cuerpo'] = 'Hubo un error al comprobar la información del cliente. <b>Intente nuevamente o contacte al administrador.</b>';
+                                        $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-error">Regresar</button></div>';
+                                        Alert::mensaje($mensaje);
+                                    }
+                                }else{
+                                    $mensaje['tipo'] = 'warning';
+                                    $mensaje['cuerpo'] = 'El cliente seleccionado no coincide con el cliente de la cuenta. <b>Intente nuevamente o contacte al administrador.</b>';
+                                    $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                    Alert::mensaje($mensaje);
+                                }
+                            }else{
+                                $mensaje['tipo'] = 'warning';
+                                $mensaje['cuerpo'] = 'No se pudo comprobar la información de la venta. <b>Intente nuevamente o contacte al administrador.</b>';
+                                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                Alert::mensaje($mensaje);
+                            }
+                        }else{
+                            $mensaje['tipo'] = 'warning';
+                            $mensaje['cuerpo'] = 'No se pudo comprobar la información de la caja. <b>Intente nuevamente o contacte al administrador.</b>';
+                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                            Alert::mensaje($mensaje);
+                        }
+                    }else{
+                        $mensaje['tipo'] = 'warning';
+                        $mensaje['cuerpo'] = 'No se pudo comprobar el acceso a la caja para realizar el cobro. <b>Intente nuevamente o contacte al administrador.</b>';
+                        $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                        Alert::mensaje($mensaje);
+                    }
+                }else{
+                    Sistema::debug('error', 'caja.class.php - pagoRegistrar - Error en arreglo de datos recibido. Ref.: '.count($data));
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información del pago. <b>Intente nuevamente o contacte al administrador.</b>';
+                    $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$_POST['form'].'\').show(350);$(\''.$_POST['process'].'\').hide(350);" class="btn btn-error">Regresar</button></div>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'caja.class.php - pagoRegistrar - Usuario no logueado.');
+            }
+        }
+
+        public static function pagoFormulario($data, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(Caja::corroboraAcceso()){
+                    Session::iniciar();
+                    $idCaja = $_SESSION["usuario"]->getActividadCaja();
+                    if(is_numeric($idCaja) && $idCaja > 0 && Compania::cajaCorroboraExistencia($idCaja)){
+                        $dataCliente = (is_numeric($data["idVenta"])) ? Cliente::data(["filtroOpcion" => 3, "id" => Venta::dataGetCliente($data["idVenta"])], ["id","documento","nombre"]) : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"];
+                        $credito = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"];
+                        $dataVenta = Venta::data($data["idVenta"]);
+                        ?>
+                        <div id="container-caja-pago" class="curtain">
+                            <div class="mine-container">
+                                <div class="d-flex justify-content-between">
+                                    <div class="titulo">Procesar pago caja N° <?php echo $idCaja ?></div>
+                                    <button class="btn delete" type="button" onclick="$('#container-caja-pago').remove()"><i class="fa fa-times"></i></button>
+                                </div>
+                                <div id="caja-pago-process" style="display: none"></div>
+                                <form id="caja-pago-form" action="./engine/caja/pago-registrar.php" form="#caja-pago-form" process="#caja-pago-process">
+                                    <div class="d-flex flex-column">
+                                        <div class="d-flex justify-content-between"> 
+                                            <div class="w-50">
+                                                <div class="d-flex flex-column">
+                                                    <div class="form-group mr-2">
+                                                        <div class="custom-control custom-checkbox">
+                                                            <input type="checkbox" class="custom-control-input" onchange="ventaRegistrarFormularioUpdateBusquedaCliente()" id="tipoCliente" <?php echo (is_numeric($data["idVenta"])) ? "disabled" : "checked" ?>>
+                                                            <label class="custom-control-label" for="tipoCliente" id="tipoClienteLabel"><?php echo (is_numeric($data["idVenta"])) ? "Cliente" : "Comprador ocasional" ?></label>
+                                                        </div>
+                                                    </div>
+                                                    <div id="container-cliente" class="form-group flex-grow-1">
+                                                        <label for="cliente" class="d-block"><i class="fa fa-search"></i> Buscar cliente</label>
+                                                        <select class="form-control" id="cliente" name="cliente" onchange="updatePago()" <?php echo (is_numeric($data["idVenta"])) ? "readonly" : "" ?>>
+                                                            <option value=""> - Buscar cliente - </option>
+                                                            <?php
+                                                                if(is_array($dataCliente) && count($dataCliente) > 0){
+                                                                    foreach($dataCliente AS $key => $value){
+                                                                        echo '<option value="'.$value["id"].'" '.((is_numeric($data["idVenta"]) && count($dataCliente) == 1) ? "selected" : "").'>['.$value["documento"].'] '.$value["nombre"].'</option>';
+                                                                    }
+                                                                }
+                                                            ?>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="pago">Forma de pago</label>
+                                                    <select class="form-control" id="pago" name="pago">
+                                                        <option value=""> - Seleccionar opción de pago - </option>
+                                                        <?php
+                                                            if(is_array($_SESSION["lista"]["pago"]) && count($_SESSION["lista"]["pago"]) > 0){
+                                                                foreach($_SESSION["lista"]["pago"] AS $key => $value){
+                                                                    if($key == 8 && is_numeric($data["idVenta"])) continue; 
+                                                                    echo '<option value="'.$key.'">'.$value["pago"].'</option>';
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                </div>
+                                                <div id="container-pago-1" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto contado</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-contado" name="monto-contado" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="control-label">Efectivo</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-efectivo" name="monto-efectivo" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="container-pago-2" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto debito</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-debito" name="monto-debito" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="container-pago-3" class="form-group d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto crédito</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-credito" name="monto-credito" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div> 
+                                                    <label for="cuota">Cuotas</label>
+                                                    <select class="form-control" id="cuota" name="cuota" disabled>
+                                                        <?php
+                                                            if(is_array($credito) && count($credito) > 0){
+                                                                foreach($credito AS $key => $value){
+                                                                    echo '<option value="'.$key.'" data-test="asd" data-interes="'.$value["interes"].'" data-cuotas="'.$value["cuotas"].'">'.$value["tipo"].'</option>';
+                                                                }
+                                                            }
+                                                        ?>
+                                                    </select>
+                                                </div>
+                                                <div id="container-pago-4" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto contado</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-contado" name="monto-contado" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto débito</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-debito" name="monto-debito" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div> 
+                                                    <div class="form-group">
+                                                        <label class="control-label">Efectivo</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-efectivo" name="monto-efectivo" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="container-pago-5" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto contado</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-contado" name="monto-contado" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex flex-column"> 
+                                                        <div class="form-group">
+                                                            <label class="control-label">Monto crédito</label>
+                                                            <div class="form-group">
+                                                                <div class="input-group">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text">$</span>
+                                                                    </div>
+                                                                    <input type="text" class="form-control" id="monto-credito" name="monto-credito" min="0" placeholder="0.00" value="0" disabled>
+                                                                </div>
+                                                            </div>
+                                                        </div> 
+                                                        <div class="form-group">
+                                                            <label for="cuota">Cuotas</label>
+                                                            <select class="form-control" id="cuota" name="cuota" disabled>
+                                                                <?php
+                                                                    if(is_array($credito) && count($credito) > 0){
+                                                                        foreach($credito AS $key => $value){
+                                                                            echo '<option value="'.$key.'" data-test="asd" data-interes="'.$value["interes"].'" data-cuotas="'.$value["cuotas"].'">'.$value["tipo"].'</option>';
+                                                                        }
+                                                                    }
+                                                                ?>
+                                                            </select>
+                                                        </div> 
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="control-label">Efectivo</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-efectivo" name="monto-efectivo" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="container-pago-6" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto débito</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-debito" name="monto-debito" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex flex-column"> 
+                                                        <div class="form-group">
+                                                            <label class="control-label">Monto crédito</label>
+                                                            <div class="form-group">
+                                                                <div class="input-group">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text">$</span>
+                                                                    </div>
+                                                                    <input type="text" class="form-control" id="monto-credito" name="monto-credito" min="0" placeholder="0.00" value="0" disabled>
+                                                                </div>
+                                                            </div>
+                                                        </div> 
+                                                        <div class="form-group">
+                                                            <label for="cuota">Cuotas</label>
+                                                            <select class="form-control" id="cuota" name="cuota" disabled>
+                                                                <?php
+                                                                    if(is_array($credito) && count($credito) > 0){
+                                                                        foreach($credito AS $key => $value){
+                                                                            echo '<option value="'.$key.'" data-test="asd" data-interes="'.$value["interes"].'" data-cuotas="'.$value["cuotas"].'">'.$value["tipo"].'</option>';
+                                                                        }
+                                                                    }
+                                                                ?>
+                                                            </select>
+                                                        </div> 
+                                                    </div>
+                                                </div>
+                                                <div id="container-pago-7" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto contado</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-contado" name="monto-contado" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto débito</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-debito" name="monto-debito" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div> 
+                                                    <div class="d-flex flex-column"> 
+                                                        <div class="form-group">
+                                                            <label class="control-label">Monto crédito</label>
+                                                            <div class="form-group">
+                                                                <div class="input-group">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text">$</span>
+                                                                    </div>
+                                                                    <input type="text" class="form-control" id="monto-credito" name="monto-credito" min="0" placeholder="0.00" value="0" disabled>
+                                                                </div>
+                                                            </div>
+                                                        </div> 
+                                                        <div class="form-group">
+                                                            <label for="cuota">Cuotas</label>
+                                                            <select class="form-control" id="cuota" name="cuota" disabled>
+                                                                <?php
+                                                                    if(is_array($credito) && count($credito) > 0){
+                                                                        foreach($credito AS $key => $value){
+                                                                            echo '<option value="'.$key.'" data-test="asd" data-interes="'.$value["interes"].'" data-cuotas="'.$value["cuotas"].'">'.$value["tipo"].'</option>';
+                                                                        }
+                                                                    }
+                                                                ?>
+                                                            </select>
+                                                        </div> 
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label class="control-label">Efectivo</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-efectivo" name="monto-efectivo" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div id="container-pago-8" class="d-none">
+                                                    <div class="form-group">
+                                                        <label class="control-label">Monto</label>
+                                                        <div class="form-group">
+                                                            <div class="input-group mb-3">
+                                                                <div class="input-group-prepend">
+                                                                    <span class="input-group-text">$</span>
+                                                                </div>
+                                                                <input type="text" class="form-control" id="monto-contado" name="monto-contado" min="0" placeholder="0.00" value="0" disabled>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div> 
+                                            <div class="w-50 d-flex flex-column justify-content-center align-items-center">
+                                                <div class="d-flex justify-content-around w-100 p-1">
+                                                    <div id="container-pre-total" class="p-1 text-center h4">
+                                                        Total: <br>
+                                                        <span class="font-weight-bold d-block w-100">
+                                                            $ <span id="pre-total"><?php echo number_format($dataVenta[$data["idVenta"]]["total"], 2, ",", ".") ?></span>
+                                                        </span>
+                                                    </div>
+                                                    <div id="container-pre-pagar" class="p-1 text-center h4">
+                                                        A pagar: <br>
+                                                        <span class="font-weight-bold d-block w-100">
+                                                            $ <span id="pre-pagar"><?php echo number_format($dataVenta[$data["idVenta"]]["total"], 2, ",", ".") ?></span>
+                                                        </span>
+                                                    </div>
+                                                    <div id="container-pre-vuelto" class="p-1 text-center h4">
+                                                        Vuelto: <br>
+                                                        <span class="font-weight-bold d-block w-100">
+                                                            $ <span id="pre-vuelto">0</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div id="container-pre-obs" class="w-100 text-center text-muted h5"></div>
+                                            </div>
+                                        </div> 
+                                    </div> 
+                                    <div class="form-group d-none">
+                                        <label class="col-form-label" for="idVenta">Identificador</label>
+                                        <input type="text" class="form-control" value="<?php echo $data["idVenta"] ?>" id="idVenta" name="idVenta" readonly>
+                                    </div>
+                                    <div class="form-group d-none">
+                                        <label class="col-form-label" for="total">Total</label>
+                                        <input type="text" class="form-control" value="<?php echo (is_numeric($data["idVenta"])) ? $dataVenta[$data["idVenta"]]["total"] : $data["total"] ?>" id="total" name="total" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <button type="button" class="btn btn-success" onclick="cajaPagoRegistrar(<?php echo $data['idVenta'] ?>)">Registrar pago</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        <script>
+                            var totalCuenta = <?php echo (is_numeric($data["idVenta"])) ? $dataVenta[$data["idVenta"]]["total"] : $data["total"] ?>;
+                            $("#pago").on("change", (e) => {
+                                ventaPagoReset(totalCuenta);
+                                switch(parseInt($("#pago").val())){
+                                    case 1:
+                                        $("#container-pago-1").removeClass("d-none").find("*").removeAttr("disabled"); 
+                                        total = parseFloat(totalCuenta).toFixed(2);
+                                        $("#container-pago-1 #monto-contado").val(total).prop("readonly", true);
+                                        break;
+                                    case 2:
+                                        $("#container-pago-2").removeClass("d-none").find("*").removeAttr("disabled"); 
+                                        total = parseFloat(totalCuenta).toFixed(2);
+                                        $("#container-pago-2 #monto-debito").val(total).prop("readonly", true);
+                                        break;
+                                    case 3:
+                                        $("#container-pago-3").removeClass("d-none").find("*").removeAttr("disabled");
+                                        total = parseFloat(totalCuenta).toFixed(2);
+                                        $("#container-pago-3 #monto-credito").val(total).prop("readonly", true);
+                                        setTimeout(() => { calculaPreTotal('container-pago-3', totalCuenta); }, 350);
+                                        break;
+                                    case 4:
+                                        $("#container-pago-4").removeClass("d-none").find("*").removeAttr("disabled");
+                                        break;
+                                    case 5:
+                                        $("#container-pago-5").removeClass("d-none").find("*").removeAttr("disabled");
+                                        break;
+                                    case 6:
+                                        $("#container-pago-6").removeClass("d-none").find("*").removeAttr("disabled");
+                                        break;
+                                    case 7:
+                                        alert("No disponible!");
+                                        e.preventDefault();
+                                        return;
+                                        break;
+                                    case 8: 
+                                        $("#container-pago-8").removeClass("d-none").find("*").removeAttr("disabled");
+                                        total = parseFloat(totalCuenta).toFixed(2);
+                                        $("#container-pago-8 #monto-contado").val(total).prop("readonly", true);
+                                        break;
+                                    default:
+                                        alert("Seleccione una opción válida para pagar...");
+                                        break;
+                                }
+                            }); 
+
+                            $("#container-pago-1 #monto-efectivo, #container-pago-4 #monto-efectivo, #container-pago-5 #monto-efectivo, #container-pago-7 #monto-efectivo").on("keypress", (e) => {
+                                if((e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105) || e.which == 8 || e.which == 46){ 
+                                    let efectivo, contado, vuelto;
+                                    switch(parseInt($("#pago").val())){
+                                        case 1:
+                                            efectivo = parseFloat($("#container-pago-1 #monto-efectivo").val() + e.key).toFixed(2);
+                                            contado = parseFloat($("#container-pago-1 #monto-contado").val()).toFixed(2);
+                                            vuelto = parseFloat((efectivo - contado)).toFixed(2);
+                                            break;
+                                        case 4:
+                                            efectivo = parseFloat($("#container-pago-4 #monto-efectivo").val() + e.key).toFixed(2);
+                                            contado = parseFloat($("#container-pago-4 #monto-contado").val()).toFixed(2);
+                                            vuelto = parseFloat((efectivo - contado)).toFixed(2);
+                                            break;
+                                        case 5: 
+                                            efectivo = parseFloat($("#container-pago-5 #monto-efectivo").val() + e.key).toFixed(2);
+                                            contado = parseFloat($("#container-pago-5 #monto-contado").val()).toFixed(2);
+                                            vuelto = parseFloat((efectivo - contado)).toFixed(2);
+                                            break;
+                                        case 7:
+                                            efectivo = parseFloat($("#container-pago-7 #monto-efectivo").val() + e.key).toFixed(2);
+                                            contado = parseFloat($("#container-pago-7 #monto-contado").val()).toFixed(2);
+                                            vuelto = parseFloat((efectivo - contado)).toFixed(2);
+                                            break;
+                                    }
+                                    //console.log(efectivo + " - " + contado + " = " + vuelto);
+                                    $("#pre-vuelto").html(vuelto);
+                                }else{
+                                    e.preventDefault();
+                                    if(e.which == 188){
+                                        alert("Para ingresar centavos usa el . [punto] en lugar de la , [coma]");
+                                    }else{ 
+                                        alert("No se admite el ingreso de esa tecla.");
+                                    }
+                                }
+                            });
+
+                            $("#container-pago-5 #monto-credito, #container-pago-6 #monto-credito, #container-pago-7 #monto-credito").on("keypress", (e) => {
+                                if((e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105) || e.which == 8 || e.which == 46){
+                                    let total, contado, debito, credito, resto;
+                                    switch(parseInt($("#pago").val())){
+                                        case 5:
+                                            $("#container-pago-5 #monto-contado").val(0);
+                                            $("#container-pago-5 #monto-efectivo").val(0)
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            contado = parseFloat($("#container-pago-5 #monto-contado").val()).toFixed(2);
+                                            credito = parseFloat($("#container-pago-5 #monto-credito").val() + e.key).toFixed(2);
+                                            resto = parseFloat((total - contado - credito)).toFixed(2);
+                                            //console.log(total + " - " + contado + " - " + credito + " = " + resto);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-5 #monto-contado").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-5', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                        case 6:
+                                            $("#container-pago-6 #monto-debito").val(0);
+                                            $("#container-pago-6 #monto-efectivo").val(0)
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            debito = parseFloat($("#container-pago-6 #monto-debito").val()).toFixed(2);
+                                            credito = parseFloat($("#container-pago-6 #monto-credito").val() + e.key).toFixed(2);
+                                            resto = parseFloat((total - debito - credito)).toFixed(2);
+                                            //console.log(total + " - " + contado + " - " + credito + " = " + resto);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-6 #monto-debito").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-6', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                        case 7:
+                                            $("#container-pago-7 #monto-contado").val(0);
+                                            $("#container-pago-7 #monto-efectivo").val(0);
+                                            $("#container-pago-7 #monto-debito").val(0);
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            contado = parseFloat($("#container-pago-5 #monto-contado").val()).toFixed(2);
+                                            debito = parseFloat($("#container-pago-5 #monto-debito").val()).toFixed(2);
+                                            credito = parseFloat($("#container-pago-5 #monto-credito").val() + e.key).toFixed(2);
+                                            resto = parseFloat((total - contado - debito - credito)).toFixed(2);
+                                            //console.log(total + " - " + contado + " - " + credito + " = " + resto);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-5 #monto-contado").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-7', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                    }
+                                }else{
+                                    e.preventDefault();
+                                    if(e.which == 188){
+                                        alert("Para ingresar centavos usa el . [punto] en lugar de la , [coma]");
+                                    }else{ 
+                                        alert("No se admite el ingreso de esa tecla.");
+                                    }
+                                }
+                            });
+
+                            $("#container-pago-4 #monto-debito, #container-pago-5 #monto-debito, #container-pago-6 #monto-debito").on("keypress", (e) => {
+                                if((e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105) || e.which == 8 || e.which == 46){
+                                    let total, contado, debito, resto;
+                                    switch(parseInt($("#pago").val())){
+                                        case 4:
+                                            $("#container-pago-4 #monto-contado").val(0);
+                                            $("#container-pago-4 #monto-efectivo").val(0)
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            contado = parseFloat($("#container-pago-4 #monto-contado").val()).toFixed(2);
+                                            debito = parseFloat($("#container-pago-4 #monto-debito").val() + e.key).toFixed(2);
+                                            resto = parseFloat((total - contado - debito)).toFixed(2);
+                                            //console.log(total + " - " + contado + " - " + credito + " = " + resto);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-4 #monto-contado").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-4', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                        case 6:
+                                            $("#container-pago-6 #monto-efectivo").val(0);
+                                            $("#container-pago-6 #monto-credito").val(0)
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            credito = parseFloat($("#container-pago-6 #monto-credito").val()).toFixed(2);
+                                            debito = parseFloat($("#container-pago-6 #monto-debito").val() + e.key).toFixed(2);
+                                            resto = parseFloat((total - credito - debito)).toFixed(2);
+                                            //console.log(total + " - " + contado + " - " + credito + " = " + resto);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-6 #monto-credito").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-6', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                    }
+                                }else{
+                                    e.preventDefault();
+                                    if(e.which == 188){
+                                        alert("Para ingresar centavos usa el . [punto] en lugar de la , [coma]");
+                                    }else{ 
+                                        alert("No se admite el ingreso de esa tecla.");
+                                    }
+                                }
+                            });
+
+                            $("#container-pago-1 #monto-contado, #container-pago-4 #monto-contado, #container-pago-5 #monto-contado").on("keypress", (e) => { 
+                                if((e.which >= 48 && e.which <= 57) || (e.which >= 96 && e.which <= 105) || e.which == 8 || e.which == 46){
+                                    let total, contado, debito, resto;
+                                    switch(parseInt($("#pago").val())){
+                                        case 4:
+                                            $("#container-pago-4 #monto-debito").val(0);
+                                            $("#container-pago-4 #monto-efectivo").val(0);
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            contado = parseFloat($("#container-pago-4 #monto-contado").val() + e.key).toFixed(2);
+                                            debito = parseFloat($("#container-pago-4 #monto-debito").val()).toFixed(2);
+                                            resto = parseFloat((total - contado - debito)).toFixed(2);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-4 #monto-debito").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-4', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                        case 5:
+                                            $("#container-pago-5 #monto-credito").val(0);
+                                            $("#container-pago-5 #monto-efectivo").val(0);
+                                            total = parseFloat(totalCuenta).toFixed(2);
+                                            contado = parseFloat($("#container-pago-5 #monto-contado").val() + e.key).toFixed(2);
+                                            credito = parseFloat($("#container-pago-5 #monto-credito").val()).toFixed(2);
+                                            resto = parseFloat((total - contado - credito)).toFixed(2);
+                                            console.log(total + " - " + contado + " - " + credito + " = " + resto);
+                                            if(resto < 0 && e.which != 8){
+                                                e.preventDefault();
+                                                alert("El valor a pagar no puede ser mayor al total.");
+                                                return;
+                                            }else{
+                                                $("#pre-pagar").html(0);
+                                                $("#container-pago-5 #monto-credito").val(resto).prop("max", resto);
+                                                setTimeout(() => { calculaPreTotal('container-pago-5', totalCuenta); }, 350);
+                                            }
+                                            break;
+                                        case 7:
+
+                                            break;
+                                        default:
+                                            console.log("no");
+                                            break;
+                                    }
+                                    
+                                }else{
+                                    e.preventDefault();
+                                    if(e.which == 188){
+                                        alert("Para ingresar centavos usa el . [punto] en lugar de la , [coma]");
+                                    }else{ 
+                                        alert("No se admite el ingreso de esa tecla.");
+                                    }
+                                }
+                            });
+
+                            $("#container-pago-3 #cuota, #container-pago-5 #cuota, #container-pago-6 #cuota").on("change", (e) => { calculaPreTotal('container-pago-'+ $("#pago").val(), totalCuenta) });
+
+                            function updatePago(){
+                                setTimeout(() => { 
+                                    let cliente = $("#cliente").val();
+                                    if(typeof cliente == "string" && parseInt(cliente) > 0){
+                                        $('#pago').children('option[value=8]').removeAttr('disabled');
+                                    }else{
+                                        $('#pago').children('option[value=8]').attr('disabled', true);
+                                        tsCliente.reload();
+                                        $("#container-cliente #cliente").val("");
+                                    }
+                                }, 375);
+                            }
+                            var idVenta = <?php echo $data["idVenta"] ?>;
+                            if(isNaN(idVenta)){
+                                var tsCliente = tailSelectSet("#cliente");
+                            }
+                            ventaRegistrarFormularioUpdateBusquedaCliente(totalCuenta);
+                        </script>
+                        <?php
+                    }
+                }
+            }else{
+                Sistema::debug('error', 'caja.class.php - pagoFormulario - Usuario no logueado.');
+            }
+        }
+
         public static function historial($idCaja, $actividad = 2, $small = false, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idCaja) && is_numeric($idCaja) && $idCaja > 0){

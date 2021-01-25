@@ -1,5 +1,63 @@
 <?php
     class Venta {
+        public static function data($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_venta", "*", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) > 0){
+                            $data = [];
+                            while($dataQuery = DataBase::getArray($query)){
+                                $data[$dataQuery["id"]] = $dataQuery;
+                            }
+                            foreach($data AS $key => $value){
+                                foreach($value AS $iKey => $iValue){
+                                    if(is_int($iKey)){
+                                        unset($data[$key][$iKey]);
+                                    }
+                                }
+                            }
+                            return $data;
+                        }else{
+                            Sistema::debug('error', 'venta.class.php - data - No se encontró información de la venta. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - data - Error al buscar la información de la venta. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'venta.class.php - data - Error en identificador de venta. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - data - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function dataGetCliente($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_venta", "cliente", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["cliente"];
+                        }else{
+                            Sistema::debug('error', 'venta.class.php - dataGetCliente - No se encontró la información de la venta. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - dataGetCliente - Error al consultar la información de la venta. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'venta.class.php - dataGetCliente - Error en identificador de venta. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - dataGetCliente - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function cajaHistorialDataGetMonto($idVenta, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
@@ -331,6 +389,13 @@
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
                     if(Caja::corroboraAcceso($data["idCaja"])){
+                        if($data["pago"] == 8 && (!is_numeric($data["cliente"]) || $data["cliente"] <= 0)){
+                            $mensaje['tipo'] = 'warning';
+                            $mensaje['cuerpo'] = 'La venta a cuenta debe estar ligada a un cliente. Regrese y seleccione un cliente, o cambie el modo de pago...';
+                            $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                            Alert::mensaje($mensaje);
+                            exit;
+                        }
                         if(isset($data["producto-identificador"]) && is_array($data["producto-identificador"]) && count($data["producto-identificador"]) > 0){
                             Session::iniciar();
                             Compania::reloadStaticData();
@@ -688,7 +753,7 @@
                                                         </div>
                                                         <div id="container-cliente" class="form-group flex-grow-1">
                                                             <label for="cliente" class="d-block"><i class="fa fa-search"></i> Buscar cliente</label>
-                                                            <select class="form-control" id="cliente" name="cliente">
+                                                            <select class="form-control" id="cliente" name="cliente" onchange="updatePago()">
                                                                 <option value=""> - Buscar cliente - </option>
                                                                 <?php
                                                                     if(is_array($dataCliente) && count($dataCliente) > 0){
@@ -707,7 +772,8 @@
                                                             <?php
                                                                 if(is_array($_SESSION["lista"]["pago"]) && count($_SESSION["lista"]["pago"]) > 0){
                                                                     foreach($_SESSION["lista"]["pago"] AS $key => $value){
-                                                                        echo '<option value="'.$key.'">'.$value["pago"].'</option>';
+                                                                        $disabled = ($key == 8) ? "disabled" : "";
+                                                                        echo '<option value="'.$key.'" '.$disabled.'>'.$value["pago"].'</option>';
                                                                     }
                                                                 }
                                                             ?>
@@ -955,7 +1021,20 @@
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                    <div id="container-pago-8" class="d-none">
+                                                        <div class="form-group">
+                                                            <label class="control-label">Monto</label>
+                                                            <div class="form-group">
+                                                                <div class="input-group mb-3">
+                                                                    <div class="input-group-prepend">
+                                                                        <span class="input-group-text">$</span>
+                                                                    </div>
+                                                                    <input type="text" class="form-control" id="monto-contado" name="monto-contado" min="0" placeholder="0.00" value="0" disabled>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div> 
                                                 <div class="w-50 d-flex flex-column justify-content-center align-items-center">
                                                     <div class="d-flex justify-content-around w-100 p-1">
                                                         <div id="container-pre-total" class="p-1 text-center h4">
@@ -1033,10 +1112,14 @@
                                     alert("No disponible!");
                                     e.preventDefault();
                                     return;
-                                    $("#container-pago-5").removeClass("d-none").find("*").removeAttr("disabled");
+                                    break;
+                                case 8: 
+                                    $("#container-pago-8").removeClass("d-none").find("*").removeAttr("disabled");
+                                    total = parseFloat($("#tabla-venta-productos #total").html()).toFixed(2);
+                                    $("#container-pago-8 #monto-contado").val(total).prop("readonly", true);
                                     break;
                                 default:
-                                    
+                                    alert("No se reconoce el movimiento solicitado!")
                                     break;
                             }
                         }); 
@@ -1315,7 +1398,20 @@
                         observer.observe(target, config);
 
                         // later, you can stop observing
-                        //observer.disconnect();
+                        //observer.disconnect(); 
+
+                        function updatePago(){
+                            setTimeout(() => { 
+                                let cliente = $("#cliente").val();
+                                if(typeof cliente == "string" && parseInt(cliente) > 0){
+                                    $('#pago').children('option[value=8]').removeAttr('disabled');
+                                }else{
+                                    $('#pago').children('option[value=8]').attr('disabled', true);
+                                    tsCliente.reload();
+                                    $("#container-cliente #cliente").val("");
+                                }
+                            }, 375);
+                        }
 
                         function ventaProductoRegistro(e){ 
                             setTimeout(() => { 
@@ -1349,6 +1445,10 @@
                                 ventaProductoNoCodificadoRegistro();
                             }
                         });
+                            
+                        var tsCliente = tailSelectSet("#cliente");
+                        ventaRegistrarFormularioUpdateBusquedaCliente();
+                        ventaRegistrarFormularioUpdatetipoProducto();
 
                         $("#iva").on("change", (e) => {
                             if($("#iva").is(":checked")){
@@ -1358,10 +1458,6 @@
                             }
                             cajaCalculaTotal();
                         })
-
-                        tailSelectSet("#cliente");
-                        ventaRegistrarFormularioUpdateBusquedaCliente();
-                        ventaRegistrarFormularioUpdatetipoProducto();
                     </script>
                     <?php
                 }

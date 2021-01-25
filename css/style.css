@@ -3,6 +3,7 @@
     --sec-sec: #F7F0E6;
     --sec-acc: #FF2B2B;
     --sec-blue: #2b80ff;
+    --sec-blue-2: #0059de;
     --sec-pink: #ff2b80;
     --gray: #f9fbfd;
     --green: #28a745;
@@ -194,6 +195,15 @@
 
 .page-link {
     color: var(--sec-blue) !important;
+}
+
+.btn-info {
+    background-color: var(--sec-blue) !important;
+    border-color: var(--sec-blue) !important;
+}
+
+.btn-info:hover {
+    background-color: var(--sec-blue-2) !important;
 }
 
 .btn-outline-info {
@@ -608,6 +618,18 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.curtain .mine-container {
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-width: 50vw;
+    max-width: 80vw;
+    width: auto;
+    min-height: 50vh;
+    max-height: 80vh;
+    height: auto;
+    overflow-y: auto;
 }
 
 .mine-container.sm {
