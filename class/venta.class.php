@@ -130,6 +130,34 @@
             return false;
         }
 
+        public static function historialCobroData($idCaja = null, $fechaInicio = null, $fechaFin = null, $operador = null, $sucursal = null, $compañia = null, $limit = 250){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $query = DataBase::select("compañia_sucursal_venta", "*", ((!is_null($idCaja) && strlen($idCaja) > 0) ? "caja = '".$idCaja."' AND " : "").((!is_null($fechaInicio) && !is_null($fechaFin)) ? "fechaPago BETWEEN '".$fechaInicio."' AND '".$fechaFin."' AND " : "").((!is_null($operador)) ? "operador = '".$operador."' AND " : "")."sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "ORDER BY fechaCarga DESC LIMIT ".$limit);
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'venta.class.php - historialData - Error al consultar la información del historial. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - historialData - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function historialData($idCaja = null, $fechaInicio = null, $fechaFin = null, $operador = null, $sucursal = null, $compañia = null, $limit = 250){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
