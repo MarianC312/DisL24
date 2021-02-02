@@ -2290,10 +2290,15 @@
                         if(Caja::jornadaCerrar($data["actividadCaja"])){
                             if($_SESSION["usuario"]->actividadCajaLimpiar()){
                                 if(Caja::bloquear($data["actividadCaja"], 0)){
+                                    $time = 1750;
                                     $mensaje['tipo'] = 'success';
                                     $mensaje['cuerpo'] = 'Caja cerrada satisfactoriamente. <b>Redireccionando...</b>';
+                                    if(!Sistema::cajaSetMonto($data["actividadCaja"], 400, null, 1, $_SESSION["usuario"]->getSucursal(), $_SESSION["usuario"]->getCompañia())){
+                                        $mensaje['cuerpo'] .= '<div class="p-2 text-center">Hubo un error al resetear el monto de caja por sistema. <b>Informe al administrador a la brevedad: Caja cod. '.$data["actividadCaja"].'</b></div>';
+                                        $time = 7500;
+                                    }
                                     Alert::mensaje($mensaje);
-                                    echo '<script>setTimeout(() => { actividadJornadaVisualizar('.$data["actividadJornada"].') }, 1750)</script>';
+                                    echo '<script>setTimeout(() => { actividadJornadaVisualizar('.$data["actividadJornada"].') }, '.$time.')</script>';
                                 }else{
                                     $mensaje['tipo'] = 'danger';
                                     $mensaje['cuerpo'] = 'Hubo un error al desbloquear la caja. <b>Intente nuevamente, si el problema persiste contacte al administrador.</b>';

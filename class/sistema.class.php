@@ -10,6 +10,24 @@
 
         public static $version = "alpha-1.69.139g";
 
+        public static function cajaSetMonto($idCaja, $monto, $accion = null, $operador, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($monto) && is_numeric($monto) && isset($idCaja) && is_numeric($idCaja) && $idCaja > 0 && isset($operador) && is_numeric($operador) && $operador == 1){
+                    $query = DataBase::update("compañia_sucursal_caja", "monto = '".$monto."', accion = ".((is_numeric($accion)) ? "'".$accion."'" : "NULL").", operador = '".$operador."'", "id = '".$idCaja."' AND sucursal = '".$sucursal."' AND compañia = '".$compañia."'");
+                    if($query){
+                        return true;
+                    }else{
+                        Sistema::debug('error', 'sistema.class.php - cajaSetMonto - Error al updatear monto de caja. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'sistema.class.php - cajaSetMonto - Error al comprobar datos de monto u operador. Ref.: '.$idCaja.' | '.$monto.' | '.$operador);
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - cajaSetMonto - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function textoSinAcentos($string){
             return strtr( $string, Sistema::$charReplace );
         }
