@@ -8,7 +8,47 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.69.139g";
+        public static $version = "alpha-1.70.141f";
+
+        public static function facturaImpagaAlerta($compañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $idCompañia = (is_numeric($compañia) && $compañia > 0) ? $compañia : $_SESSION["usuario"]->getCompañia();
+                $data = Compania::facturaImpagaData($idCompañia);
+                if(is_array($data)){
+                    if(count($data) > 0){
+                        $nombre = explode(" ", $_SESSION["usuario"]->getNombre());
+                        ?>
+                        <div class="cover-container">
+                            <div>
+                                <div id="factura-adeuda-container" class="d-flex">
+                                    <div id="data" class="w-50">
+                                        <span id="titulo">
+                                            Hola <?php echo mb_strtoupper($nombre[0]) ?> <i class="fa fa-hand-paper-o"></i>
+                                        </span>
+                                        <span>
+                                            Te recordamos que tenes <?php echo count($data) ?> factura/s impaga/s.<br> Clickeá en el botón de la derecha para descargar el documento digital.
+                                        </span>
+                                    </div>
+                                    <a href="#" class="w-50 d-flex flex-column justify-content-center align-items-center">
+                                        <div id="file">
+                                            <i class="fa fa-file-pdf-o"></i>
+                                        </div>
+                                        <div id="text">
+                                            <i class="fa fa-download"></i>
+                                            <span>DESCARGAR<br>FACTURA</span>
+                                        </div> 
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+                    }
+                }
+            }else{
+                Sistema::debug('error', 'sistema.class.php - facturaImpagaAlerta - Usuario no logueado.');
+            }
+        }
 
         public static function cajaSetMonto($idCaja, $monto, $accion = null, $operador, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){

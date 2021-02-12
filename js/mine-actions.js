@@ -899,6 +899,39 @@ const compañiaStockRegistroProductoFormulario = () => {
     });
 }
 
+const productoContenido = (idProducto, tipo, productoTipo = "codificado") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    console.log("exe test");
+    let divProcess = "#producto-" + idProducto + " #" + tipo;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/producto/contenido.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).html(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idProducto: idProducto, tipo: tipo, productoTipo: productoTipo },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const compañiaStockContenidoData = (idProducto, tipo, productoTipo = "codificado") => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -1248,12 +1281,13 @@ const compañiaStockEditarContenidoFormulario = (producto, tipo, cantidad = 0) =
     });
 }
 
-const productoEditarContenidoFormulario = (producto, tipo, value = null) => {
+const productoEditarContenidoFormulario = (producto, tipo, value = null, productoTipo = "codificado") => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
+    console.log("#producto-" + producto + " #" + tipo);
     let divProcess = "#producto-" + producto + " #" + tipo;
     let divForm = "";
     $.ajax({
@@ -1265,7 +1299,46 @@ const productoEditarContenidoFormulario = (producto, tipo, value = null) => {
             //$(divForm).hide(350);
             //$(divProcess).show(350);
         },
-        data: { producto: producto, tipo: tipo, value: value },
+        data: { producto: producto, tipo: tipo, value: value, productoTipo: productoTipo },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const productoEditarContenidoFormularioRegistro = (producto, tipo, value = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#producto-" + producto + "-editar-" + tipo + "-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "idProducto2", value: producto });
+    data.push({ name: "tipo2", value: tipo });
+    data.push({ name: "exceptions", value: ["exceptions"] });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -2564,6 +2637,70 @@ const administracionClienteBuscar = () => {
             $(divProcess).show(350);
         },
         data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaSucursalPedido = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/sucursal-pedido.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaSucursalPedidoFormulario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/sucursal-pedido-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: {},
         complete: function() {
             me.data('requestRunning', false);
         },

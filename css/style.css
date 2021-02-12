@@ -327,6 +327,68 @@ body {
     background-image: url("../image/bg-general.png");
 }
 
+.cover-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cover-container>div {
+    width: 50vw;
+    height: 50vh;
+    background-color: white;
+    box-shadow: 0 0px 12px rgba(0, 0, 0, 0.3);
+}
+
+#factura-adeuda-container {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+#factura-adeuda-container #data {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 1em;
+}
+
+#factura-adeuda-container #data #titulo {
+    font-size: 1.3em;
+    color: var(--mono-light-blue-1);
+    font-weight: bold;
+}
+
+#factura-adeuda-container a #text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1em;
+}
+
+#factura-adeuda-container a #text>i {
+    font-size: 2em;
+    margin-right: .5em;
+}
+
+#factura-adeuda-container a #text span {
+    font-weight: bold;
+    font-size: 1.6em;
+    line-height: 1em;
+    text-align: left;
+}
+
+#factura-adeuda-container #file i {
+    font-size: 10em;
+}
+
 .bg-main {
     background-color: var(--sec-main) !important;
 }

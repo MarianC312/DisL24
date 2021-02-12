@@ -134,6 +134,59 @@
             }
         }
 
+        public static function editarContenidoFormularioRegistro($data){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    echo Sistema::loading();
+                    Session::iniciar();
+                    $query = DataBase::update(($data["productoTipo"] == "codificado") ? "producto" : "compañia_producto", $data["tipo"]." = '".$data["valor"]."', operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$data["idProducto"]."'");
+                    if($query){
+                        echo '<script>successAction("#producto-'.$data["idProducto"].' #'.$data["tipo"].'", () => { return productoContenido('.$data["idProducto"].', "'.$data["tipo"].'", "'.$data["productoTipo"].'"); }, "loader-ok")</script>';
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - editarContenidoFormularioRegistro - Error al actualizar los datos del producto. Ref.: '.DataBase::getError());
+                        echo '<button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-info"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - editarContenidoFormularioRegistro - Error en arreglo de datos recibido. Ref.: '.count($data));
+                    echo '<button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-danger"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - editarContenidoFormularioRegistro - Usuario no logueado.');
+            }
+        }
+
+        public static function contenido($idProducto, $tipo, $productoTipo = "codificado"){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0 && isset($tipo) && strlen($tipo) > 0){
+                    $data = ($productoTipo == "codificado") ? Producto::getData($idProducto) : Compania::productoNoCodifData($idProducto);
+                    if($productoTipo == "noCodificado"){
+                        $data = $data[$idProducto];
+                    }
+                    if(is_array($data) && count($data) > 0){
+                        echo '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$data[$tipo].'</span> <i class="fa fa-pencil"></i></button>';
+                        ?>
+                        <script>
+                            $(document).ready(() => {
+                                console.log('#producto-<?php echo $idProducto ?> #<?php echo $tipo ?> button');
+                                $('#producto-<?php echo $idProducto ?> #<?php echo $tipo ?> button').on('click', (e) => {
+                                    productoEditarContenidoFormulario(<?php echo $idProducto ?>, '<?php echo $tipo ?>','<?php echo $data[$tipo] ?>','<?php echo $productoTipo ?>');
+                                });
+                            })
+                        </script>
+                        <?php
+                    }else{
+                        Sistema::debug('error', 'producto.class.php - stockContenido - Información de stock erronea. Ref.: '.$data[$tipo]);
+                        echo '<button onclick="successAction(\'#producto-'.$idProducto.' #'.$tipo.'\', () => { compañiaStockContenidoData('.$idProducto.', \''.$tipo.'\') })" class="btn btn-info"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                    }
+                }else{
+                    Sistema::debug('error', 'producto.class.php - stockContenido - Error en el identificador de producto o tipo de dato. Ref.: [ID => '.$idProducto.', TIPO => '.$tipo.']');
+                    echo '<button onclick="successAction(\'#producto-'.$idProducto.' #'.$tipo.'\', () => { compañiaStockContenidoData('.$idProducto.', \''.$tipo.'\') })" class="btn btn-danger"><i class="fa fa-exclamation-triangle"></i> Reintentar</button>';
+                }
+            }else{
+                Sistema::debug('error', 'producto.class.php - stockContenido - Usuario no logueado.');
+            }
+        }
+
         public static function inventarioEditarContenido($data){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
@@ -445,7 +498,7 @@
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
                     Session::iniciar();
-                    $query = DataBase::select("producto", "*", "id = '".$idProducto."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    $query = DataBase::select("producto", "*", "id = '".$idProducto."'", "");
                     if($query){
                         if(DataBase::getNumRows($query) == 1){
                             $data = DataBase::getArray($query);
@@ -1204,10 +1257,7 @@
 
         public static function editarContenidoFormulario($data){
             if(Sistema::usuarioLogueado()){
-                echo '<pre>';
-                print_r($data);
-                echo '</pre>';
-                if(isset($data) && is_array($data) && count($data) == 3){
+                if(isset($data) && is_array($data) && count($data) == 4){
                     ?>
                     <div id="producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-process" style="display: none"></div>
                     <form id="producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form" action="./engine/producto/editar-contenido.php" form="#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form" process="#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-process"> 
@@ -1215,9 +1265,10 @@
                             <div class="input-group">
                                 <input class="form-control form-control-sm" type="text" id="valor" name="valor" value="<?php echo (strlen($data["value"]) > 0) ? $data["value"] : "" ?>">
                                 <input class="form-control form-control-sm d-none" type="text" id="tipo" name="tipo" value="<?php echo $data["tipo"] ?>" readonly>
+                                <input class="form-control form-control-sm d-none" type="text" id="productoTipo" name="productoTipo" value="<?php echo $data["productoTipo"] ?>" readonly>
                                 <input class="form-control form-control-sm d-none" type="text" id="idProducto" name="idProducto" value="<?php echo $data["producto"] ?>" readonly>
                                 <div class="input-group-append">
-                                    <button type="button" onclick="productoEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>')" class="btn btn-sm btn-outline-success"><i class="fa fa-check"></i></button>
+                                    <button type="button" onclick="productoEditarContenidoFormularioRegistro(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>')" class="btn btn-sm btn-outline-success"><i class="fa fa-check"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -1228,7 +1279,7 @@
                             $("#producto-<?php echo $data["producto"] ?>-editar-<?php echo $data["tipo"] ?>-form #valor").keypress((e) => {
                                 var keycode = (e.keyCode ? e.keyCode : e.which);
                                 if(keycode == '13'){
-                                    productoEditarContenido(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>') 
+                                    productoEditarContenidoFormularioRegistro(<?php echo $data['producto'] ?>,'<?php echo $data['tipo'] ?>') 
                                 }
                             });
                         })

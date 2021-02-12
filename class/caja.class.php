@@ -1901,151 +1901,159 @@
                                                         <b style="font-variant-caps: all-petite-caps; font-size: 1.2em;">Detalle</b>
                                                     </div> 
                                                     <div style="margin-left: 0.5em; display: flex; flex-direction: column;">
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <b>Cobros en contado:</b>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column;">
-                                                            <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
-                                                                <?php
-                                                                    $count = 0;
-                                                                    foreach($data[$idJornada]["movimientos"] AS $key => $value){
-                                                                        if($value["tipo"] == 1){
-                                                                            $count++;
+                                                        <div class="<?php echo ($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["cobro"]["volumen"] == 0) ? "d-none" : "" ?>">
+                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                                <b>Cobros en contado:</b>
+                                                            </div>
+                                                            <div style="display: flex; flex-direction: column;">
+                                                                <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
+                                                                    <?php
+                                                                        $count = 0;
+                                                                        foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                            if($value["tipo"] == 1){
+                                                                                $count++;
+                                                                                echo '
+                                                                                    <div style="display: flex; justify-content: space-between">
+                                                                                        <span style="font-size: 11.5px; padding-right: 2em;">'.$value["observacion"].'</span>
+                                                                                        <span style="font-size: 11.5px; min-width: max-content;">$ '.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                    </div>
+                                                                                    <div style="display: none; justify-content: space-between">
+                                                                                        <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                        <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                                    </div> 
+                                                                                ';
+                                                                            }
+                                                                        }
+                                                                            
+                                                                        if($count == 0){
                                                                             echo '
-                                                                                <div style="display: flex; justify-content: space-between">
-                                                                                    <span style="font-size: 11.5px; padding-right: 2em;">'.$value["observacion"].'</span>
-                                                                                    <span style="font-size: 11.5px; min-width: max-content;">$ '.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                <div style="display: flex; justify-content: center">
+                                                                                    <span style="font-size: 11.5px;">Sin movimientos.</span>
                                                                                 </div>
-                                                                                <div style="display: none; justify-content: space-between">
-                                                                                    <span>'.$operador[$value["operador"]]["nombre"].'</span>
-                                                                                    <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
-                                                                                </div> 
                                                                             ';
                                                                         }
-                                                                    }
-                                                                        
-                                                                    if($count == 0){
-                                                                        echo '
-                                                                            <div style="display: flex; justify-content: center">
-                                                                                <span style="font-size: 11.5px;">Sin movimientos.</span>
-                                                                            </div>
-                                                                        ';
-                                                                    }
-                                                                ?>
-                                                            </div> 
-                                                            <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
-                                                                <span style="font-weight: bold; padding-right: 1em">Total Cobros:</span>
-                                                                <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["cobro"]["volumen"], 2, ",", ".") ?></span> 
+                                                                    ?>
+                                                                </div> 
+                                                                <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
+                                                                    <span style="font-weight: bold; padding-right: 1em">Total Cobros:</span>
+                                                                    <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["cobro"]["volumen"], 2, ",", ".") ?></span> 
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <b>Depositos en efectivo:</b>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column;">
-                                                            <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
-                                                                <?php
-                                                                    $count = 0;
-                                                                    foreach($data[$idJornada]["movimientos"] AS $key => $value){
-                                                                        if($value["tipo"] == 2){
-                                                                            $count++;
+                                                        <div class="<?php echo ($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"] == 0) ? "d-none" : "" ?>">
+                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                                <b>Depositos en efectivo:</b>
+                                                            </div>
+                                                            <div style="display: flex; flex-direction: column;">
+                                                                <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
+                                                                    <?php
+                                                                        $count = 0;
+                                                                        foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                            if($value["tipo"] == 2){
+                                                                                $count++;
+                                                                                echo '
+                                                                                    <div style="display: flex; justify-content: space-between">
+                                                                                        <span style="font-size: 11.5px; padding-right: 2em;">'.$value["observacion"].'</span>
+                                                                                        <span style="font-size: 11.5px; min-width: max-content;">$ '.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                    </div>
+                                                                                    <div style="display: none; justify-content: space-between">
+                                                                                        <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                        <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                                    </div> 
+                                                                                ';
+                                                                            }
+                                                                        }
+                                                                            
+                                                                        if($count == 0){
                                                                             echo '
-                                                                                <div style="display: flex; justify-content: space-between">
-                                                                                    <span style="font-size: 11.5px; padding-right: 2em;">'.$value["observacion"].'</span>
-                                                                                    <span style="font-size: 11.5px; min-width: max-content;">$ '.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                <div style="display: flex; justify-content: center">
+                                                                                    <span style="font-size: 11.5px;">Sin movimientos.</span>
                                                                                 </div>
-                                                                                <div style="display: none; justify-content: space-between">
-                                                                                    <span>'.$operador[$value["operador"]]["nombre"].'</span>
-                                                                                    <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
-                                                                                </div> 
                                                                             ';
                                                                         }
-                                                                    }
-                                                                        
-                                                                    if($count == 0){
-                                                                        echo '
-                                                                            <div style="display: flex; justify-content: center">
-                                                                                <span style="font-size: 11.5px;">Sin movimientos.</span>
-                                                                            </div>
-                                                                        ';
-                                                                    }
-                                                                ?>
-                                                            </div>
-                                                            <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
-                                                                <span style="font-weight: bold; padding-right: 1em">Total Depósitos:</span>
-                                                                <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"], 2, ",", ".") ?></span>
+                                                                    ?>
+                                                                </div>
+                                                                <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
+                                                                    <span style="font-weight: bold; padding-right: 1em">Total Depósitos:</span>
+                                                                    <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"], 2, ",", ".") ?></span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <b>Pagos:</b>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column;">
-                                                            <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
-                                                                <?php
-                                                                    $count = 0;
-                                                                    foreach($data[$idJornada]["movimientos"] AS $key => $value){
-                                                                        if($value["tipo"] == 3){
-                                                                            $count++;
+                                                        <div class="<?php echo ($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"] == 0) ? "d-none" : "" ?>">
+                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                                <b>Pagos:</b>
+                                                            </div>
+                                                            <div style="display: flex; flex-direction: column;">
+                                                                <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
+                                                                    <?php
+                                                                        $count = 0;
+                                                                        foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                            if($value["tipo"] == 3){
+                                                                                $count++;
+                                                                                echo '
+                                                                                    <div style="display: flex; justify-content: space-between">
+                                                                                        <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
+                                                                                        <span style="font-size: 11.5px;">$ -'.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                    </div>
+                                                                                    <div style="display: none; justify-content: space-between">
+                                                                                        <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                        <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                                    </div> 
+                                                                                ';
+                                                                            }
+                                                                        }
+                                                                            
+                                                                        if($count == 0){
                                                                             echo '
-                                                                                <div style="display: flex; justify-content: space-between">
-                                                                                    <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
-                                                                                    <span style="font-size: 11.5px;">$ -'.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                <div style="display: flex; justify-content: center">
+                                                                                    <span style="font-size: 11.5px;">Sin movimientos.</span>
                                                                                 </div>
-                                                                                <div style="display: none; justify-content: space-between">
-                                                                                    <span>'.$operador[$value["operador"]]["nombre"].'</span>
-                                                                                    <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
-                                                                                </div> 
                                                                             ';
                                                                         }
-                                                                    }
-                                                                        
-                                                                    if($count == 0){
-                                                                        echo '
-                                                                            <div style="display: flex; justify-content: center">
-                                                                                <span style="font-size: 11.5px;">Sin movimientos.</span>
-                                                                            </div>
-                                                                        ';
-                                                                    }
-                                                                ?>
-                                                            </div> 
-                                                            <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
-                                                                <span style="font-weight: bold; padding-right: 1em">Total Pagos:</span>
-                                                                <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"], 2, ",", ".") ?></span>
+                                                                    ?>
+                                                                </div> 
+                                                                <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
+                                                                    <span style="font-weight: bold; padding-right: 1em">Total Pagos:</span>
+                                                                    <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"], 2, ",", ".") ?></span>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
-                                                            <b>Retiro:</b>
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column;">
-                                                            <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
-                                                                <?php
-                                                                    $count = 0;
-                                                                    foreach($data[$idJornada]["movimientos"] AS $key => $value){
-                                                                        if($value["tipo"] == 4){
-                                                                            $count++;
+                                                        <div class="<?php echo ($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"] == 0) ? "d-none" : "" ?>">
+                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black">
+                                                                <b>Retiro:</b>
+                                                            </div>
+                                                            <div style="display: flex; flex-direction: column;">
+                                                                <div style="display: flex; flex-direction: column; padding: .25em 1.5em;">
+                                                                    <?php
+                                                                        $count = 0;
+                                                                        foreach($data[$idJornada]["movimientos"] AS $key => $value){
+                                                                            if($value["tipo"] == 4){
+                                                                                $count++;
+                                                                                echo '
+                                                                                    <div style="display: flex; justify-content: space-between">
+                                                                                        <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
+                                                                                        <span style="font-size: 11.5px;">$ -'.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                    </div>
+                                                                                    <div style="display: none; justify-content: space-between">
+                                                                                        <span>'.$operador[$value["operador"]]["nombre"].'</span>
+                                                                                        <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
+                                                                                    </div> 
+                                                                                ';
+                                                                            }
+                                                                        } 
+                                                                        if($count == 0){
                                                                             echo '
-                                                                                <div style="display: flex; justify-content: space-between">
-                                                                                    <span style="font-size: 11.5px;">'.$value["observacion"].'</span>
-                                                                                    <span style="font-size: 11.5px;">$ -'.number_format($value["monto"], 2, ",", ".").'</span>
+                                                                                <div style="display: flex; justify-content: center">
+                                                                                    <span style="font-size: 11.5px;">Sin movimientos.</span>
                                                                                 </div>
-                                                                                <div style="display: none; justify-content: space-between">
-                                                                                    <span>'.$operador[$value["operador"]]["nombre"].'</span>
-                                                                                    <span>'.date("d/m/Y, H:i A", strtotime($value["fechaCarga"])).'</span>
-                                                                                </div> 
                                                                             ';
                                                                         }
-                                                                    } 
-                                                                    if($count == 0){
-                                                                        echo '
-                                                                            <div style="display: flex; justify-content: center">
-                                                                                <span style="font-size: 11.5px;">Sin movimientos.</span>
-                                                                            </div>
-                                                                        ';
-                                                                    }
-                                                                ?>
-                                                            </div>
-                                                            <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
-                                                                <span style="font-weight: bold; padding-right: 1em">Total Retiros:</span>
-                                                                <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"], 2, ",", ".") ?></span>
+                                                                    ?>
+                                                                </div>
+                                                                <div style="display: flex; justify-content: end; border-top: 1px solid black; font-weight: bold;">
+                                                                    <span style="font-weight: bold; padding-right: 1em">Total Retiros:</span>
+                                                                    <span>$ <?php echo number_format($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"], 2, ",", ".") ?></span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black"> 
@@ -2086,14 +2094,14 @@
                                                                 <span style="padding-right: 1em">Total ventas débito + crédito:</span> <span style="">$ <?php echo number_format(($data[$idJornada]["stats"]["recaudacion"]["debito"] + $data[$idJornada]["stats"]["recaudacion"]["credito"]), 2, ",", ".") ?></span>
                                                             </div>
                                                         </div>
-                                                        <div style="margin-bottom: 0.35em">
-                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black;">
+                                                        <div class="<?php echo (($data[$idJornada]["stats"]["cobro"]["contado"] + $data[$idJornada]["stats"]["cobro"]["debito"] + $data[$idJornada]["stats"]["cobro"]["credito"]) == 0) ? "d-none" : "" ?>" style="margin-bottom: 0.35em">
+                                                            <div style="display: <?php echo ($data[$idJornada]["stats"]["cobro"]["contado"] == 0) ? "none" : "flex" ?>; justify-content: space-between; border-bottom: 1px dashed black;">
                                                                 <span>Cobros en Contado:</span> <span style="margin-right: 1em; font-size: 11.5px;">$ <?php echo number_format($data[$idJornada]["stats"]["cobro"]["contado"], 2, ",", ".") ?></span>
                                                             </div>
-                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black;">
+                                                            <div style="display: <?php echo ($data[$idJornada]["stats"]["cobro"]["debito"] == 0) ? "none" : "flex" ?>; justify-content: space-between; border-bottom: 1px dashed black;">
                                                                 <span>Cobros en Débito:</span> <span style="margin-right: 1em; font-size: 11.5px;">$ <?php echo number_format($data[$idJornada]["stats"]["cobro"]["debito"], 2, ",", ".") ?></span>
                                                             </div>
-                                                            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid black;">
+                                                            <div style="display: <?php echo ($data[$idJornada]["stats"]["cobro"]["credito"] == 0) ? "none" : "flex" ?>; justify-content: space-between; border-bottom: 1px solid black;">
                                                                 <span>Cobros en Crédito:</span> <span style="margin-right: 1em; font-size: 11.5px;">$ <?php echo number_format($data[$idJornada]["stats"]["cobro"]["credito"], 2, ",", ".") ?></span>
                                                             </div>
                                                             <div style="display: flex; justify-content: end; font-weight: bold;">

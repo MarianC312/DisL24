@@ -1,5 +1,121 @@
 <?php
     class Compania{ 
+        public static function facturaImpagaData($compañia = null){
+            if(Sistema::usuarioLogueado()){
+                $idCompañia = (is_numeric($compañia) && $compañia > 0) ? $compañia : $_SESSION["usuario"]->getCompañia();
+                $query = DataBase::select("sistema_compañia_facturacion", "*", "estado = 1 AND fechaPago IS NULL AND compañia = '".$idCompañia."'", "ORDER BY fechaCarga DESC");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'compania.class.php - facturaImpagaData - Error al consultar información de facturación de la compañía. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - facturaImpagaData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function sucursalPedidoGetData($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $sucursal = (is_numeric($idSucursal)) ? $idSucursal : $_SESSION["usuario"]->getSucursal();
+                $compañia = (is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia();
+                $query = DataBase::select("compañia_sucursal_venta", "*", "pedido = 1 AND sucursal = '".$sucursal."' AND compañia = '".$compañia."'", "ORDER BY CASE WHEN fechaPago IS NULL AND estado = 1 THEN 0 ELSE 1 END, fechaCarga DESC");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
+                            }
+                        }
+                    }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'compania.class.php - sucursalPedidoGetData - Error al encontrar los pedidos de la sucursal. Ref.: '.DataBase::getError());
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalPedidoGetData - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function sucursalPedido($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $sucursal = (is_numeric($idSucursal)) ? $idSucursal : $_SESSION["usuario"]->getSucursal();
+                $compañia = (is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia();
+                $data = Compania::sucursalPedidoGetData($idSucursal, $idCompañia);
+                ?>
+                <div class="mine-container">
+                    <div class="d-flex justify-content-between"> 
+                        <div class="titulo">Lista de pedidos</div>
+                        <button type="button" onclick="alert('Esta característica se habilitará pronto!'); return; compañiaSucursalPedidoFormulario()" class="btn btn-success"><i class="fa fa-plus"></i> Nuevo pedido</button>
+                    </div>
+                    <div class="p-1">
+                        <?php
+                            if(is_array($data)){
+                                ?>
+                                <table id="tabla-pedidos" class="table table-hover w-100">
+                                    <thead>
+                                        <tr>
+                                            <td></td>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                            if(count($data) > 0){
+                                                foreach($data AS $key => $value){
+                                                    echo '<pre>';
+                                                    print_r($value);
+                                                    echo '</pre>';
+                                                }
+                                            }else{
+                                                ?>
+                                                <tr>
+                                                    <td class="text-center">No se encontraron pedidos en esta sucursal.</td>
+                                                </tr>
+                                                <?php
+                                            }
+                                        ?>
+                                    </tbody>
+                                </table>
+                                <script>
+                                    dataTableSet("#tabla-pedidos");
+                                </script>
+                                <?php
+                            }else{
+                                $mensaje['tipo'] = 'danger';
+                                $mensaje['cuerpo'] = 'Hubo un error al recibir la información de los pedidos de la sucursal. <b>Intente nuevamente o contacte al administrador.</b>';
+                                Alert::mensaje($mensaje);
+                            }
+                        ?>
+                    </div>
+                </div>
+                <?php
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalPedido - Usuario no logueado.');
+            }
+        }
+
         public static function configurar($idSucursal = null, $idCompañia = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
@@ -1171,10 +1287,10 @@
             return false;
         }
 
-        public static function productoNoCodifData($idCompañia = null){
+        public static function productoNoCodifData($idCompañia = null, $idProducto = null){
             Session::iniciar();
             $idCompañia = (is_null($idCompañia)) ? $_SESSION["usuario"]->getCompañia() : $idCompañia;
-            $query = DataBase::select("compañia_producto", "*", "compañia = '".$idCompañia."'", "ORDER BY nombre ASC");
+            $query = DataBase::select("compañia_producto", "*", "compañia = '".$idCompañia."'".((is_numeric($idProducto)) ? " AND id = '".$idProducto."'" : ""), "ORDER BY nombre ASC");
             if($query){
                 $data = [];
                 if(DataBase::getNumRows($query) > 0){
@@ -1196,6 +1312,7 @@
 
         public static function stockFormulario(){
             if(Sistema::usuarioLogueado()){
+                Session::iniciar();
                 $data = Compania::stockData();
                 ?>
                 <div class="mine-container">
@@ -1282,7 +1399,7 @@
                                                 }
                                                 ?>
                                                 <tr style="display: none" id="producto-<?php echo $idProducto ?>" data-key="<?php echo $idProducto ?>" data-producto-tipo="<?php echo $tipo ?>">
-                                                    <th scope="row"><?php echo $producto[$tipo][$idProducto]["codigoBarra"] ?></th>
+                                                    <th scope="row"><?php echo (($tipo == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$producto[$tipo][$idProducto]["codigoBarra"] ?></th>
                                                     <td id="nombre" data-value="<?php echo $producto[$tipo][$idProducto]["nombre"] ?>"><button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn"><?php echo $producto[$tipo][$idProducto]["nombre"] ?></span> <i class="fa fa-pencil"></i></button></td>
                                                     <td id="stock" data-value="<?php echo (isset($value["stock"]) && is_numeric($value["stock"])) ? $value["stock"] : 0 ?>" class="text-center"><?php echo (isset($value["sucursal"]) && $_SESSION["usuario"]->getSucursal() == $value["sucursal"]) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["stock"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i> stock inicial</a>" ?></td>
                                                     <td id="minimo" data-value="<?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? $value["minimo"] : 0 ?>" class="text-center"><?php echo (isset($value["minimo"]) && is_numeric($value["minimo"])) ? '<button type="button" class="btn btn-sm btn-link btn-iconed"><span class="spn">'.$value["minimo"].'</span> <i class="fa fa-pencil"></i></button>' : "<a href='#/'><i class='fa fa-plus-circle'></i></a>" ?></td>
@@ -1392,9 +1509,7 @@
                                 let id = e.currentTarget.parentNode.getAttribute("id");
                                 let dataValue = e.currentTarget.parentNode.getAttribute("data-value");
                                 if(id === "nombre"){
-                                    alert("Esta característica será habilitada en breve.");
-                                    return;
-                                    productoEditarContenidoFormulario(dataKey,id,dataValue);
+                                    productoEditarContenidoFormulario(dataKey,id,dataValue,productoTipo);
                                 }else{
                                     productoInventarioEditarContenidoFormulario(dataKey,id,dataValue,productoTipo);
                                 }
@@ -1405,9 +1520,7 @@
                                 let id = e.currentTarget.parentNode.getAttribute("id");
                                 let dataValue = e.currentTarget.parentNode.getAttribute("data-value");
                                 if(id === "nombre"){
-                                    alert("Esta característica será habilitada en breve.");
-                                    return;
-                                    productoEditarContenidoFormulario(dataKey,id,dataValue);
+                                    productoEditarContenidoFormulario(dataKey,id,dataValue,productoTipo);
                                 }else{
                                     productoInventarioEditarContenidoFormulario(dataKey,id,dataValue,productoTipo);
                                 }
