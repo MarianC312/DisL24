@@ -106,6 +106,30 @@
             return false;
         }
 
+        public static function dataGetPedido($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_venta", "pedido", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["pedido"];
+                        }else{
+                            Sistema::debug('info', 'venta.class.php - dataGetPedido - No se encontró información de la venta. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - dataGetPedido - Error al consultar la información de la venta. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error' , 'venta.class.php - dataGetPedido - Identificador de venta incorrecto. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - dataGetPedido - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function dataGetPago($idVenta, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
@@ -247,8 +271,9 @@
                     $idVenta = $data["idVenta"]; 
                     Session::iniciar();
                     $pago = Venta::dataGetPago($idVenta);
-                    $caja = Venta::dataGetCaja($idVenta);
-                    if(is_numeric($pago) && array_key_exists($pago, $_SESSION["lista"]["pago"]) && is_numeric($caja) && Compania::cajaCorroboraExistencia($caja)){
+                    $pedido = Venta::dataGetPedido($idVenta);
+                    $caja = ($pedido == 1) ? Caja::historialDataGetVentaCaja($idVenta) : Venta::dataGetCaja($idVenta);
+                    if(is_numeric($pago) && array_key_exists($pago, $_SESSION["lista"]["pago"]) && ((is_numeric($caja) && Compania::cajaCorroboraExistencia($caja)) || $pedido == 1)){
                         $query = DataBase::update("compañia_sucursal_venta", "estado = 0, anuladoMotivo = '".$data["motivo"]."', anuladoObservacion = ".((!is_null($data["observacion"]) && strlen($data["observacion"]) > 0) ? "'".$data["observacion"]."'" : "NULL").", anuladoOperador = '".$_SESSION["usuario"]->getId()."'", "id = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'");
                         if($query){
                             if($pago == 1 || $pago == 4 || $pago == 5 || $pago == 7){
@@ -272,6 +297,9 @@
                                     $mensaje['cuerpo'] = 'Hubo un error al anular el movimiento en caja. <b>Contacte al administrador a la brevedad.</b>';
                                     Alert::mensaje($mensaje);
                                 }
+                            }
+                            if($pedido == 1){
+                                echo '<script>compañiaSucursalPedido()</script>';
                             }
                             echo '<script>setTimeout(() => { cajaRefreshUI('.Caja::dataGetMonto($caja).', '.$caja.') }, 250)</script>';
                             $mensaje['tipo'] = 'success';
@@ -416,7 +444,7 @@
                 //echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>'; 
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
-                    if(Caja::corroboraAcceso($data["idCaja"])){
+                    if(Caja::corroboraAcceso($data["idCaja"]) || (isset($data["pedido"]) && $data["pedido"] == 1 && $data["idCaja"] == 0)){
                         if($data["pago"] == 8 && (!is_numeric($data["cliente"]) || $data["cliente"] <= 0)){
                             $mensaje['tipo'] = 'warning';
                             $mensaje['cuerpo'] = 'La venta a cuenta debe estar ligada a un cliente. Regrese y seleccione un cliente, o cambie el modo de pago...';
@@ -502,10 +530,13 @@
                             $dataCaja["total"] = round($dataCaja["contado"] + $dataCaja["debito"] + $totalCredito - ($dataCaja["subtotal"] / 100 * $dataCaja["descuento"]), 2); 
     
                             $nComprobante = Compania::facturaIdUltima();
-                            
+
                             if(is_numeric($nComprobante) && $nComprobante >= 0){
-                                $query = DataBase::insert("compañia_sucursal_venta", "caja,nComprobante,producto,productoCantidad,productoPrecio,pago,contado,debito,credito,efectivo,financiacion,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "'".$data["idCaja"]."','".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."',".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["contado"]."'" : "NULL").",".((strlen($dataCaja["debito"]) > 0) ? "'".$dataCaja["debito"]."'" : "NULL").",".((strlen($dataCaja["credito"]) > 0) ? "'".$dataCaja["credito"]."'" : "NULL").",".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["efectivo"]."'" : "NULL").",".((is_numeric($dataCaja["financiacion"])) ? "'".$dataCaja["financiacion"]."'" : "NULL" ).",'".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
+                                $query = DataBase::insert("compañia_sucursal_venta", "caja,pedido,nComprobante,producto,productoCantidad,productoPrecio,pago,contado,debito,credito,efectivo,financiacion,descuento,iva,cliente,subtotal,total,operador,sucursal,compañia", "".((isset($data["idCaja"]) && $data["idCaja"] != 0) ? "'".$data["idCaja"]."'" : "NULL").",".((isset($data["pedido"]) ? "'".$data["pedido"]."'" : "NULL")).",'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."',".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["contado"]."'" : "NULL").",".((strlen($dataCaja["debito"]) > 0) ? "'".$dataCaja["debito"]."'" : "NULL").",".((strlen($dataCaja["credito"]) > 0) ? "'".$dataCaja["credito"]."'" : "NULL").",".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["efectivo"]."'" : "NULL").",".((is_numeric($dataCaja["financiacion"])) ? "'".$dataCaja["financiacion"]."'" : "NULL" ).",'".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."','".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                                 if($query){
+                                    if((isset($data["pedido"]) && $data["pedido"] == 1 && $data["idCaja"] == 0)){
+                                        echo '<script>cartErase(); compañiaSucursalPedido();</script>';
+                                    }
                                     $idVenta = DataBase::getLastId();
                                     $stockRestar = Compania::stockRestar($dataCaja["producto"], $dataCaja["productoCantidad"]); 
                                     $productoStockRestar = "";
@@ -539,7 +570,8 @@
                                             Sistema::debug('error', 'venta.class.php - registar - Error al registrar acción en caja.');
                                         }
                                     }
-                                    Compania::facturaVisualizar($idVenta);
+                                    //Compania::facturaVisualizar($idVenta);
+                                    echo '<script>facturaVisualizar('.$idVenta.'); $("#container-caja-accion").html("Aguardando tarea a realizar...")</script>';
                                     echo '<script>setTimeout(() => { cajaRefreshUI('.Caja::dataGetMonto($data["idCaja"]).', '.$data["idCaja"].') }, 250)</script>';
                                 }else{
                                     $mensaje['tipo'] = 'danger';

@@ -435,6 +435,30 @@
                 Sistema::debug('error', 'caja.class.php - historialData - Usuario no logueado.');
             }
             return false;
+        } 
+
+        public static function historialDataGetVentaCaja($idVenta, $sucursal = null, $compañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idVenta) && is_numeric($idVenta) && $idVenta > 0){
+                    Session::iniciar();
+                    $query = DataBase::select("compañia_sucursal_caja_historial", "caja", "venta = '".$idVenta."' AND sucursal = '".((is_numeric($sucursal)) ? $sucursal : $_SESSION["usuario"]->getSucursal())."' AND compañia = '".((is_numeric($compañia)) ? $compañia : $_SESSION["usuario"]->getCompañia())."'", "");
+                    if($query){
+                        if(DataBase::getNumRows($query) == 1){
+                            $dataQuery = DataBase::getArray($query);
+                            return $dataQuery["caja"];
+                        }else{
+                            Sistema::debug('info', 'venta.class.php - historialDataGetVentaCaja - No se encontró información de la venta. Ref.: '.DataBase::getNumRows($query));
+                        }
+                    }else{
+                        Sistema::debug('error', 'venta.class.php - historialDataGetVentaCaja - Error al consultar la información de la venta. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error' , 'venta.class.php - historialDataGetVentaCaja - Identificador de venta incorrecto. Ref.: '.$idVenta);
+                }
+            }else{
+                Sistema::debug('error', 'venta.class.php - historialDataGetVentaCaja - Usuario no logueado.');
+            }
+            return false;
         }
 
         public static function pagoRegistrar($data, $sucursal = null, $compañia = null){
@@ -492,6 +516,9 @@
                                                     $mensaje['tipo'] = 'success';
                                                     $mensaje['cuerpo'] = 'Pago registrado satisfactoriamente!';
                                                     Alert::mensaje($mensaje);
+                                                    if($dataVenta[$data["idVenta"]]["pedido"] == 1){
+                                                        echo '<script>compañiaSucursalPedido()</script>';
+                                                    }
                                                     echo '<script>setTimeout(() => { clienteRefreshUI('.$data["cliente"].',"#cliente-container-compra", true) }, 350)</script>';
                                                 }else{
                                                     Sistema::debug('error', 'caja.class.php - pagoRegistrar - Error al registrar pago. Ref.: '.DataBase::getError());
@@ -1619,7 +1646,7 @@
                                                     <td><?php echo $value["sucursal"] ?></td>
                                                     <td><?php echo date("d/m/Y, H:i:s A", strtotime($value["fechaInicio"]))." - ".((strlen($value["fechaFin"]) > 0 && $value["estado"] == 2) ? date("d/m/Y, H:i:s A", strtotime($value["fechaFin"])) : "EN CURSO") ?></td>
                                                     <td>
-                                                        <button type="button" onclick="actividadJornadaVisualizar(<?php echo $value["id"] ?>)" class="btn btn-success"><i class="fa fa-list-alt"></i> Ver</button>
+                                                        <button type="button" onclick="actividadJornadaVisualizar(<?php echo $value['id'] ?>)" class="btn btn-success"><i class="fa fa-list-alt"></i> Ver</button>
                                                     </td>
                                                 </tr>
                                                 <?php
@@ -1735,8 +1762,8 @@
                                             $productoCodigo = "Sin código";
                                             $tipo = "varios";
                                         }else{
-                                            $productoNombre = $_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["nombre"];
-                                            $productoCodigo = ((strlen($_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"]) > 0) ? "PFC-".$dataCompañia["id"]."-".$_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"] : "Sin código"); 
+                                            $productoNombre = "Producto propio empresa."; //$_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["nombre"]; //fix nombre producto propio empresa
+                                            $productoCodigo = "Codigo barra propio empresa.";//((strlen($_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"]) > 0) ? "PFC-".$dataCompañia["id"]."-".$_SESSION["lista"]["producto"]["noCodificado"][str_replace("*", "", $jValue)]["codigoBarra"] : "Sin código"); 
                                             $tipo = "compañia";
                                         }
                                     }elseif($jValue > 0){

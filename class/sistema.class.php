@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.70.141f";
+        public static $version = "alpha-1.85.178c";
 
         public static function facturaImpagaAlerta($compañia = null){
             if(Sistema::usuarioLogueado()){
@@ -164,6 +164,7 @@
 
         public static function in_array_r($needle, $haystack, $strict = false) {
             foreach ($haystack as $item) {
+                //echo '<script>console.log("'.$needle.' EQ '.$item.'")</script>';
                 if (($strict ? $item === $needle : $item == $needle) || (is_array($item) && Sistema::in_array_r($needle, $item, $strict))) {
                     return true;
                 }

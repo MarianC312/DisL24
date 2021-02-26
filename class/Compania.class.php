@@ -58,6 +58,577 @@
             return false;
         }
 
+        public static function sucursalPedidoCarritoFormularioRegistrar($data){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    Venta::registrar($data);
+                }else{
+                    Sistema::debug('error', 'compania.class.php - sucursalPedidoCarritoFormularioRegistrar - Error en información recibida. Ref.: '.count($data));
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error con la información recibida. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalPedidoCarritoFormularioRegistrar - Usuario no logueado.');
+            }
+        }
+
+        public static function sucursalPedidoFormularioProductoFiltrar($data, $idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    Session::iniciar();
+                    $sucursal = (is_numeric($idSucursal)) ? $idSucursal : $_SESSION["usuario"]->getSucursal();
+                    $compañia = (is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia(); 
+                    $productoCodificado = Producto::buscadorData(["filtroOpcion" => 1, "tag" => $data["tag"]], 100); 
+                    $productoNoCodificado = Compania::productoNoCodifData(null, null, ["filtroOpcion" => 1, "tag" => $data["tag"]], 100);
+                    if(is_array($productoCodificado)){
+                        if(!is_array($productoNoCodificado)){
+                            $mensaje['tipo'] = 'warning';
+                            $mensaje['cuerpo'] = 'Hubo un error al recibir la información de los productos de la compañía. No se mostrarán los productos propios como cajones de coca cola o cerveza, o cualquier otro producto cargado a la base de la compañía.';
+                            Alert::mensaje($mensaje);
+                        }
+                        $productoData = array_merge($productoCodificado, $productoNoCodificado);
+                        $stock = Compania::stockData();
+                        $stockProductoCodificado = [];
+                        $stockProductoNoCodificado = [];
+                        foreach($stock AS $key => $value){
+                            if(is_numeric($value["producto"])){
+                                array_push($stockProductoCodificado, $value["producto"]);
+                            }elseif(is_numeric($value["productoNC"])){
+                                array_push($stockProductoNoCodificado, $value["productoNC"]);
+                            }
+                        }
+                        if(is_array($productoData)){
+                            ?>
+                            <table id="tabla-producto-filtrado" class="table table-hover table-responsive">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" style="white-space: nowrap !important;">Descripción de Producto<br><small class="text-muted">[Código de barra]</small></th>
+                                        <th class="text-right">Precio</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php
+                                        if(count($productoData) > 0){
+                                            foreach($productoData AS $key => $value){
+                                                $enStock = (Sistema::in_array_r($value["id"], $stockProductoCodificado)) ? true : false; //resolver búsqueda de prod en stock
+                                                if($enStock && $value["tipo"] != 5){
+                                                    $stockKey = "";
+                                                    foreach($stock AS $iKey => $iValue){
+                                                        if($value["id"] == $iValue["producto"]){
+                                                            $stockKey = $iKey;
+                                                            break;
+                                                        }
+                                                    }
+                                                    $prodTipo = "codificado";
+                                                    $prodStock = $stock[$stockKey]["stock"];
+                                                    $prodPrecio = $stock[$stockKey]["precio"];
+                                                    $prodPrecioMayorista = $stock[$stockKey]["precioMayorista"];
+                                                    $prodPrecioKiosco = $stock[$stockKey]["precioKiosco"];
+                                                }else{
+                                                    $enStock = (Sistema::in_array_r($value["id"], $stockProductoNoCodificado)) ? true : false; 
+                                                    if($enStock && $value["tipo"] == 5){
+                                                        $stockKey = "";
+                                                        foreach($stock AS $iKey => $iValue){
+                                                            if($value["id"] == $iValue["productoNC"]){
+                                                                $stockKey = $iKey;
+                                                                break;
+                                                            }
+                                                        }
+                                                        $prodTipo = "noCodificado";
+                                                        $prodStock = $stock[$stockKey]["stock"];
+                                                        $prodPrecio = $stock[$stockKey]["precio"];
+                                                        $prodPrecioMayorista = $stock[$stockKey]["precioMayorista"];
+                                                        $prodPrecioKiosco = $stock[$stockKey]["precioKiosco"];
+                                                    }else{
+                                                        $prodStock = "Sin stock";
+                                                        $prodPrecio = null;
+                                                        $prodPrecioMayorista = null;
+                                                        $prodPrecioKiosco = null;
+                                                    }
+                                                    
+                                                }
+                                                switch($data["precioTipo"]){
+                                                    case 1:
+                                                        $order[1] = "order-1";
+                                                        $order[2] = "order-2";
+                                                        $order[3] = "order-3";
+                                                        $precio = $prodPrecio;
+                                                        break;
+                                                    case 2:
+                                                        $order[1] = "order-2";
+                                                        $order[2] = "order-1";
+                                                        $order[3] = "order-3";
+                                                        $precio = $prodPrecioMayorista;
+                                                        break;
+                                                    case 3: 
+                                                        $order[1] = "order-2";
+                                                        $order[2] = "order-3";
+                                                        $order[3] = "order-1";
+                                                        $precio = $prodPrecioKiosco;
+                                                        break;
+                                                }
+                                                ?>
+                                                <tr id="producto-stock-<?php echo $stockKey ?>" data-nombre="<?php echo $value["nombre"] ?>" data-producto-tipo="<?php echo $prodTipo ?>" data-codigo-barra="<?php echo $value["codigoBarra"] ?>" data-id-stock="<?php echo $stockKey ?>" data-stock="<?php echo $prodStock ?>" data-id-producto="<?php echo $value["id"] ?>" data-precio-tipo="<?php echo $data["precioTipo"] ?>" data-precio="<?php echo $precio ?>">
+                                                    <td style="line-height: 1em;"><span><?php echo $value["nombre"] ?></span><br><small>[<?php echo ((isset($prodTipo) && $prodTipo == "noCodificado") ? "PFC-".$value["compañia"]."-" : "").$value["codigoBarra"] ?>]</small></td>
+                                                    <td class="text-right" style="white-space: nowrap !important;">
+                                                        <div class="d-flex flex-column flex-nowrap">
+                                                            <?php
+                                                                if(is_numeric($prodStock) && $prodStock > 0){
+                                                                    ?>
+                                                                    <div style="line-height: .8em;" class="d-flex flex-column justify-content-center align-items-end mb-2 <?php echo $order[1]." ".(($data["precioTipo"] == 1) ? "h3 font-weight-bold" : "text-muted") ?>" id="titulo-precio-minorista"><span style="font-size: <?php echo (($data["precioTipo"] == 1) ? ".6em" : ".85em") ?>">Minorista</span> <span>$ <?php echo number_format($prodPrecio, 2, ",", "."); ?></span></div><br>
+                                                                    <div style="line-height: .8em;" class="d-flex flex-column justify-content-center align-items-end mb-2 <?php echo $order[2]." ".(($data["precioTipo"] == 2) ? "h3 font-weight-bold" : "text-muted") ?>" id="titulo-precio-mayorista"><span style="font-size: <?php echo (($data["precioTipo"] == 2) ? ".6em" : ".85em") ?>">Mayorista</span> <span>$ <?php echo number_format($prodPrecioMayorista, 2, ",", "."); ?></span></div><br>
+                                                                    <div style="line-height: .8em;" class="d-flex flex-column justify-content-center align-items-end mb-2 <?php echo $order[3]." ".(($data["precioTipo"] == 3) ? "h3 font-weight-bold" : "text-muted") ?>" id="titulo-precio-kiosco"><span style="font-size: <?php echo (($data["precioTipo"] == 3) ? ".6em" : ".85em") ?>">Kiosco</span> <span>$ <?php echo number_format($prodPrecioKiosco, 2, ",", "."); ?></span></div>
+                                                                    <?php
+                                                                }else{
+                                                                    echo $prodStock;
+                                                                } 
+                                                            ?> 
+                                                        </div> 
+                                                    </td>
+                                                    <td id="producto-accion-<?php echo $stockKey ?>">
+                                                        <?php
+                                                            if(is_numeric($prodStock) && $prodStock > 0){
+                                                                ?>
+                                                                <div class="input-group">
+                                                                    <div class="input-group-prepend">
+                                                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="$('#cantidad-<?php echo $stockKey ?>').val(parseInt($('#cantidad-<?php echo $stockKey ?>').val()) - 1)"><i class="fa fa-minus"></i></button>
+                                                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="$('#cantidad-<?php echo $stockKey ?>').val(parseInt($('#cantidad-<?php echo $stockKey ?>').val()) + 1)"><i class="fa fa-plus"></i></button>
+                                                                    </div>
+                                                                    <input type="number" class="form-control" value="1" min="1" max="<?php echo $prodStock ?>" id="cantidad-<?php echo $stockKey ?>" name="cantidad-<?php echo $stockKey ?>" disabled readonly> 
+                                                                    <div class="input-group-append">
+                                                                        <button type="button" onclick="test(<?php echo $stockKey ?>)" class="btn btn-sm btn-success"><i class="fa fa-cart-plus"></i></button>
+                                                                    </div> 
+                                                                </div>
+                                                                <?php
+                                                            }else{
+                                                                echo $prodStock;
+                                                            }
+                                                        ?>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                            }
+                                        }else{
+                                            ?>
+                                            <tr>
+                                                <td colspan="3" class="text-center"><u>No se encontraron resultados</u> con las palabras claves ingresadas. <b>Intente nuevamente.</b></td>
+                                                <td class="d-none"></td>
+                                                <td class="d-none"></td>
+                                            </tr>
+                                            <?php
+                                        }
+                                    ?>
+                                </tbody>
+                            </table>
+                            <script> 
+                                function test(idStock){
+                                    let producto = document.getElementById("producto-stock-" + idStock);
+                                    let cantidad = $("#cantidad-" + idStock).val();
+                                    let data = [];
+                                    if(cantidad > 0 && cantidad <= producto.dataset.stock){
+
+                                        data.push({
+                                            "nombre": producto.dataset.nombre,
+                                            "idProducto": producto.dataset.idProducto,
+                                            "idStock": producto.dataset.idStock,
+                                            "stock": producto.dataset.stock,
+                                            "codigoBarra": producto.dataset.codigoBarra,
+                                            "precio": producto.dataset.precio,
+                                            "precioTipo": producto.dataset.precioTipo,
+                                            "productoTipo": producto.dataset.productoTipo,
+                                            "cantidad": cantidad,
+                                        });
+                                        cart.push(data);
+                                        
+                                        var badge = $("#sucursal-pedido-container #btn-cart .badge"); 
+                                        badge.html((parseInt(badge.html()) + 1));
+
+                                        $("#producto-accion-" + idStock).html(loading("loader-ok"))
+
+                                    }else{
+                                        alert("La cantidad seleccionada es incorrecta.");
+                                    }
+                                }
+                                $('#tabla-producto-filtrado').DataTable({
+                                    "sDom": '<"d-flex justify-content-between"p>rt<"d-flex justify-content-between"il><"clear">',
+                                    "lengthMenu": [ [4, 8, 25, 50, 100, -1], [4, 8, 25, 50, 100, "Todos"] ],
+                                    "pageLength": 4,
+                                    "bSort": false,
+                                    "language": {
+                                        "decimal":        "",
+                                        "emptyTable":     "No hay información para mostrar.",
+                                        "info":           "Mostrando página _PAGE_ de _PAGES_",
+                                        "infoEmpty":      "Mostrando 0 a 0 de 0 registros",
+                                        "infoFiltered":   "(filtrado de _MAX_ total de registros)",
+                                        "infoPostFix":    "",
+                                        "thousands":      ",",
+                                        "lengthMenu":     "Mostrar _MENU_ registros.",
+                                        "loadingRecords": "Cargando...",
+                                        "processing":     "Procesando...",
+                                        "search":         "Buscar:",
+                                        "zeroRecords":    "No se encontraron coincidencias.",
+                                        "paginate": {
+                                            "first":      "Primero",
+                                            "last":       "Último",
+                                            "next":       "Siguiente",
+                                            "previous":   "Anterior"
+                                        },
+                                        "aria": {
+                                            "sortAscending":  ": activar para ordenar ascendentemente",
+                                            "sortDescending": ": activar para ordenar descendientemente"
+                                        }
+                                    }
+                                });
+                            </script>
+                            <?php
+                        }else{
+                            $mensaje['tipo'] = 'danger';
+                            $mensaje['cuerpo'] = 'Hubo un error al recibir la información de los productos. <b>Intente nuevamente o contacte al administrador.</b>';
+                            Alert::mensaje($mensaje);
+                        }
+                    }else{
+                        $mensaje['tipo'] = 'danger';
+                        $mensaje['cuerpo'] = 'Hubo un error al recibir la información de la base de productos. <b>Intente nuevamente o contacte al administrador.</b>';
+                        Alert::mensaje($mensaje);
+                    }
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalPedidoFormularioProductoFiltrar - Usuario no logueado.');
+            }
+        }
+
+        public static function sucursalPedidoCarritoFormulario($data){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    Session::iniciar();
+                    $total = 0;
+                    $articulos = 0;
+                    ?>
+                    <div class="cover-container">
+                        <div class="mine-container w-75 h-75">
+                            <div class="d-flex justify-content-between"> 
+                                <div class="titulo">Carrito de pedido - <?php echo '<span id="items-value">'.count($data["producto"]).'</span> items.' ?></div>
+                                <button type="button" onclick="$('.cover-container').remove()" class="btn btn-danger"><i class="fa fa-times"></i></button>
+                            </div>
+                            <div class="w-100 d-block" style="height: 85%; overflow: auto">
+                                <div id="carrito-pedido-process" style="display: none;"></div>
+                                <form id="carrito-pedido-form" class="h-100" action="./engine/compania/sucursal-pedido-carrito-formulario-registro.php" form="#carrito-pedido-form" process="#carrito-pedido-process">
+                                    <div class="d-flex" style="height: 100%;overflow: hidden;">
+                                        <div style="width: 55%; height: 100%;">
+                                            <div class="mine-container sm h-100" style="overflow-y: auto;">
+                                                <h3 class="font-weight-bold">Productos</h3>
+                                                <table id="pedido-lista-productos" class="table table-hover"> 
+                                                    <tbody>
+                                                        <?php
+                                                            if(count($data["producto"]) > 0){
+                                                                foreach($data["producto"] AS $key => $value){
+                                                                    $total += (intval($value["cantidad"]) * floatval($value["precio"]));
+                                                                    $articulos += $value["cantidad"];
+                                                                    //echo '<script>console.log("('.number_format($value["precio"], 2, ".", ",").') '.$value["cantidad"].' X '.floatval($value["precio"]).' = '.$total.'")</script>';
+                                                                    ?>
+                                                                    <tr id="lista-producto-<?php echo $key ?>" data-stock="<?php echo $value["stock"] ?>" data-precio="<?php echo $value["precio"] ?>" data-nombre="<?php echo $value["nombre"] ?>" data-id="<?php echo $value["idProducto"] ?>">
+                                                                        <td class="d-flex"> 
+                                                                            <div class="d-flex align-items-center justify-content-center mr-2">
+                                                                                <button type="button" onclick="setTimeout(() => { delItem(<?php echo $key ?>) }, 250)" class="btn btn-sm btn-danger" style="height: min-content;"><i class="fa fa-times"></i></button>
+                                                                            </div>
+                                                                            <div class="w-50" style="line-height: 1em;">
+                                                                                <span class="font-weight-bold"><?php echo $value["nombre"] ?></span><br>
+                                                                                <small class="text-muted">[<?php echo (($value["productoTipo"] == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$value["codigoBarra"] ?>]</small>
+                                                                                <div class="d-none">
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["idProducto"] ?>" id="id-<?php echo $key ?>" name="producto-id[]" readonly>
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["nombre"] ?>" id="nombre-<?php echo $key ?>" name="producto-descripcion[]" readonly>
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["idStock"] ?>" id="idStock-<?php echo $key ?>" name="producto-identificador[]" readonly> //idstock para venta cc => pedido
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["codigoBarra"] ?>" id="codigoBarra-<?php echo $key ?>" name="producto-codigo-barra[]" readonly>
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["precio"] ?>" id="precio-<?php echo $key ?>" name="producto-precio-unitario[]" readonly>
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["precioTipo"] ?>" id="precioTipo-<?php echo $key ?>" name="producto-precio-tipo[]" readonly>
+                                                                                    <input type="text" class="form-control d-none" value="<?php echo $value["productoTipo"] ?>" id="productoTipo-<?php echo $key ?>" name="producto-tipo[]" readonly>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="w-50 d-flex align-items-top justify-content-end">
+                                                                                <span class="font-weight-bold mr-3" style="font-size: 1em;">$ <?php echo number_format($value["precio"], 2, ",", ".") ?></span>
+                                                                                <div id="lista-producto-<?php echo $key ?>-accion">
+                                                                                    <div class="input-group">
+                                                                                        <div class="input-group-prepend">
+                                                                                            <button type="button" id="sub" class="btn btn-sm btn-outline-info" onclick="setTimeout(() => { subItem(<?php echo $key ?>) }, 0)"><i class="fa fa-minus"></i></button>
+                                                                                        </div>
+                                                                                        <input type="number" class="form-control" style="width: 3em" value="<?php echo $value["cantidad"] ?>" min="1" max="<?php echo $value["stock"] ?>" id="cantidad-<?php echo $key ?>" name="producto-cantidad[]" readonly=""> 
+                                                                                        <div class="input-group-append">
+                                                                                            <button type="button" id="add" class="btn btn-sm btn-outline-info" onclick="setTimeout(() => { addItem(<?php echo $key ?>) }, 0)"><i class="fa fa-plus"></i></button>
+                                                                                        </div> 
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <?php
+                                                                }
+                                                            }else{
+                                                                ?>
+                                                                <tr>
+                                                                    <td class="text-center w-100">
+                                                                        <small class="text-muted">Sin productos en el carrito.</small>
+                                                                    </td>
+                                                                </tr>
+                                                                <?php
+                                                            }
+                                                        ?>
+                                                    </tbody>
+                                                </table> 
+                                            </div> 
+                                        </div>
+                                        <div style="width: 45%">
+                                            <div class="mine-container sm">
+                                                <h3 class="font-weight-bold">Detalle</h3>
+                                                <div class="p-1">
+                                                    <div class="d-flex flex-column mb-3" style="line-height: 1.15em">
+                                                        <small class="text-muted">Cliente</small>
+                                                        <span style="font-size: 1.4em;"><?php echo mb_strtoupper($data["cliente"]["nombre"]) ?></span>
+                                                        <div class="d-none">
+                                                            <input type="text" class="form-control d-none" id="idCliente" name="cliente" value="<?php echo $data["cliente"]["id"] ?>" readonly>
+                                                            <input type="text" class="form-control d-none" id="cliente" name="cliente-nombre" value="<?php echo $data["cliente"]["nombre"] ?>" readonly>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex flex-column mb-3" style="line-height: 1.15em">
+                                                        <small class="text-muted">Artículos</small>
+                                                        <span style="font-size: 1.4em;" id="articulos-value"><?php echo $articulos ?></span>
+                                                        <div class="d-none">
+                                                            <input type="text" class="form-control d-none" id="articulos" name="articulos" value="<?php echo $articulos ?>" readonly>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex flex-column mb-3" style="line-height: 1.15em">
+                                                        <small class="text-muted">Total</small>
+                                                        <div style="font-size: 1.7em;">$ <span id="total-value" data-total="<?php echo $total ?>"><?php echo number_format($total, 2, ".", "") ?></span></div>
+                                                        <div class="d-none">
+                                                            <input type="text" class="form-control d-none" id="descuento" name="descuento" value="0" readonly>
+                                                            <input type="text" class="form-control d-none" id="iva" name="iva" value="1" readonly>
+                                                            <input type="text" class="form-control d-none" id="pago" name="pago" value="8" readonly>
+                                                            <input type="text" class="form-control d-none" id="pedido" name="pedido" value="1" readonly>
+                                                            <input type="text" class="form-control d-none" id="idCaja" name="idCaja" value="0" readonly>
+                                                            <input type="text" class="form-control d-none" id="total" name="monto-contado" value="<?php echo $total ?>" readonly>
+                                                        </div>
+                                                    </div>
+                                                    <div class="d-flex justify-content-center mt-5">
+                                                        <button type="button" onclick="compañiaSucursalPedidoCarritoFormularioRegistrar()" class="btn btn-lg btn-success">Registrar pedido</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> 
+                                    </div>
+                                </form>
+                            </div> 
+                        </div>
+                        <script>
+                            function addItem(key){
+                                var btnControl = $("#lista-producto-" + key + "-accion #add");
+                                btnControl.prop("disabled", true);
+                                var cantidad = parseInt($('#cantidad-' + key).val());
+                                var producto = document.getElementById("lista-producto-" + key);
+                                var total = document.getElementById("total-value");
+                                var articulos = $("#articulos-value");
+                                if(cantidad <= producto.dataset.stock){
+                                    var nuevoTotal = (parseFloat(total.dataset.total) + parseFloat(producto.dataset.precio)).toFixed(2);
+                                    $('#cantidad-' + key).val(cantidad + 1);
+                                    $("#total-value").html(nuevoTotal);
+                                    total.dataset['total'] = nuevoTotal;
+                                    $("#total").val(nuevoTotal);
+                                    $("#articulos").val(parseInt(articulos.html()) + 1);
+                                    articulos.html(parseInt(articulos.html()) + 1);
+                                }else{
+                                    alert("No hay stock disponible para agregar.")  
+                                } 
+                                setTimeout(() => { btnControl.prop("disabled", false); }, 150);
+                            }
+                            function subItem(key){
+                                var btnControl = $("#lista-producto-" + key + "-accion #sub");
+                                btnControl.prop("disabled", true);
+                                var cantidad = parseInt($('#cantidad-' + key).val());
+                                var producto = document.getElementById("lista-producto-" + key);
+                                var total = document.getElementById("total-value");
+                                var articulos = $("#articulos-value");
+                                if(cantidad > 1){
+                                    var nuevoTotal = (parseFloat(total.dataset.total) + parseFloat(producto.dataset.precio)).toFixed(2);
+                                    $('#cantidad-' + key).val(cantidad - 1);
+                                    $("#total-value").html(nuevoTotal);
+                                    total.dataset['total'] = nuevoTotal;
+                                    $("#total").val(nuevoTotal);
+                                    articulos.html(parseInt(articulos.html()) - 1);
+                                    $("#articulos").val(parseInt(articulos.html()) - 1);
+                                }else{
+                                    alert("La cantidad mínima es 1 artículo.")  
+                                } 
+                                setTimeout(() => { btnControl.prop("disabled", false); }, 150);
+                            }
+                            var itemDeleted = 0; 
+                            function delItem(key){ 
+                                //cart = cart.filter((variable, i, item) => { i != (key - itemDeleted) });
+                                var cantidad = parseInt($('#cantidad-' + key).val());
+                                var producto = document.getElementById("lista-producto-" + key);
+                                var total = document.getElementById("total-value");
+                                var cartBadge = $("#sucursal-pedido-container #btn-cart .badge");
+                                var articulos = $("#articulos-value");
+                                var items = $("#items-value");
+                                var restar = parseFloat(producto.dataset.precio) * cantidad;
+                                cart = filtrarPorPropiedad(cart, "idProducto", producto.dataset.id, 0);
+                                articulos.html(parseInt(articulos.html()) - cantidad);
+                                $("#articulos").val(parseInt(articulos.html()) - cantidad);
+                                $("#total-value").html((parseFloat(total.dataset.total) - parseFloat(restar)).toFixed(2));
+                                total.dataset['total'] = (parseFloat(total.dataset.total) - parseFloat(restar)).toFixed(2);
+                                producto.remove();
+                                items.html(parseInt(items.html()) - 1);
+                                cartBadge.html(parseInt(cartBadge.html()) - 1);
+                                itemDeleted += 1;
+                            }
+                        </script>
+                    </div>
+                    <?php
+                }else{
+                    $mensaje['tipo'] = 'danger';
+                    $mensaje['cuerpo'] = 'Hubo un error al recibir la información del carrito de pedidos. <b>Intente nuevamente o contacte al administrador.</b>';
+                    Alert::mensaje($mensaje);
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalPedidoCarritoFormulario - Usuario no logueado.');
+            }
+        }
+
+        public static function sucursalPedidoFormulario($idSucursal = null, $idCompañia = null){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar(); 
+                $sucursal = (is_numeric($idSucursal)) ? $idSucursal : $_SESSION["usuario"]->getSucursal();
+                $compañia = (is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia(); 
+                $dataCliente = $_SESSION["lista"]["compañia"][$compañia]["cliente"];
+                ?>
+                <div id="sucursal-pedido-container" class="mine-container">
+                    <button type="button" onclick="compañiaSucursalPedidoFormulario()" class="btn btn-success"><i class="fa fa-repeat"></i> Reload</button>
+                    <div class="d-flex justify-content-between"> 
+                        <div class="titulo">Nuevo pedido</div>
+                        <button type="button" id="btn-cart" onclick="compañiaSucursalPedidoCarritoFormulario()" class="btn btn-outline-info" style="position: relative; padding: 1em; font-size: 1.2em;"><i class="fa fa-shopping-cart"></i><span class="badge badge-pill badge-success" style="right: 3px;">0</span></button>
+                    </div>
+                    <div class="p-1">
+                        <div id="sucursal-pedido-process" style="display: none"></div>
+                        <form id="sucursal-pedido-form" action="./" form="#sucursal-pedido-form" process="#sucursal-pedido-process">
+                            <div class="row">
+                                <div class="col-md-5">
+                                    <div id="container-cliente" class="form-group">
+                                        <label for="cliente" class="d-block"><i class="fa fa-search"></i> Buscar cliente</label>
+                                        <select class="form-control" id="cliente" name="cliente">
+                                            <option value=""> - Seleccionar cliente - </option>
+                                            <?php
+                                                if(is_array($dataCliente) && count($dataCliente) > 0){
+                                                    foreach($dataCliente AS $key => $value){
+                                                        echo '<option value="'.$value["id"].'" data-nombre="'.$value["nombre"].'">['.$value["documento"].'] '.$value["nombre"].'</option>';
+                                                    }
+                                                }
+                                            ?>
+                                        </select>
+                                    </div>
+                                    <div id="step-2" style="display: none">
+                                        <div class="d-flex justify-content-around">
+                                            <div class="form-check">
+                                                <label class="form-check-label">
+                                                    <input type="radio" class="form-check-input" name="precioTipo" id="precioTipo1" value="1" checked="">
+                                                    Precio Minorista
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label">
+                                                    <input type="radio" class="form-check-input" name="precioTipo" id="precioTipo2" value="2">
+                                                    Precio Mayorista
+                                                </label>
+                                            </div>
+                                            <div class="form-check">
+                                                <label class="form-check-label">
+                                                    <input type="radio" class="form-check-input" name="precioTipo" id="precioTipo3" value="3">
+                                                    Precio Kiosco
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div id="container-tag" class="form-group">
+                                            <label class="col-form-label" for="tag"><i class="fa fa-tag"></i> Palabras claves</label>
+                                            <div class="input-group"> 
+                                                <input type="text" class="form-control" placeholder="Ej.: shampoo, sedal, 200ml" id="tag" autocomplete="off">
+                                                <div class="input-group-append">
+                                                    <button type="button" class="btn btn-info"><i class="fa fa-plus"></i></button>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">Utilizá combinaciones <b>claves</b> como "rollo, cocina, x3" o "acond, elvive, 400ml".</small>
+                                        </div>
+                                        <div id="tag-badge"></div>
+                                        <div id="tag-agregadas" class="form-group"></div>
+                                    </div>
+                                </div>
+                                <div class="col-md-7" id="sucursal-pedido-producto-lista-process"></div>
+                            </div>
+                        </form> 
+                    </div>
+                    <script>
+                        var tsCliente = tailSelectSet("#cliente");
+                        $("#cliente").on("change", (e) => {
+                            if($("#cliente").val() == ""){
+                                $("#step-2").hide(150);
+                                $("#step-2 #tag").val("");
+                                $("#step-2 #tag-badge").html("");
+                                $("#step-2 #tag-agregadas").html("");
+                                $("#step-2 #sucursal-pedido-producto-lista-process").html("");
+                            }else{
+                                if("0" in cart){
+                                    cart.shift();
+                                    cart.unshift({name: "cliente", value: [{name: "id", value: $("#cliente").val()}, {name: "nombre", value: $("#cliente option:selected").text()} ]}); 
+                                }else{
+                                    cart.push({name: "cliente", value: [{name: "id", value: $("#cliente").val()}, {name: "nombre", value: $("#cliente option:selected").text()} ]});
+                                }
+                                $("#step-2").show(150);
+                            }
+                        });
+                        $("#sucursal-pedido-form #container-tag input").on("keypress", (e) => {
+                            let keycode = (e.keyCode ? e.keyCode : e.which);
+                            if(keycode == '13'){
+                                let input = $("#sucursal-pedido-form #container-tag input");
+                                let tag = input.attr("id") + "-agregadas";
+                                let tags = document.getElementById(tag);
+                                if(input.val() == ""){
+                                    if(tags.hasChildNodes()){
+                                        compañiaSucursalPedidoFormularioProductoFiltrar(tag);
+                                    }else{
+                                        alert("Ingrese un valor a buscar.");
+                                    } 
+                                }else{
+                                    agregarInput(input.attr("id"),input.val());
+                                    input.val("");
+                                    setTimeout(() => { compañiaSucursalPedidoFormularioProductoFiltrar(tag); }, 350);
+                                }
+                            }
+                        });
+                        $("#sucursal-pedido-form #container-tag button").on("click", (e) => {
+                            let input = $("#sucursal-pedido-form #container-tag input");
+                            let tag = input.attr("id") + "-agregadas";
+                            let tags = document.getElementById(tag);
+                            if(input.val() == ""){
+                                if(tags.hasChildNodes()){
+                                    compañiaSucursalPedidoFormularioProductoFiltrar(tag);
+                                }else{
+                                    alert("Ingrese un valor a buscar.");
+                                } 
+                            }else{
+                                agregarInput(input.attr("id"),input.val());
+                                input.val("");
+                                setTimeout(() => { compañiaSucursalPedidoFormularioProductoFiltrar(tag); }, 350);
+                            }
+                        });
+                    </script>
+                </div>
+                <?php
+            }else{
+                Sistema::debug('error', 'compania.class.php - sucursalPedidoFormulario - Usuario no logueado.');
+            }
+        }
+
         public static function sucursalPedido($idSucursal = null, $idCompañia = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
@@ -68,7 +639,7 @@
                 <div class="mine-container">
                     <div class="d-flex justify-content-between"> 
                         <div class="titulo">Lista de pedidos</div>
-                        <button type="button" onclick="alert('Esta característica se habilitará pronto!'); return; compañiaSucursalPedidoFormulario()" class="btn btn-success"><i class="fa fa-plus"></i> Nuevo pedido</button>
+                        <button type="button" onclick="compañiaSucursalPedidoFormulario()" class="btn btn-success"><i class="fa fa-plus"></i> Nuevo pedido</button>
                     </div>
                     <div class="p-1">
                         <?php
@@ -77,21 +648,84 @@
                                 <table id="tabla-pedidos" class="table table-hover w-100">
                                     <thead>
                                         <tr>
-                                            <td></td>
+                                            <th></th>
+                                            <th scope="row">Cliente</th>
+                                            <th></th>
+                                            <th class="text-center">Pedido</th>
+                                            <th class="text-center">Estado</th>
+                                            <th class="text-right">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php
                                             if(count($data) > 0){
                                                 foreach($data AS $key => $value){
-                                                    echo '<pre>';
-                                                    print_r($value);
-                                                    echo '</pre>';
+                                                    $clienteNombre = Cliente::getNombre($value["cliente"]);
+                                                    $clienteDireccion = Cliente::getDomicilio($value["cliente"]);
+                                                    if($value["estado"] == 1){
+                                                        if(!is_null($value["fechaPago"]) && $value["fechaPago"] != ""){
+                                                            $estadoTexto = "Entregado / Cobrado";
+                                                            $estadoTipo = "success";
+                                                        }else{
+                                                            $estadoTexto = "Pendiente";
+                                                            $estadoTipo = "info";
+                                                        }
+                                                    }else{
+                                                        $estadoTexto = "Anulado";
+                                                        $estadoTipo = "danger";
+                                                    }
+                                                    ?>
+                                                    <tr>
+                                                        <td>
+                                                            <?php
+                                                                if($estadoTexto != "Anulado"){
+                                                                    ?>
+                                                                    <button type="button" onclick="ventaAnularFormulario(<?php echo $value['id'] ?>)" id="anular-<?php echo (($estadoTexto == "Pendiente") ? "pedido" : "venta") ?>" class="btn btn-sm btn-danger"><i class="fa fa-ban"></i></button>
+                                                                    <?php
+                                                                }
+                                                            ?>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex flex-column" style="line-height: 1em;">
+                                                                <small class="text-muted">Nombre</small>
+                                                                <span class="font-weight-bold"><?php echo mb_strtoupper((isset($clienteNombre) && !is_bool($clienteNombre) && strlen($clienteNombre) > 0) ? $clienteNombre : "S/N") ?></span>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex flex-column" style="line-height: 1em;">
+                                                                <small class="text-muted">Dirección</small>
+                                                                <span class="font-weight-bold"><?php echo mb_strtoupper((isset($clienteDireccion) && !is_bool($clienteDireccion) && strlen($clienteDireccion) > 0) ? $clienteDireccion : "S/D") ?></span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <button type="button" onclick="facturaVisualizar(<?php echo $value['id'] ?>)" id="factura" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <span class="badge badge-pill badge-<?php echo $estadoTipo ?> p-2 w-75"><?php echo $estadoTexto ?></span>
+                                                        </td>
+                                                        <td class="text-right">
+                                                            <?php
+                                                                if(Caja::corroboraAcceso()){
+                                                                    $idCaja = $_SESSION["usuario"]->getActividadCaja();
+                                                                    $actividad = 1;
+                                                                    if($value["pago"] == 8 && $value["estado"] == 1 && is_numeric($idCaja) && $idCaja > 0 && Compania::cajaCorroboraExistencia($idCaja)){
+                                                                        echo '<button type="button" id="pagar" onclick="cajaPagoFormulario('.$idCaja.', null, '.$value["id"].')" class="btn btn-sm btn-info"><i class="fa fa-usd"></i></button>';
+                                                                    }
+                                                                } 
+                                                            ?>
+                                                        </td>
+                                                    </tr>
+                                                    <?php
                                                 }
                                             }else{
                                                 ?>
                                                 <tr>
-                                                    <td class="text-center">No se encontraron pedidos en esta sucursal.</td>
+                                                    <td colspan="6" class="text-center">No se encontraron pedidos en esta sucursal.</td>
+                                                    <td class="d-none"></td>
+                                                    <td class="d-none"></td>
+                                                    <td class="d-none"></td>
+                                                    <td class="d-none"></td>
+                                                    <td class="d-none"></td>
                                                 </tr>
                                                 <?php
                                             }
@@ -100,6 +734,26 @@
                                 </table>
                                 <script>
                                     dataTableSet("#tabla-pedidos");
+                                    tippy('#anular-pedido', {
+                                        content: 'Anular pedido',
+                                        delay: [150,150],
+                                        animation: 'fade'
+                                    });
+                                    tippy('#anular-venta', {
+                                        content: 'Anular pedido / cobro',
+                                        delay: [150,150],
+                                        animation: 'fade'
+                                    });
+                                    tippy('#factura', {
+                                        content: 'Visualizar ticket',
+                                        delay: [150,150],
+                                        animation: 'fade'
+                                    });
+                                    tippy('#pagar', {
+                                        content: 'Registrar pago de pedido',
+                                        delay: [150,150],
+                                        animation: 'fade'
+                                    });
                                 </script>
                                 <?php
                             }else{
@@ -483,127 +1137,137 @@
                             $productoCantidad = explode(",", $data[$idVenta]["productoCantidad"]);
                             $productoPrecio = explode(",", $data[$idVenta]["productoPrecio"]);
                             ?>
-                            <div class="d-flex justify-content-end">
-                                <button type="button" onclick="printDiv()" class="btn btn-primary">Imprimir <i class="fa fa-print"></i></button>
-                            </div>
-                            <div id="comprobante" style="position: relative; padding: 1em; margin: 0.825em; background-color: var(--white); box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;">
-                                <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center">
-                                    <div style="display: flex; flex-direction: column; justify-content: space-around;">
-                                        <span style="font-size: 2em; font-weight-bold;"><?php echo $dataCompañia["nombre"] ?></span>
-                                        <span><?php echo $dataCompañia["direccion"] ?></span>
-                                        <span><?php echo $dataCompañia["telefono"] ?></span>
+                            <div id="container-factura" class="cover-container">
+                                <div class="mine-container w-75 h-75">
+                                    <div class="d-flex justify-content-between"> 
+                                        <div class="titulo">Visualización comprobante #<?php echo $prenComprobante.$data[$idVenta]["nComprobante"] ?></div>
+                                        <button type="button" onclick="$('.cover-container').remove()" class="btn btn-danger"><i class="fa fa-times"></i></button>
                                     </div>
-                                    <img src="image/compañia/<?php echo $dataCompañia["id"] ?>/logo.png" style="height: 4em;" alt="<?php echo $dataCompañia["nombre"] ?>" />
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
-                                    <div style="display: flex; flex-direction: column; padding: 1.5em 0;">
-                                        <div style="font-size: 1.3em; font-weight: bold;">
-                                            Cliente
+                                    <div class="w-100" style="height: 85%; overflow: auto">
+                                        <div class="d-flex justify-content-end">
+                                            <button type="button" onclick="printDiv()" class="btn btn-primary">Imprimir <i class="fa fa-print"></i></button>
                                         </div>
-                                        <?php
-                                            if(is_numeric($data[$idVenta]["cliente"]) && $data[$idVenta]["cliente"] > 0){
-                                                $dataCliente = Cliente::data(["filtroOpcion" => 3, "id" => $data[$idVenta]["cliente"]]);
-                                                ?>
-                                                <span><b>Nombre y apellido:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["nombre"] ?></span>
-                                                <span><b>N° Documento:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["documento"] ?></span>
-                                                <span><b>N° Teléfono:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["telefono"] ?></span>
-                                                <span><b>Domicilio:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["domicilio"] ?></span>
-                                                <span><b>Email:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["email"] ?></span>
-                                                <?php
-                                            }else{
-                                                ?>
-                                                <span>Cliente ocasional.</span>
-                                                <?php
-                                            }
-                                        ?>
-                                    </div>
-                                    <div style="display: flex; flex-direction: column; align-items: flex-end">
-                                        <span><b>Fecha: </b><?php echo date("d/m/Y", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
-                                        <span><b>Hora: </b><?php echo date("H:i A", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
-                                        <span><b>Forma de Pago: </b><?php echo $_SESSION["lista"]["pago"][$data[$idVenta]["pago"]]["pago"] ?></span>
-                                        <span><b>Comprobante N°:</b> #<?php echo $prenComprobante.$data[$idVenta]["nComprobante"] ?></span>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: center; align-items: center; padding: 0.375em">
-                                    <b>COMPROBANTE NO FISCAL</b>
-                                </div>
-                                <div>
-                                    <table style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; width: 100%;">
-                                        <thead style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
-                                            <tr style="text-align: center; font-weight: bold; background-color: burlywood;">
-                                                <td style="width: 66%; padding: 1.1em;">Descripción</td>
-                                                <td style="width: 6%; padding: 1.1em">Cant.</td>
-                                                <td style="width: 12%; padding: 1.1em">Precio/U.</td>
-                                                <td style="width: 15%; padding: 1.1em; text-align: right">Total</td>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php
-                                                $total = 0;
-                                                foreach($producto AS $key => $value){
-                                                    $tipo = ($value[0] == "*") ? "noCodificado" : "codificado";
-                                                    $value = str_replace("*", "", $value);
+                                        <div id="comprobante" style="position: relative; padding: 1em; margin: 0.825em; background-color: var(--white); box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.16), 0 2px 10px 0 rgba(0, 0, 0, 0.12) !important;">
+                                            <div style="padding: 10px; display: flex; justify-content: space-between; align-items: center">
+                                                <div style="display: flex; flex-direction: column; justify-content: space-around;">
+                                                    <span style="font-size: 2em; font-weight-bold;"><?php echo $dataCompañia["nombre"] ?></span>
+                                                    <span><?php echo $dataCompañia["direccion"] ?></span>
+                                                    <span><?php echo $dataCompañia["telefono"] ?></span>
+                                                </div>
+                                                <img src="image/compañia/<?php echo $dataCompañia["id"] ?>/logo.png" style="height: 4em;" alt="<?php echo $dataCompañia["nombre"] ?>" />
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
+                                                <div style="display: flex; flex-direction: column; padding: 1.5em 0;">
+                                                    <div style="font-size: 1.3em; font-weight: bold;">
+                                                        Cliente
+                                                    </div>
+                                                    <?php
+                                                        if(is_numeric($data[$idVenta]["cliente"]) && $data[$idVenta]["cliente"] > 0){
+                                                            $dataCliente = Cliente::data(["filtroOpcion" => 3, "id" => $data[$idVenta]["cliente"]]);
+                                                            ?>
+                                                            <span><b>Nombre y apellido:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["nombre"] ?></span>
+                                                            <span><b>N° Documento:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["documento"] ?></span>
+                                                            <span><b>N° Teléfono:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["telefono"] ?></span>
+                                                            <span><b>Domicilio:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["domicilio"] ?></span>
+                                                            <span><b>Email:</b> <?php echo $dataCliente[$data[$idVenta]["cliente"]]["email"] ?></span>
+                                                            <?php
+                                                        }else{
+                                                            ?>
+                                                            <span>Cliente ocasional.</span>
+                                                            <?php
+                                                        }
                                                     ?>
-                                                    <tr style="border-bottom: 1px solid lightgray;">
-                                                        <td style="padding: 0.215em 0; line-height: 0.8em;"><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
-                                                        <td style="padding: 0.215em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
-                                                        <td style="padding: 0.215em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
-                                                        <td style="padding: 0.215em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
-                                                    </tr>
-                                                    <?php
-                                                    $total += $productoCantidad[$key] * $productoPrecio[$key];
-                                                }
-                                            ?>
-                                        </tbody>
-                                        <tfoot style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; ">
-                                            <tr style="margin-bottom: 1em; <?php echo ($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4) ? "display: none" : "" ?>">
-                                                <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
-                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["subtotal"], 2); ?></td>
-                                            </tr>
-                                            <tr class="margin-bottom: 1em; <?php echo ($data[$idVenta]["descuento"] == 0) ? "d-none" : "" ?>">
-                                                <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
-                                                <td style="padding: 0.215em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
-                                            </tr>
-                                            <?php
-                                                if($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 5){
-                                                    ?> 
-                                                    <tr>
-                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Contado:</td>
-                                                        <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["contado"], 2); ?></td>
-                                                    </tr>
-                                                    <?php
-                                                }
-                                                if($data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 6){
-                                                    ?> 
-                                                    <tr>
-                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Débito:</td>
-                                                        <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["debito"], 2); ?></td>
-                                                    </tr>
-                                                    <?php
-                                                }
-                                                if($data[$idVenta]["pago"] == 3 || $data[$idVenta]["pago"] == 5 || $data[$idVenta]["pago"] == 6){
-                                                    ?> 
-                                                    <tr>
-                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Crédito:</td>
-                                                        <td style="padding: 0.215em 0; text-align: right; line-height: 0.8em;">$ <?php echo round(($data[$idVenta]["credito"] * $credito[$data[$idVenta]["financiacion"]]["interes"]), 2)."<br>".$credito[$data[$idVenta]["financiacion"]]["cuotas"]." cuotas" ?></td>
-                                                    </tr>
-                                                    <?php
-                                                }
-                                                if($data[$idVenta]["iva"] == 1){
-                                                    ?> 
-                                                    <tr style="display: none">
-                                                        <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Iva :</td>
-                                                        <td style="padding: 0.215em 0; text-align: right">% 21</td>
-                                                    </tr>
-                                                    <?php
-                                                }
-                                            ?>
-                                            <tr style="margin-top: 1em; ">
-                                                <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
-                                                <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["total"] - ($data[$idVenta]["subtotal"] / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["subtotal"] / 100 * (($data[$idVenta]["iva"] == 1) ? 0 : 21)), 2) ?></td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
+                                                </div>
+                                                <div style="display: flex; flex-direction: column; align-items: flex-end">
+                                                    <span><b>Fecha: </b><?php echo date("d/m/Y", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
+                                                    <span><b>Hora: </b><?php echo date("H:i A", strtotime($data[$idVenta]["fechaCarga"])) ?></span>
+                                                    <span><b>Forma de Pago: </b><?php echo $_SESSION["lista"]["pago"][$data[$idVenta]["pago"]]["pago"] ?></span>
+                                                    <span><b>Comprobante N°:</b> #<?php echo $prenComprobante.$data[$idVenta]["nComprobante"] ?></span>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; justify-content: center; align-items: center; padding: 0.375em">
+                                                <b>COMPROBANTE NO FISCAL</b>
+                                            </div>
+                                            <div>
+                                                <table style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; width: 100%;">
+                                                    <thead style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray;">
+                                                        <tr style="text-align: center; font-weight: bold; background-color: burlywood;">
+                                                            <td style="width: 66%; padding: 1.1em;">Descripción</td>
+                                                            <td style="width: 6%; padding: 1.1em">Cant.</td>
+                                                            <td style="width: 12%; padding: 1.1em">Precio/U.</td>
+                                                            <td style="width: 15%; padding: 1.1em; text-align: right">Total</td>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <?php
+                                                            $total = 0;
+                                                            foreach($producto AS $key => $value){
+                                                                $tipo = ($value[0] == "*") ? "noCodificado" : "codificado";
+                                                                $value = str_replace("*", "", $value);
+                                                                ?>
+                                                                <tr style="border-bottom: 1px solid lightgray;">
+                                                                    <td style="padding: 0.215em 0; line-height: 0.8em;"><?php echo ($value == 0) ? "VARIOS" : $_SESSION["lista"]["producto"][$tipo][$dataCompañiaStock[$value][($tipo == "codificado") ? "producto" : "productoNC"]]["nombre"] ?></td>
+                                                                    <td style="padding: 0.215em 0; text-align: center;"><?php echo $productoCantidad[$key] ?></td>
+                                                                    <td style="padding: 0.215em 0; text-align: center;">$<span><?php echo $productoPrecio[$key] ?></span></td>
+                                                                    <td style="padding: 0.215em 0; text-align: right;">$<span><?php echo round($productoCantidad[$key] * $productoPrecio[$key], 2) ?></span></td>
+                                                                </tr>
+                                                                <?php
+                                                                $total += $productoCantidad[$key] * $productoPrecio[$key];
+                                                            }
+                                                        ?>
+                                                    </tbody>
+                                                    <tfoot style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; ">
+                                                        <tr style="margin-bottom: 1em; <?php echo ($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4) ? "display: none" : "" ?>">
+                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
+                                                            <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["subtotal"], 2); ?></td>
+                                                        </tr>
+                                                        <tr class="margin-bottom: 1em; <?php echo ($data[$idVenta]["descuento"] == 0) ? "d-none" : "" ?>">
+                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
+                                                            <td style="padding: 0.215em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
+                                                        </tr>
+                                                        <?php
+                                                            if($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 5){
+                                                                ?> 
+                                                                <tr>
+                                                                    <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Contado:</td>
+                                                                    <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["contado"], 2); ?></td>
+                                                                </tr>
+                                                                <?php
+                                                            }
+                                                            if($data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 6){
+                                                                ?> 
+                                                                <tr>
+                                                                    <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Débito:</td>
+                                                                    <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["debito"], 2); ?></td>
+                                                                </tr>
+                                                                <?php
+                                                            }
+                                                            if($data[$idVenta]["pago"] == 3 || $data[$idVenta]["pago"] == 5 || $data[$idVenta]["pago"] == 6){
+                                                                ?> 
+                                                                <tr>
+                                                                    <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Crédito:</td>
+                                                                    <td style="padding: 0.215em 0; text-align: right; line-height: 0.8em;">$ <?php echo round(($data[$idVenta]["credito"] * $credito[$data[$idVenta]["financiacion"]]["interes"]), 2)."<br>".$credito[$data[$idVenta]["financiacion"]]["cuotas"]." cuotas" ?></td>
+                                                                </tr>
+                                                                <?php
+                                                            }
+                                                            if($data[$idVenta]["iva"] == 1){
+                                                                ?> 
+                                                                <tr style="display: none">
+                                                                    <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Iva :</td>
+                                                                    <td style="padding: 0.215em 0; text-align: right">% 21</td>
+                                                                </tr>
+                                                                <?php
+                                                            }
+                                                        ?>
+                                                        <tr style="margin-top: 1em; ">
+                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
+                                                            <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["total"] - ($data[$idVenta]["subtotal"] / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["subtotal"] / 100 * (($data[$idVenta]["iva"] == 1) ? 0 : 21)), 2) ?></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div> 
                                 </div>
                             </div>
                             <script> 
@@ -1287,25 +1951,70 @@
             return false;
         }
 
-        public static function productoNoCodifData($idCompañia = null, $idProducto = null){
+        public static function productoNoCodifData($idCompañia = null, $idProducto = null, $data = null, $max = 250){
             Session::iniciar();
             $idCompañia = (is_null($idCompañia)) ? $_SESSION["usuario"]->getCompañia() : $idCompañia;
-            $query = DataBase::select("compañia_producto", "*", "compañia = '".$idCompañia."'".((is_numeric($idProducto)) ? " AND id = '".$idProducto."'" : ""), "ORDER BY nombre ASC");
-            if($query){
-                $data = [];
-                if(DataBase::getNumRows($query) > 0){
-                    while($dataQuery = DataBase::getArray($query)){
-                        $data[$dataQuery["id"]] = $dataQuery;
+            if(is_array($data) && count($data) > 0){
+                if($data["filtroOpcion"] == 1 || $data["filtroOpcion"] == 2){
+                    switch($data["filtroOpcion"]){
+                        case 1:
+                            $cond = "";
+                            if(is_array($data["tag"]) && count($data["tag"]) > 0){
+                                foreach($data["tag"] AS $key => $value){
+                                    $value = preg_replace( '/[\W]/', '', $value);
+                                    if($key > 0 && $key < count($data["tag"])){
+                                        $cond .= " AND ";
+                                    }
+                                    $cond .= "nombre LIKE '%".$value."%'";
+                                }
+                            }
+                            $query = DataBase::select("compañia_producto", "*", $cond, "ORDER BY codigoBarra ASC, nombre ASC LIMIT ".$max);
+                        break;
+                        case 2:
+                            $query = DataBase::select("compañia_producto", "*", "codigoBarra LIKE '".$data["codigo"]."%'", "ORDER BY codigoBarra ASC, nombre ASC LIMIT ".$max);
+                        break;
                     }
-                    foreach($data AS $key => $value){
-                        foreach($value AS $iKey => $iValue){
-                            if(is_int($iKey)){
-                                unset($data[$key][$iKey]);
+                    if($query){
+                        $data = [];
+                        if(DataBase::getNumRows($query) > 0){
+                            while($dataQuery = DataBase::getArray($query)){
+                                $data[] = $dataQuery;
+                            }
+                            foreach($data AS $key => $value){
+                                foreach($value AS $iKey => $iValue){
+                                    if(is_int($iKey)){
+                                        unset($data[$key][$iKey]);
+                                    }
+                                }
+                            }
+                        }
+                        return $data;
+                    }else{
+                        Sistema::debug('error', 'compania.class.php - productoNoCodifData - Error al buscar los productos. Ref.: '.DataBase::getError());
+                    }
+                }else{
+                    Sistema::debug('error', 'compania.class.php - productoNoCodifData - Error en el dato de búsqueda recibido. Ref.: '.$data["busqueda"]);
+                }
+            }else{ 
+                $query = DataBase::select("compañia_producto", "*", "compañia = '".$idCompañia."'".((is_numeric($idProducto)) ? " AND id = '".$idProducto."'" : ""), "ORDER BY nombre ASC");
+                if($query){
+                    $data = [];
+                    if(DataBase::getNumRows($query) > 0){
+                        while($dataQuery = DataBase::getArray($query)){
+                            $data[$dataQuery["id"]] = $dataQuery;
+                        }
+                        foreach($data AS $key => $value){
+                            foreach($value AS $iKey => $iValue){
+                                if(is_int($iKey)){
+                                    unset($data[$key][$iKey]);
+                                }
                             }
                         }
                     }
+                    return $data;
+                }else{
+                    Sistema::debug('error', 'compania.class.php - productoNoCodifData - Error al consultar la inforamción de productos. Ref.: '.DataBase::getError());
                 }
-                return $data;
             }
             return false;
         }

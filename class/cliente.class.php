@@ -351,8 +351,7 @@
                                                                         if($value["pago"] == 8 && $value["estado"] == 1 && is_numeric($idCaja) && $idCaja > 0 && Compania::cajaCorroboraExistencia($idCaja)){
                                                                             echo '<button type="button" id="pagar" onclick="cajaPagoFormulario('.$idCaja.', null, '.$value["id"].')" class="btn btn-sm btn-info"><i class="fa fa-usd"></i></button>';
                                                                         }
-                                                                    }
-                                                                    
+                                                                    } 
                                                                 ?>
                                                                 <button type="button" id="factura" onclick="facturaVisualizar(<?php echo $value['id'] ?>)" class="btn btn-sm btn-outline-info"><i class="fa fa-file-pdf-o"></i></button>
                                                             </div>
@@ -460,16 +459,38 @@
                         if(count($data) == 1){
                             return $data[$idCliente]["nombre"];
                         }else{
-                            Sistema::debug('error', 'cliente.class.php - getId - No se encontró registro del cliente.');
+                            Sistema::debug('error', 'cliente.class.php - getNombre - No se encontró registro del cliente.');
                         }
                     }else{
-                        Sistema::debug('error', 'cliente.class.php - getId - Error al recibir la información del cliente.');
+                        Sistema::debug('error', 'cliente.class.php - getNombre - Error al recibir la información del cliente.');
                     }
                 }else{
-                    Sistema::debug('error', 'cliente.class.php - getId - El documento recibido tiene un formato incorrecto. Ref.: '.$documento);
+                    Sistema::debug('error', 'cliente.class.php - getNombre - El identificador del cliente recibido tiene un formato incorrecto. Ref.: '.$idCliente);
                 }
             }else{
-                Sistema::debug('error', 'cliente.class.php - getId - Usuario no logueado.');
+                Sistema::debug('error', 'cliente.class.php - getNombre - Usuario no logueado.');
+            }
+            return false;
+        }
+
+        public static function getDomicilio($idCliente){
+            if(Sistema::usuarioLogueado()){
+                if(isset($idCliente) && is_numeric($idCliente) && $idCliente > 0){
+                    $data = Cliente::data(["filtroOpcion" => 3, "id" => $idCliente], ["id","domicilio"]);
+                    if(is_array($data)){
+                        if(count($data) == 1){
+                            return $data[$idCliente]["domicilio"];
+                        }else{
+                            Sistema::debug('error', 'cliente.class.php - getDomicilio - No se encontró registro del cliente.');
+                        }
+                    }else{
+                        Sistema::debug('error', 'cliente.class.php - getDomicilio - Error al recibir la información del cliente.');
+                    }
+                }else{
+                    Sistema::debug('error', 'cliente.class.php - getDomicilio - El identificador del cliente recibido tiene un formato incorrecto. Ref.: '.$idCliente);
+                }
+            }else{
+                Sistema::debug('error', 'cliente.class.php - getDomicilio - Usuario no logueado.');
             }
             return false;
         }
@@ -646,7 +667,7 @@
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
                     $clienteExiste = Cliente::corroboraExistencia(["documento" => $data["documento"], "filtroOpcion" => 2]);
-                    if($clienteExiste){
+                    if(!$clienteExiste){
                         $query = DataBase::update("cliente","nombre = '".$data["nombre"]."', documento = '".$data["documento"]."', telefono = ".((isset($data["telefono"]) && !is_null($data["telefono"]) && strlen($data["telefono"]) > 0) ? "'".$data["telefono"]."'" : "NULL").", domicilio = ".((isset($data["domicilio"]) && !is_null($data["domicilio"]) && strlen($data["domicilio"]) > 0) ? "'".$data["domicilio"]."'" : "NULL").", email = ".((isset($data["email"]) && !is_null($data["email"]) && strlen($data["email"]) > 0) ? "'".$data["email"]."'" : "NULL"), "id = '".$data["idCliente"]."' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'");
                         if($query){
                             Session::iniciar();

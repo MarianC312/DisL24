@@ -1,7 +1,13 @@
 <?php
     require_once 'autoload.class.php';
     if(Sistema::usuarioLogueado()){
-        Compania::sucursalPedido();
+        if(isset($_POST)){
+            Compania::sucursalPedido();
+        }else{
+            $mensaje['tipo'] = 'danger';
+            $mensaje['cuerpo'] = 'Hubo un error al recibir la información. <b>Intente nuevamente o contacte al administrador.</b>';
+            Alert::mensaje($mensaje);
+        }
     }else{
         Sistema::debug('error', 'includes > compania > sucursal-pedido-formulario.php - Usuario no logueado.');
     }

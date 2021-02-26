@@ -1,6 +1,29 @@
 const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
 
+let cart = [];
+
+const cartErase = () => { cart = []; }
+
 const beep1 = new Audio("./sound/scanner-beep.mp3");
+
+const filtrarPorPropiedad = (arr, prop, val, skip = null) => {
+    var filtrado = [];
+    arr.map((data, i) => {
+        if (i == skip) {
+            filtrado.push(data);
+        } else {
+            for (var key in data) {
+                if (typeof(data[key] == "object")) {
+                    var item = data[key];
+                    if (item[prop] != val) {
+                        filtrado.push([item]);
+                    }
+                }
+            }
+        }
+    });
+    return filtrado;
+}
 
 const charter = (container, tipo, labels = ["test 1", "test 2", "test 3"], datasets = [{
     label: "# test X",
@@ -2133,12 +2156,7 @@ const cajaAccionRegistrarFormulario = (div = null, small = false) => {
 }
 
 const facturaVisualizar = (idVenta, nComprobante = null, div = null) => {
-    var me = $(this);
-    if (me.data('requestRunning')) {
-        return;
-    }
-    me.data('requestRunning', true);
-    let divProcess = (div !== null) ? div : "#right-content-data";
+    let divProcess = (div !== null) ? div : "#right-content-process";
     let divForm = "";
     $.ajax({
         type: "POST",
@@ -2150,9 +2168,7 @@ const facturaVisualizar = (idVenta, nComprobante = null, div = null) => {
             $(divProcess).show(350);
         },
         data: { idVenta: idVenta, nComprobante: nComprobante },
-        complete: function() {
-            me.data('requestRunning', false);
-        },
+        complete: function() {},
         success: function(data) {
             setTimeout(function() {
                 $(divProcess).hide().html(data).fadeIn("slow");
@@ -2160,7 +2176,6 @@ const facturaVisualizar = (idVenta, nComprobante = null, div = null) => {
         }
     }).fail(function(jqXHR) {
         console.log(jqXHR.statusText);
-        me.data('requestRunning', false);
     });
 }
 
@@ -2651,6 +2666,88 @@ const administracionClienteBuscar = () => {
     });
 }
 
+const compañiaSucursalPedidoFormularioProductoAgregaralCarro = (tag, process = "#sucursal-pedido-producto-lista-process") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#sucursal-pedido-form");
+    let data = form.serializeArray();
+    data.push({ name: "tag-container", value: tag });
+    let tags = document.getElementById(tag);
+    if (!tags.hasChildNodes()) {
+        alert("Ingrese palabras claves para filtrar");
+        me.data('requestRunning', false);
+        return;
+    }
+    let divProcess = process;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/sucursal-pedido-formulario-producto-filtrar.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaSucursalPedidoFormularioProductoFiltrar = (tag, process = "#sucursal-pedido-producto-lista-process") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#sucursal-pedido-form");
+    let data = form.serializeArray();
+    data.push({ name: "tag-container", value: tag });
+    let tags = document.getElementById(tag);
+    if (!tags.hasChildNodes()) {
+        alert("Ingrese palabras claves para filtrar");
+        me.data('requestRunning', false);
+        return;
+    }
+    let divProcess = process;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/sucursal-pedido-formulario-producto-filtrar.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const compañiaSucursalPedido = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
@@ -2683,12 +2780,99 @@ const compañiaSucursalPedido = () => {
     });
 }
 
+const compañiaSucursalPedidoCarritoFormularioRegistrar = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#carrito-pedido-form");
+    let data = form.serializeArray();
+    data.push({ name: "process", value: form.attr("process") });
+    data.push({ name: "form", value: form.attr("form") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaSucursalPedidoCarritoFormulario = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#sucursal-pedido-form");
+    let data = form.serializeArray();
+    cart.map((cartData, i) => {
+        if (i > 0) {
+            data.push({ name: "producto[" + i + "][nombre]", value: cartData[0]["nombre"] });
+            data.push({ name: "producto[" + i + "][idProducto]", value: cartData[0]["idProducto"] });
+            data.push({ name: "producto[" + i + "][idStock]", value: cartData[0]["idStock"] });
+            data.push({ name: "producto[" + i + "][stock]", value: cartData[0]["stock"] });
+            data.push({ name: "producto[" + i + "][codigoBarra]", value: cartData[0]["codigoBarra"] });
+            data.push({ name: "producto[" + i + "][precio]", value: cartData[0]["precio"] });
+            data.push({ name: "producto[" + i + "][precioTipo]", value: cartData[0]["precioTipo"] });
+            data.push({ name: "producto[" + i + "][productoTipo]", value: cartData[0]["productoTipo"] });
+            data.push({ name: "producto[" + i + "][cantidad]", value: cartData[0]["cantidad"] });
+        } else {
+            data.push({ name: "cliente[id]", value: cartData["value"][0]["value"] });
+            data.push({ name: "cliente[nombre]", value: cartData["value"][1]["value"] });
+        }
+    });
+    let divProcess = "#right-content-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/compania/sucursal-pedido-carrito-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const compañiaSucursalPedidoFormulario = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
+    cart = [];
     let divProcess = "#right-content-data";
     let divForm = "";
     $.ajax({
@@ -2750,4 +2934,5 @@ const nuevaCompania = () => {
     });
 }
 
+sistemaReloadStaticData();
 sistemaReloadStaticData();

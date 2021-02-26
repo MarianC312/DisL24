@@ -1366,11 +1366,16 @@
                                             <div class="form-group">
                                                 <label class="col-form-label required" for="tipo"><i class="fa fa-list"></i> Tipo</label>
                                                 <div class="input-group">
-                                                    <select class="form-control" required id="tipo" name="tipo">
+                                                    <select class="form-control" required id="tipo" name="tipo" <?php echo (!$codificado) ? "readonly" : "" ?>>
                                                         <?php
                                                             if(is_array($_SESSION["lista"]["producto"]["tipo"]) && count($_SESSION["lista"]["producto"]["tipo"]) > 0){
                                                                 foreach($_SESSION["lista"]["producto"]["tipo"] AS $key => $value){
-                                                                    $selected = (isset($data["tipo"]) && $data["tipo"] == $key) ? "selected" : "";
+                                                                    
+                                                                    if(!$codificado){
+                                                                        $selected = ($key == 5) ? "selected" : "disabled"; //registr propio compañia
+                                                                    }else{
+                                                                        $selected = (isset($data["tipo"]) && $data["tipo"] == $key) ? "selected" : "";
+                                                                    }
                                                                     echo '<option value="'.$key.'" '.$selected.'>'.$value.'</option>';
                                                                 }
                                                             }else{
@@ -1586,10 +1591,16 @@
                                     search: true,
                                     classNames: ["flex-grow-1"]
                                 });
-                                tail.select('#tipo', {
-                                    search: true,
-                                    classNames: ["flex-grow-1"]
-                                });
+                                <?php
+                                    if($codificado){
+                                        ?>
+                                        tail.select('#tipo', {
+                                            search: true,
+                                            classNames: ["flex-grow-1"]
+                                        });
+                                        <?php
+                                    }
+                                ?>
                                 tippy('#producto-tipo-get-form', {
                                     content: 'Agregar un nuevo tipo de producto a la lista.',
                                     delay: [0,500],
