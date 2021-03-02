@@ -227,8 +227,7 @@
                                     let producto = document.getElementById("producto-stock-" + idStock);
                                     let cantidad = $("#cantidad-" + idStock).val();
                                     let data = [];
-                                    if(cantidad > 0 && cantidad <= producto.dataset.stock){
-
+                                    if(cantidad > 0 && cantidad <= producto.dataset.stock){ 
                                         data.push({
                                             "nombre": producto.dataset.nombre,
                                             "idProducto": producto.dataset.idProducto,
@@ -248,6 +247,8 @@
                                         $("#producto-accion-" + idStock).html(loading("loader-ok"))
 
                                     }else{
+                                        console.log(producto);
+                                        console.log(cantidad + " - " + producto.dataset.stock);
                                         alert("La cantidad seleccionada es incorrecta.");
                                     }
                                 }
@@ -413,6 +414,12 @@
                                                             <input type="text" class="form-control d-none" id="total" name="monto-contado" value="<?php echo $total ?>" readonly>
                                                         </div>
                                                     </div>
+                                                    <div class="d-flex flex-column mb-3" style="line-height: 1.15em">
+                                                        <div class="form-group">
+                                                            <label for="observacion"><small class="text-muted">Observaciones</small></label>
+                                                            <textarea class="form-control" id="observacion" name="observacion" rows="3"></textarea>
+                                                        </div>
+                                                    </div>
                                                     <div class="d-flex justify-content-center mt-5">
                                                         <button type="button" onclick="compañiaSucursalPedidoCarritoFormularioRegistrar()" class="btn btn-lg btn-success">Registrar pedido</button>
                                                     </div>
@@ -505,7 +512,7 @@
                 $dataCliente = $_SESSION["lista"]["compañia"][$compañia]["cliente"];
                 ?>
                 <div id="sucursal-pedido-container" class="mine-container">
-                    <button type="button" onclick="compañiaSucursalPedidoFormulario()" class="btn btn-success"><i class="fa fa-repeat"></i> Reload</button>
+                    <button type="button" onclick="compañiaSucursalPedidoFormulario()" class="btn btn-success d-none"><i class="fa fa-repeat"></i> Reload</button>
                     <div class="d-flex justify-content-between"> 
                         <div class="titulo">Nuevo pedido</div>
                         <button type="button" id="btn-cart" onclick="compañiaSucursalPedidoCarritoFormulario()" class="btn btn-outline-info" style="position: relative; padding: 1em; font-size: 1.2em;"><i class="fa fa-shopping-cart"></i><span class="badge badge-pill badge-success" style="right: 3px;">0</span></button>
@@ -522,7 +529,7 @@
                                             <?php
                                                 if(is_array($dataCliente) && count($dataCliente) > 0){
                                                     foreach($dataCliente AS $key => $value){
-                                                        echo '<option value="'.$value["id"].'" data-nombre="'.$value["nombre"].'">['.$value["documento"].'] '.$value["nombre"].'</option>';
+                                                        echo '<option value="'.$value["id"].'" data-nombre="'.$value["nombre"].'">['.$value["documento"].'] '.$value["nombre"].', '.$value["domicilio"].'</option>';
                                                     }
                                                 }
                                             ?>
@@ -1265,6 +1272,20 @@
                                                         </tr>
                                                     </tfoot>
                                                 </table>
+                                                <?php
+                                                    if(strlen($data[$idVenta]["observacion"]) > 0){
+                                                        ?>
+                                                        <div style="margin-top: 1em;">
+                                                            <div style="border-top: 1px dashed darkgray; padding: 0.75em;">
+                                                                <b>Observaciones para el operador:</b>
+                                                                <div style="padding-top: 0.65em">
+                                                                    <?php echo $data[$idVenta]["observacion"] ?>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <?php
+                                                    }
+                                                ?>
                                             </div>
                                         </div>
                                     </div> 

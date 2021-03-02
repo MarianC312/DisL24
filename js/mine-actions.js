@@ -2790,6 +2790,7 @@ const compañiaSucursalPedidoCarritoFormularioRegistrar = () => {
     let data = form.serializeArray();
     data.push({ name: "process", value: form.attr("process") });
     data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "exceptions", value: ["exceptions,observacion"] });
     let divProcess = form.attr("process");
     let divForm = form.attr("form");
     $.ajax({
