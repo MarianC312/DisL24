@@ -674,9 +674,9 @@ body {
     width: 100%;
     background-color: rgba(65, 65, 65, 0.5);
     content: "ANULADO";
-    position: absolute;
+    /*position: absolute;
     top: 0;
-    left: 0;
+    left: 0;*/
     height: 100%;
     text-align: center;
     display: flex;

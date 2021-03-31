@@ -1895,6 +1895,7 @@
                                 }
                             }
                             $totalEfectivo = ($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["venta"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["retiro"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["pago"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["cobro"]["volumen"]);
+                            $totalContado = ($data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["venta"]["volumen"]  + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["deposito"]["volumen"] + $data[$idJornada]["stats"]["caja"]["movimiento"]["detalle"]["cobro"]["volumen"]);
                             ?>
                             <div class="d-flex justify-content-end">
                                 <button type="button" onclick="actividadJornadaVisualizar(<?php echo $idJornada ?>)" class="btn btn-success d-none"><i class="fa fa-list-alt"></i> Ver</button>
@@ -2126,7 +2127,7 @@
                                                     </div>
                                                     <div style="margin-left: 0.5em; display: flex; flex-direction: column">
                                                         <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black; margin-bottom: 0.35em">
-                                                            <span>Ventas en Contado:</span> <span style="font-weight: bold;">$ <?php echo number_format($totalEfectivo, 2, ",", ".") ?></span>
+                                                            <span>Ventas en Contado:</span> <span style="font-weight: bold;">$ <?php echo number_format($totalContado, 2, ",", ".") ?></span>
                                                         </div>
                                                         <div style="margin-bottom: 0.35em">
                                                             <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed black; align-items: center;">
@@ -2151,7 +2152,7 @@
                                                             </div>
                                                         </div>
                                                         <div style="display: flex; justify-content: end; padding: 1em 0 1em 1em; font-size: 1.15em; font-weight: bold;">
-                                                            <span style="padding-right: 1em">Gran Total:</span> $ <?php echo number_format(($totalEfectivo + $data[$idJornada]["stats"]["recaudacion"]["debito"] + $data[$idJornada]["stats"]["recaudacion"]["credito"] + $data[$idJornada]["stats"]["cobro"]["debito"] + $data[$idJornada]["stats"]["cobro"]["credito"]), 2, ",", ".") ?>
+                                                            <span style="padding-right: 1em">Gran Total:</span> $ <?php echo number_format(($totalContado + $data[$idJornada]["stats"]["recaudacion"]["debito"] + $data[$idJornada]["stats"]["recaudacion"]["credito"] + $data[$idJornada]["stats"]["cobro"]["debito"] + $data[$idJornada]["stats"]["cobro"]["credito"]), 2, ",", ".") ?>
                                                         </div>
                                                     </div>
 
