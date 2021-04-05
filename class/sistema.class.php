@@ -8,40 +8,51 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.86.184g";
+        public static $version = "alpha-1.103.219c";
 
         public static function facturaImpagaAlerta($compañia = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
                 $idCompañia = (is_numeric($compañia) && $compañia > 0) ? $compañia : $_SESSION["usuario"]->getCompañia();
                 $data = Compania::facturaImpagaData($idCompañia);
+                $idAlerta = rand(0,100);
                 if(is_array($data)){
                     if(count($data) > 0){
                         $nombre = explode(" ", $_SESSION["usuario"]->getNombre());
                         ?>
-                        <div class="cover-container">
+                        <div id="sistema-factura-disponible-<?php echo $idAlerta ?>" class="cover-container">
                             <div>
                                 <div id="factura-adeuda-container" class="d-flex">
                                     <div id="data" class="w-50">
                                         <span id="titulo">
-                                            Hola <?php echo mb_strtoupper($nombre[0]) ?> <i class="fa fa-hand-paper-o"></i>
+                                            FACTURA DISPONIBLE
                                         </span>
-                                        <span>
-                                            Te recordamos que tenes <?php echo count($data) ?> factura/s impaga/s.<br> Clickeá en el botón de la derecha para descargar el documento digital.
+                                        <span class="mb-3">
+                                            Hola <?php echo mb_strtoupper($nombre[0]) ?> <i class="fa fa-hand-paper-o"></i>, te recordamos que tenés una factura disponible. No olvides que podés realizar el depósito en la cuenta indicada
+                                            en administración de facturas para continuar utilizando nuestros servicios, el alta del pago demora hasta 24 hrs. de realizado el pago.
                                         </span>
-                                    </div>
-                                    <a href="#" class="w-50 d-flex flex-column justify-content-center align-items-center">
-                                        <div id="file">
-                                            <i class="fa fa-file-pdf-o"></i>
+                                        <div class="w-100 d-flex justify-content-around mb-3"> 
+                                            <a href="./administracion/documentacion/compania/2/facturacion/<?php echo $data["file"] ?>" target="_blank" download>
+                                                <button type="button" class="btn btn-primary"><i class="fa fa-download"></i> Descargar</button>
+                                            </a>
+                                            <a href="mailto:contacto@efecesoluciones.com.ar"> 
+                                                <button type="button" class="btn btn-outline-primary"><i class="fa fa-envelope-o"></i> Informar pago</button>
+                                            </a>
                                         </div>
-                                        <div id="text">
-                                            <i class="fa fa-download"></i>
-                                            <span>DESCARGAR<br>FACTURA</span>
-                                        </div> 
-                                    </a>
+                                        <button type="button" id="sistema-factura-recordatorio-<?php echo $idAlerta ?>" class="btn btn-link">Recordarme más tarde</button>
+                                    </div>
+                                    <div class="w-50 d-flex align-items-center justify-content-center">
+                                        <img src="./image/ills_online_payment.svg" class="w-75">    
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <script> 
+                            $("#sistema-factura-recordatorio-<?php echo $idAlerta ?>").on("click", () => {
+                                $('#sistema-factura-disponible-<?php echo $idAlerta ?>').remove();
+                                setTimeout(() => { sistemaFacturaImpagaAlerta() }, 600000);
+                            });
+                        </script>
                         <?php
                     }
                 }

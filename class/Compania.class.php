@@ -8,14 +8,12 @@
                     $data = [];
                     if(DataBase::getNumRows($query) > 0){
                         while($dataQuery = DataBase::getArray($query)){
-                            $data[$dataQuery["id"]] = $dataQuery;
+                            $data = $dataQuery;
                         }
                         foreach($data AS $key => $value){
-                            foreach($value AS $iKey => $iValue){
-                                if(is_int($iKey)){
-                                    unset($data[$key][$iKey]);
-                                }
-                            }
+                            if(is_int($key)){
+                                unset($data[$key]);
+                            } 
                         }
                     }
                     return $data;

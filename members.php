@@ -22,7 +22,7 @@
         </div>
         <div id="right-content" class="flex-grow-1">
             <?php Componente::headerUsuario() ?>
-            <div id="right-content-alerts"><?php //Sistema::facturaImpagaAlerta() ?></div>
+            <div id="right-content-alerts"><?php Sistema::facturaImpagaAlerta() ?></div>
             <div id="right-content-process"></div>
             <div id="right-content-data">
                 <?php
