@@ -13,6 +13,7 @@
         }
         $login = Login::me($data);
         //echo '<script>console.log("'.$login.'")</script>';
+        //echo Sistema::hashGet($data["login-pass"]);
         if($login){
             Session::iniciar();
             if(isset($_SESSION["usuario"]) && is_object($_SESSION["usuario"])){

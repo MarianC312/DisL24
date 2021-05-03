@@ -50,7 +50,7 @@
                         <script> 
                             $("#sistema-factura-recordatorio-<?php echo $idAlerta ?>").on("click", () => {
                                 $('#sistema-factura-disponible-<?php echo $idAlerta ?>').remove();
-                                setTimeout(() => { sistemaFacturaImpagaAlerta() }, 600000);
+                                setTimeout(() => { sistemaFacturaImpagaAlerta() }, 6000000); //1 hr
                             });
                         </script>
                         <?php
