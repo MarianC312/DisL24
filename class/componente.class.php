@@ -363,7 +363,7 @@
 
                 
 
-                setTimeout(() => { headerUsuarioMainData(); }, (2 * 60 * 1000));
+                setTimeout(() => { headerUsuarioMainData(); }, (30 * 60 * 1000));
                 let alertFuncHelper = function (input) {
                     return new Promise(function resolver(resolve, reject) {
                         setTimeout(() => {
@@ -378,7 +378,7 @@
                     Promise.all([promise1, promise2]).catch(function (err) { 
                         console.log("Promise error: " + err);
                     });
-                }, 60000);
+                }, 1800000);
                 loadUsuarioTareasPendientes();
             </script>
             <?php

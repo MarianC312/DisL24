@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.103.219c";
+        public static $version = "alpha-1.104.220b";
 
         public static function facturaImpagaAlerta($compañia = null){
             if(Sistema::usuarioLogueado()){
@@ -50,7 +50,7 @@
                         <script> 
                             $("#sistema-factura-recordatorio-<?php echo $idAlerta ?>").on("click", () => {
                                 $('#sistema-factura-disponible-<?php echo $idAlerta ?>').remove();
-                                setTimeout(() => { sistemaFacturaImpagaAlerta() }, 6000000); //1 hr
+                                setTimeout(() => { sistemaFacturaImpagaAlerta() }, 3000000); //.5 hr
                             });
                         </script>
                         <?php

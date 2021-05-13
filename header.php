@@ -2,7 +2,7 @@
     require_once 'autoload.class.php';
     Session::iniciar();
     if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
-        Sistema::reloadStaticData();
+        //Sistema::reloadStaticData();
     }
 ?>
 <head>

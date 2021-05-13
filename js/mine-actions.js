@@ -2235,7 +2235,7 @@ const sistemaReloadStaticData = () => {
         success: function(data) {
             setTimeout(function() {
                 $(divProcess).html(data);
-                setTimeout(() => { sistemaReloadStaticData() }, 3600000);
+                setTimeout(() => { sistemaReloadStaticData() }, 1800000);
             }, 1000);
         }
     }).fail(function(jqXHR) {
@@ -2959,5 +2959,4 @@ const nuevaCompania = () => {
     });
 }
 
-sistemaReloadStaticData();
 sistemaReloadStaticData();
