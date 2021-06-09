@@ -18,8 +18,9 @@
             Session::iniciar();
             if(isset($_SESSION["usuario"]) && is_object($_SESSION["usuario"])){
                 if($_SESSION["usuario"]->getAuth()){
+                    Sistema::reloadStaticData();
                     $mensaje['tipo'] = 'success';
-                    $mensaje['cuerpo'] = 'Bienvenido! Ingresando al sistema...';
+                    $mensaje['cuerpo'] = 'Bienvenido! Cargando módulos e ingresando al sistema...';
                     Alert::mensaje($mensaje);
                     echo '<meta http-equiv="refresh" content="2;URL=./members.php" />';
                 }else{

@@ -853,7 +853,7 @@ const requestLogout = () => {
     });
 }
 
-const compañiaStockRegistroProductoListaFormulario = () => {
+const compañiaStockRegistroProductoListaFormulario = (div = null) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -863,7 +863,7 @@ const compañiaStockRegistroProductoListaFormulario = () => {
     let data = form.serializeArray();
     data.push({ name: "form", value: form.attr("form") });
     data.push({ name: "process", value: form.attr("process") });
-    let divProcess = form.attr("process");
+    let divProcess = (div != null) ? div : form.attr("process");
     let divForm = form.attr("form");
     $.ajax({
         type: "POST",

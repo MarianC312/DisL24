@@ -2,6 +2,7 @@
     require_once 'autoload.class.php';
     Session::iniciar();
     if(Sistema::usuarioLogueado()){
+        return;
         if(isset($_POST)){
             if(isset($_POST["collapse"]) && strlen($_POST["collapse"]) > 0){
                 if(isset($_SESSION["componente"]["menu"]["opcion"][$_POST["collapse"]])){

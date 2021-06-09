@@ -8,7 +8,7 @@
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
 
-        public static $version = "alpha-1.104.220b";
+        public static $version = "alpha-1.107.239f";
 
         public static function facturaImpagaAlerta($compañia = null){
             if(Sistema::usuarioLogueado()){
@@ -306,34 +306,39 @@
         }
 
         public static function reloadStaticData(){
-            Sistema::debug('info', 'sistema.class.php - reloadStaticData - Inicio recarga de datos estáticos...');
+            Sistema::debug('info', 'sistema.class.php - reloadStaticData - Inicio recarga de datos estáticos...'); 
             Session::iniciar();
-            $_SESSION["usuario"]->reloadStaticData();
-            $_SESSION["lista"]["producto"]["codificado"] = Lista::producto();
-            $_SESSION["lista"]["producto"]["noCodificado"] = Compania::productoNoCodifData();
-            $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
-            $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
-            $_SESSION["lista"]["producto"]["subcategoria"] = Lista::productoSubCategoria();
-            $_SESSION["lista"]["fabricante"] = Lista::fabricante();
-            $_SESSION["lista"]["proveedor"] = Lista::proveedor();
-            $_SESSION["lista"]["sucursal"] = Lista::sucursal();
-            $_SESSION["lista"]["compañia"] = Lista::compañia();
-            $_SESSION["lista"]["operador"] = Lista::operador();
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"] = Compania::data();
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"] = Lista::compañiaCredito();
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["caja"] = Compania::sucursalCajaData();
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia());
-            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia(), 1);
-            $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
-            $_SESSION["lista"]["pago"] = Lista::pago();
-            $_SESSION["lista"]["anulacion"] = Lista::ventaAnulacion();
-            $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
-            $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
-            $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
-            $_SESSION["componente"]["menu"]["data"]["opcion"] = (isset($_SESSION["componente"]["menu"]["data"]["opcion"])) ? $_SESSION["componente"]["menu"]["data"]["opcion"] : [];
-            Sistema::debug('info', 'sistema.class.php - reloadStaticData - Fin recarga de datos estáticos.');
+            if($_SESSION["usuario"]->shouldReloadStaticData()){
+                $_SESSION["usuario"]->reloadStaticData();
+                $_SESSION["lista"]["producto"]["codificado"] = Lista::producto();
+                $_SESSION["lista"]["producto"]["noCodificado"] = Compania::productoNoCodifData();
+                $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
+                $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
+                $_SESSION["lista"]["producto"]["subcategoria"] = Lista::productoSubCategoria();
+                $_SESSION["lista"]["fabricante"] = Lista::fabricante();
+                $_SESSION["lista"]["proveedor"] = Lista::proveedor();
+                $_SESSION["lista"]["sucursal"] = Lista::sucursal();
+                $_SESSION["lista"]["compañia"] = Lista::compañia();
+                $_SESSION["lista"]["operador"] = Lista::operador();
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["data"] = Compania::data();
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"] = Lista::compañiaCredito();
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["caja"] = Compania::sucursalCajaData();
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia());
+                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia(), 1);
+                $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
+                $_SESSION["lista"]["pago"] = Lista::pago();
+                $_SESSION["lista"]["anulacion"] = Lista::ventaAnulacion();
+                $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
+                $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
+                $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
+                $_SESSION["componente"]["menu"]["data"]["opcion"] = (isset($_SESSION["componente"]["menu"]["data"]["opcion"])) ? $_SESSION["componente"]["menu"]["data"]["opcion"] : [];
+                $_SESSION["usuario"]->setLastReloadStaticData();
+                Sistema::debug('info', 'sistema.class.php - reloadStaticData - Fin recarga de datos estáticos.');
+            }else{
+                Sistema::debug('info', 'sistema.class.php - reloadStaticData - Aún no se debe recargar la información.');
+            } 
         }
 
         public static function componenteEstado($idComponente){

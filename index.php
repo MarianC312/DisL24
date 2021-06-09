@@ -18,7 +18,7 @@
 
                     <!--Header-->
                     <div class="form-header mb-4">
-                        <h3><i class="fa fa-lock"></i> Login:</h3>
+                        <h3><i class="fa fa-lock"></i> Ingreso al sistema:</h3>
                     </div>
 
                     <!--Body-->
@@ -27,17 +27,17 @@
                         <div class="form-group">
                             <i class="fa fa-envelope text-red"></i>
                             <input type="text" id="login-email" name="login-email" class="form-control">
-                            <label for="login-email">Your email</label>
+                            <label for="login-email">Tu usuario</label>
                         </div>
 
                         <div class="form-group">
                             <i class="fa fa-lock text-red"></i>
                             <input type="password" id="login-pass" name="login-pass" class="form-control">
-                            <label for="login-pass">Your password</label>
+                            <label for="login-pass">Tu contraseña</label>
                         </div>
 
                         <div class="text-center">
-                            <button type="submit" onclick="requestLogin()" class="btn btn-default">Login</button>
+                            <button type="submit" onclick="requestLogin()" class="btn btn-default">Ingresar</button>
                         </div>
                     </form>
                 </div>
@@ -45,11 +45,11 @@
                 <!--Footer-->
                 <div class="modal-footer justify-content-end">
                     <div class="options">
-                        <p>Not a member?
-                            <a href="#">Sign Up</a>
+                        <p>
+                            <a href="mailto:ventas@efecesoluciones.com.ar">Contactanos para conocer nuestros planes!</a>
                         </p>
-                        <p>Forgot
-                            <a href="#">Password?</a>
+                        <p>
+                            Olvidaste tu contraseña? <a href="mailto:soporte@efecesoluciones.com.ar">Contactá a soporte</a>
                         </p>
                     </div>
                 </div>

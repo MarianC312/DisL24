@@ -454,7 +454,7 @@
                         }
                         if(isset($data["producto-identificador"]) && is_array($data["producto-identificador"]) && count($data["producto-identificador"]) > 0){
                             Session::iniciar();
-                            Compania::reloadStaticData();
+                            //Compania::reloadStaticData();
                             $credito = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"];
                             $dataProducto = [];
                             $dataCaja = [];
@@ -472,9 +472,9 @@
                             $dataCaja["productoCantidad"] = "";
                             $dataCaja["productoPrecio"] = "";
                             foreach($data["producto-identificador"] AS $key => $value){ 
-                                $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value][($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC"];
+                                $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value][($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC"];
                                 $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
-                                $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["stock"];
+                                $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["stock"];
                                 $dataProducto[$key]["precio"] = trim($data["producto-precio-unitario"][$key]); 
                                 $dataProducto[$key]["cantidad"] = trim($data["producto-cantidad"][$key]);
                                 $dataProducto[$key]["tipo"] = $data["producto-tipo"][$key];
@@ -482,12 +482,12 @@
                                 $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
                                 $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];
                                 if($value != 0){
-                                    if($dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioMayorista"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioKiosco"]){
+                                    if($dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precio"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioMayorista"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioKiosco"]){
                                         $mensaje['tipo'] = 'warning';
                                         $mensaje['cuerpo'] = 'El precio del producto '.$dataProducto[$key]["nombre"].' no coincide con los registrados en stock. Corrobore los datos antes de continuar...';
                                         $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
                                         Alert::mensaje($mensaje);
-                                        echo $dataProducto[$key]["precio"]."<br>pmi = ".$_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precio"]."<br>pma = ".$_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioMayorista"]."<br>pk = ".$_SESSION["lista"]["compañia"]["sucursal"]["stock"][$value]["precioKiosco"];
+                                        echo $dataProducto[$key]["precio"]."<br>pmi = ".$_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precio"]."<br>pma = ".$_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioMayorista"]."<br>pk = ".$_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioKiosco"];
                                         exit;
                                     }
                                 } 

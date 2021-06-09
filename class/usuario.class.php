@@ -1,7 +1,7 @@
 <?php
     class Usuario{
 
-        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false;
+        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData;
         private $debugTipo = [
             0 => "all",
             1 => "success",
@@ -26,6 +26,7 @@
             $this->actividadFechaFin = $data["actividadFechaFin"];
             $this->debug = $this->debugTipo[$data["debug"]];
             $this->auth = $auth;
+            $this->lastReloadStaticData = date("Y-m-d H:i:s", strtotime("Y-m-d H:i:s -1 hour")); 
         }
 
         function getAuth(){ return $this->auth; }
@@ -40,6 +41,7 @@
         function getActividadFechaInicio(){ return $this->actividadFechaInicio; }
         function getActividadFechaFin(){ return $this->actividadFechaFin; }
         function getActividadJornada(){ return $this->actividadJornada; }
+        function getLastReloadStaticData(){ return $this->lastReloadStaticData; }
         function getCajaData(){
             $this->setDataActividadCaja();
             return [
@@ -49,6 +51,7 @@
                 "actividadFechaFin" => $this->actividadFechaFin
             ];
         }
+
         function isAdmin(){ return $this->admin; }
         function debug(){ return $this->debug; }
 
@@ -56,6 +59,16 @@
         function setActividadCaja($idCaja){ $this->actividadCaja = $idCaja; }
         function setActividadFechaInicio($fecha){ $this->actividadFechaInicio = $fecha; }
         function setActividadFechaFin($fecha){ $this->actividadFechaFin = $fecha; }
+        function setLastReloadStaticData(){ $this->lastReloadStaticData = date("Y-m-d H:i:s"); }
+
+        function shouldReloadStaticData(){
+            $date1 = $this->getLastReloadStaticData();
+            $date2 = date("Y-m-d H:i:s");
+            $timestamp1 = strtotime($date1);
+            $timestamp2 = strtotime($date2);
+            $minutes = abs($timestamp2 - $timestamp1)/(60);
+            return ($minutes >= 30) ? true : false;
+        }
 
         function updateActividadJornada($idJornada){
             if(Sistema::usuarioLogueado()){
