@@ -457,7 +457,7 @@
                                 var total = document.getElementById("total-value");
                                 var articulos = $("#articulos-value");
                                 if(cantidad > 1){
-                                    var nuevoTotal = (parseFloat(total.dataset.total) + parseFloat(producto.dataset.precio)).toFixed(2);
+                                    var nuevoTotal = (parseFloat(total.dataset.total) - parseFloat(producto.dataset.precio)).toFixed(2);
                                     $('#cantidad-' + key).val(cantidad - 1);
                                     $("#total-value").html(nuevoTotal);
                                     total.dataset['total'] = nuevoTotal;
