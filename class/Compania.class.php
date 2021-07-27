@@ -483,6 +483,7 @@
                                 articulos.html(parseInt(articulos.html()) - cantidad);
                                 $("#articulos").val(parseInt(articulos.html()) - cantidad);
                                 $("#total-value").html((parseFloat(total.dataset.total) - parseFloat(restar)).toFixed(2));
+                                $("#total").val((parseFloat(total.dataset.total) - parseFloat(restar)).toFixed(2));
                                 total.dataset['total'] = (parseFloat(total.dataset.total) - parseFloat(restar)).toFixed(2);
                                 producto.remove();
                                 items.html(parseInt(items.html()) - 1);
