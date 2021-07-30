@@ -223,7 +223,7 @@
                             <script> 
                                 function test(idStock){
                                     let producto = document.getElementById("producto-stock-" + idStock);
-                                    let cantidad = $("#cantidad-" + idStock).val();
+                                    let cantidad = parseInt($("#cantidad-" + idStock).val());
                                     let data = [];
                                     if(cantidad > 0 && cantidad <= producto.dataset.stock){ 
                                         data.push({
@@ -439,15 +439,15 @@
                                 if(cantidad <= producto.dataset.stock){
                                     var nuevoTotal = (parseFloat(total.dataset.total) + parseFloat(producto.dataset.precio)).toFixed(2);
                                     $('#cantidad-' + key).val(cantidad + 1);
+                                    $("#articulos").val(parseInt(articulos.html()) + 1);
                                     $("#total-value").html(nuevoTotal);
                                     total.dataset['total'] = nuevoTotal;
                                     $("#total").val(nuevoTotal);
-                                    $("#articulos").val(parseInt(articulos.html()) + 1);
                                     articulos.html(parseInt(articulos.html()) + 1);
                                 }else{
                                     alert("No hay stock disponible para agregar.")  
                                 } 
-                                setTimeout(() => { btnControl.prop("disabled", false); }, 150);
+                                setTimeout(() => { btnControl.prop("disabled", false); }, 850);
                             }
                             function subItem(key){
                                 var btnControl = $("#lista-producto-" + key + "-accion #sub");
@@ -459,15 +459,15 @@
                                 if(cantidad > 1){
                                     var nuevoTotal = (parseFloat(total.dataset.total) - parseFloat(producto.dataset.precio)).toFixed(2);
                                     $('#cantidad-' + key).val(cantidad - 1);
+                                    $("#articulos").val(parseInt(articulos.html()) - 1);
                                     $("#total-value").html(nuevoTotal);
                                     total.dataset['total'] = nuevoTotal;
                                     $("#total").val(nuevoTotal);
                                     articulos.html(parseInt(articulos.html()) - 1);
-                                    $("#articulos").val(parseInt(articulos.html()) - 1);
                                 }else{
                                     alert("La cantidad mínima es 1 artículo.")  
                                 } 
-                                setTimeout(() => { btnControl.prop("disabled", false); }, 150);
+                                setTimeout(() => { btnControl.prop("disabled", false); }, 850);
                             }
                             var itemDeleted = 0; 
                             function delItem(key){ 

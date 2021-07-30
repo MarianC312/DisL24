@@ -459,10 +459,10 @@
                             $dataProducto = [];
                             $dataCaja = [];
                             $dataCaja["pago"] = $data["pago"];
-                            $dataCaja["contado"] = (isset($data["monto-contado"])) ? $data["monto-contado"] : NULL;
-                            $dataCaja["debito"] = (isset($data["monto-debito"])) ? $data["monto-debito"] : NULL;
-                            $dataCaja["credito"] = (isset($data["monto-credito"])) ? $data["monto-credito"] : NULL;
-                            $dataCaja["efectivo"] = (isset($data["monto-efectivo"])) ? $data["monto-efectivo"] : NULL;
+                            $dataCaja["contado"] = (isset($data["monto-contado"])) ? $data["monto-contado"] : 0;
+                            $dataCaja["debito"] = (isset($data["monto-debito"])) ? $data["monto-debito"] : 0;
+                            $dataCaja["credito"] = (isset($data["monto-credito"])) ? $data["monto-credito"] : 0;
+                            $dataCaja["efectivo"] = (isset($data["monto-efectivo"])) ? $data["monto-efectivo"] : 0;
                             $dataCaja["financiacion"] = (isset($data["cuota"])) ? $data["cuota"] : NULL;
                             $dataCaja["subtotal"] = 0;
                             $dataCaja["iva"] = (isset($data["iva"])) ? true : false;
@@ -530,6 +530,14 @@
                             $dataCaja["total"] = round($dataCaja["contado"] + $dataCaja["debito"] + $totalCredito - ($dataCaja["subtotal"] / 100 * $dataCaja["descuento"]), 2); 
     
                             $nComprobante = Compania::facturaIdUltima();
+
+                            if($data["pedido"] == 1 && $dataCaja["subtotal"] != $dataCaja["total"]){
+                                $mensaje['tipo'] = 'warning';
+                                $mensaje['cuerpo'] = 'El monto subtotal difiere del total. Regrese al formulario y compruebe la información. En caso de ser necesario contacte al administrador.';
+                                $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
+                                Alert::mensaje($mensaje);
+                                exit;
+                            }
 
                             if(is_numeric($nComprobante) && $nComprobante >= 0){
                                 $query = DataBase::insert("compañia_sucursal_venta", "caja,pedido,nComprobante,producto,productoCantidad,productoPrecio,pago,contado,debito,credito,efectivo,financiacion,descuento,iva,cliente,subtotal,total,observacion,operador,sucursal,compañia", "".((isset($data["idCaja"]) && $data["idCaja"] != 0) ? "'".$data["idCaja"]."'" : "NULL").",".((isset($data["pedido"]) ? "'".$data["pedido"]."'" : "NULL")).",'".($nComprobante + 1)."','".$dataCaja["producto"]."','".$dataCaja["productoCantidad"]."','".$dataCaja["productoPrecio"]."','".$dataCaja["pago"]."',".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["contado"]."'" : "NULL").",".((strlen($dataCaja["debito"]) > 0) ? "'".$dataCaja["debito"]."'" : "NULL").",".((strlen($dataCaja["credito"]) > 0) ? "'".$dataCaja["credito"]."'" : "NULL").",".((strlen($dataCaja["contado"]) > 0) ? "'".$dataCaja["efectivo"]."'" : "NULL").",".((is_numeric($dataCaja["financiacion"])) ? "'".$dataCaja["financiacion"]."'" : "NULL" ).",'".$dataCaja["descuento"]."','".(($dataCaja["iva"]) ? 1 : 0)."',".((isset($dataCaja["cliente"]) && is_numeric($dataCaja["cliente"]) && $dataCaja["cliente"] > 0) ? $dataCaja["cliente"] : "NULL").",'".$dataCaja["subtotal"]."','".$dataCaja["total"]."',".((isset($data["observacion"]) && strlen($data["observacion"]) > 0) ? "'".$data["observacion"]."'" : "NULL").",'".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
