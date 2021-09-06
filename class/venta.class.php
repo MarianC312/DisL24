@@ -442,6 +442,11 @@
         public static function registrar($data){
             if(Sistema::usuarioLogueado()){
                 //echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>'; 
+                
+                echo '<pre>';
+                print_r($data);
+                echo '</pre>';
+
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
                     if(Caja::corroboraAcceso($data["idCaja"]) || (isset($data["pedido"]) && $data["pedido"] == 1 && $data["idCaja"] == 0)){
@@ -472,7 +477,10 @@
                             $dataCaja["productoCantidad"] = "";
                             $dataCaja["productoPrecio"] = "";
                             foreach($data["producto-identificador"] AS $key => $value){ 
-                                $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value][($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC"];
+                                echo '<pre>';
+                                print_r($value);
+                                echo '</pre>';
+                                $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value][(($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC")];
                                 $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
                                 $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["stock"];
                                 $dataProducto[$key]["precio"] = trim($data["producto-precio-unitario"][$key]); 
@@ -482,7 +490,9 @@
                                 $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
                                 $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];
                                 if($value != 0){
-                                    if($dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precio"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioMayorista"] && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioKiosco"]){
+                                    if($dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precio"]
+                                    && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioMayorista"]
+                                    && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioKiosco"]){
                                         $mensaje['tipo'] = 'warning';
                                         $mensaje['cuerpo'] = 'El precio del producto '.$dataProducto[$key]["nombre"].' no coincide con los registrados en stock. Corrobore los datos antes de continuar...';
                                         $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
@@ -531,7 +541,7 @@
     
                             $nComprobante = Compania::facturaIdUltima();
 
-                            if($data["pedido"] == 1 && $dataCaja["subtotal"] != $dataCaja["total"]){
+                            if(isset($data["pedido"]) && $data["pedido"] == 1 && $dataCaja["subtotal"] != $dataCaja["total"]){
                                 $mensaje['tipo'] = 'warning';
                                 $mensaje['cuerpo'] = 'El monto subtotal difiere del total. Regrese al formulario y compruebe la información. En caso de ser necesario contacte al administrador.';
                                 $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
@@ -693,7 +703,7 @@
                                             <input type="text" class="form-control" placeholder="Buscar producto" id="producto" autocomplete="off">
                                             <ul id="container-producto-lista" class="list-group" style="max-height: 15vh; overflow: auto;">
                                                 <?php
-                                                    if(is_array($dataStock) && count($dataStock) > 0){
+                                                    if(false && is_array($dataStock) && count($dataStock) > 0){
                                                         foreach($dataStock AS $key => $value){
                                                             if((is_numeric($value["producto"]) && $value["producto"] > 0)){
                                                                 $idProducto =  $value["producto"];
@@ -764,8 +774,10 @@
                                             </tbody>
                                             <tfoot>
                                                 <tr>
-                                                    <td class="text-right align-middle" colspan="5">
-                                                        Sub total:
+                                                    <td class="text-right align-middle" colspan="5" style="line-height: 1rem;">
+                                                        SUB TOTAL:
+                                                        <br>
+                                                        <small class="text-muted">(sin iva)</small>
                                                     </td>
                                                     <td>
                                                         $<span id="subtotal">0</span>
@@ -1420,19 +1432,7 @@
                                 break;
                                 case 13:
                                     if(barcode.length > 0){
-                                        let lista = [...document.getElementById("container-producto-lista").childNodes];
-                                        let search = false;
-                                        lista.map((data, i) => {
-                                            if(typeof data === 'object' && data.length > 0){
-                                                //console.log(i + " " + data.dataset);
-                                            }else{
-                                                if(data.dataset.barCode === barcode || 'PFC-<?php echo $_SESSION["usuario"]->getCompañia() ?>-' + data.dataset.barCode === barcode){
-                                                    $("#" + data.id + " button").click();
-                                                    search = true;
-                                                }
-                                            }
-                                        });
-                                        if(!search) alert("Producto no encontrado.");
+                                        ventaProductoRegistro(barcode);
                                     }else{
                                         stepper1.next();
                                         //ventaRegistrar(<?php echo $idCaja ?>);
@@ -1481,28 +1481,20 @@
                             }, 375);
                         }
 
-                        function ventaProductoRegistro(e){ 
+                        function ventaProductoRegistro(productoBuscado){ 
                             setTimeout(() => { 
-                                let obj = e.parentElement;
-                                let pos = ventaProductoAgregarInput("lista-productos", obj.dataset);
+                                let pos = ventaProductoAgregarInput("lista-productos", productoBuscado);
                                 cajaCalculaTotalBruto(); 
                                 $("#container-producto #producto").val("");
-                                $("#container-producto-lista").find("li").css({display: "none"});
+                                //$("#container-producto-lista").find("li").css({display: "none"});
                             }, 350);
                         }
 
                         function ventaProductoNoCodificadoRegistro(){ 
                             let producto = $("#container-producto-no-codificado #descripcion").val();
-                            let precio = $("#container-producto-no-codificado #precio").val();
-                            let dataset = {
-                                "barCode": null,
-                                "idProducto": '0',
-                                "precio": (precio == '') ? '0' : precio,
-                                "producto": (producto == '') ? 'VARIOS' : producto,
-                                "stock": null
-                            };
+                            let precio = $("#container-producto-no-codificado #precio").val(); 
                             setTimeout(() => { 
-                                let pos = ventaProductoAgregarInput("lista-productos", dataset);
+                                let pos = ventaProductoAgregarInput("lista-productos", null, producto, precio);
                                 cajaCalculaTotalBruto(); 
                             }, 550);
                         }

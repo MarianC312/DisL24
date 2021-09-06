@@ -18,7 +18,7 @@
             Session::iniciar();
             if(isset($_SESSION["usuario"]) && is_object($_SESSION["usuario"])){
                 if($_SESSION["usuario"]->getAuth()){
-                    Sistema::reloadStaticData();
+                    //Sistema::reloadStaticData();
                     $mensaje['tipo'] = 'success';
                     $mensaje['cuerpo'] = 'Bienvenido! Cargando módulos e ingresando al sistema...';
                     Alert::mensaje($mensaje);

@@ -2,7 +2,7 @@
     require_once 'autoload.class.php';
     if(Sistema::usuarioLogueado()){
         if(isset($_POST)){
-            Sistema::reloadStaticData();
+            Sistema::reloadStaticData($_POST["force"]);
         }else{
             Sistema::debug('error', 'engine > control > reload-static-data.php - Error al recibir la información del formulario.');
             $mensaje['tipo'] = 'danger';

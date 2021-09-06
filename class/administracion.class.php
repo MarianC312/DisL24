@@ -472,7 +472,7 @@
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
-                    $carga = date("Y-m-d H:i:s");
+                    $carga = Date::current();
                     $query = DataBase::insert("compañia", "nombre", "'".$data["nombre"]."'");
                     if($query){ 
                         Sistema::debug("success", "admin.class.php - setNuevaCompania - compañía registrada satisfactoriamente.");

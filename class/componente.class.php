@@ -1,5 +1,19 @@
 <?php
     class Componente{
+        public static function inicio(){
+            Componente::headerUsuario()
+            ?>
+            <div id="right-content-alerts"><?php Sistema::facturaImpagaAlerta() ?></div>
+            <div id="right-content-process"></div>
+            <div id="right-content-data">
+                <?php
+                    Session::iniciar();
+                    Alert::feature(1);
+                ?>
+            </div>
+            <?php
+        }
+
         public static function headerUsuarioAlert($id, $url, $icon, $test = false){
             if($test){
                 $cantidad = rand(8, 55);
@@ -41,6 +55,7 @@
         }
 
         public static function headerUsuarioMain($data){ 
+            Sistema::reloadStaticData();
             Session::iniciar();
             ?>
             <div class="dropdown bg-orange">
@@ -301,86 +316,6 @@
                     }
                 ?>
             </div>
-            <script>
-                const headerUsuarioMainData = () => {
-                    var me = $(this);
-                    if (me.data('requestRunning')) {
-                        return;
-                    }
-                    me.data('requestRunning', true);
-                    let divProcess = "#container-header-usuario";
-                    let divForm = "";
-                    $.ajax({
-                        type: "POST",
-                        url: "./includes/componente/header-usuario.php",
-                        timeout: 45000,
-                        beforeSend: function() {
-                            //$(divProcess).load("./includes/loading.php");
-                            //$(divForm).hide(350);
-                            $(divProcess).show(350);
-                        },
-                        data: {},
-                        complete: function() {
-                            me.data('requestRunning', false);
-                        },
-                        success: function(data) {
-                            setTimeout(function() {
-                                $(divProcess).html(data);
-                            }, 1000);
-                            setTimeout(() => {
-                                headerUsuarioMainData();
-                            }, (2 * 60 * 1000));
-                        }
-                    }).fail(function(jqXHR) {
-                        console.log(jqXHR.statusText);
-                        me.data('requestRunning', false);
-                    });
-                }
-                const headerUsuarioAlerta = (id) => {
-                    let divProcess = "#container-header-usuario-alerta-" + id;
-                    let divForm = "";
-                    $.ajax({
-                        type: "POST",
-                        url: "./includes/componente/header-usuario-alerta.php",
-                        timeout: 45000,
-                        beforeSend: function() {
-                            //$(divProcess).load("./includes/loading.php");
-                            //$(divForm).hide(350);
-                            $(divProcess).show(350);
-                        },
-                        data: {id:id},
-                        complete: function() {
-                        },
-                        success: function(data) {
-                            setTimeout(function() {
-                                $(divProcess).html(data);
-                            }, 1000);
-                        }
-                    }).fail(function(jqXHR) {
-                        console.log(jqXHR.statusText);
-                    });
-                }
-
-                
-
-                setTimeout(() => { headerUsuarioMainData(); }, (30 * 60 * 1000));
-                let alertFuncHelper = function (input) {
-                    return new Promise(function resolver(resolve, reject) {
-                        setTimeout(() => {
-                            headerUsuarioAlerta(input);
-                            console.log("Info: Promise set index " + input);
-                        }, 0);
-                    });
-                };
-                setInterval(() => {
-                    let promise1 = alertFuncHelper(1);
-                    let promise2 = alertFuncHelper(2);
-                    Promise.all([promise1, promise2]).catch(function (err) { 
-                        console.log("Promise error: " + err);
-                    });
-                }, 1800000);
-                loadUsuarioTareasPendientes();
-            </script>
             <?php
         }
 
@@ -403,7 +338,7 @@
                                 </button> 
                                 <div class="collapse navbar-collapse flex-column w-100" id="navbarCollapse">
                                     <div class="navbar-nav flex-column">
-                                        <a href="./members.php" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a> 
+                                        <a href="#/Inicio" onclick="inicio()" class="nav-item nav-link active"><i class="fa fa-home"></i> Inicio</a> 
                                         <?php
                                             if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1 || $_SESSION["usuario"]->getRol() == 2 || $_SESSION["usuario"]->getRol() == 3){
                                                 ?>
@@ -450,9 +385,17 @@
                                                             <a href="#/" onclick="administracionCliente()" class="nav-item nav-link"><i class="fa fa-user"></i> Cliente</a>
                                                     </div>
                                                 </div>
+                                                <a href="#/" onclick="setCollapse('tests-collapse'); swapClass('#menu-tests','bg-main'); swapClass('#tests-collapse','bg-main')" id="menu-tests" class="nav-item nav-link <?php echo (isset($opcion["tests-collapse"]) && $opcion["tests-collapse"]) ? 'bg-main text-acc font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#tests-collapse" aria-controls="tests-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["tests-collapse"]) && $opcion["tests-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-superpowers"></i> Tests</a> 
+                                                <div class="collapse w-100 <?php echo (isset($opcion["tests-collapse"]) && $opcion["tests-collapse"]) ? 'show bg-main' : ''; ?>" id="tests-collapse">                                            
+                                                    <div class="d-flex flex-column ml-3"> 
+                                                            <a href="#/" onclick="sistemaTest(1)" class="nav-item nav-link"><i class="fa fa-barcode"></i> Prod. codif force</a>
+                                                            <a href="#/" onclick="sistemaTest(2)" class="nav-item nav-link"><i class="fa fa-user"></i> Prod. stock force</a>
+                                                    </div>
+                                                </div>
                                                 <?php
                                             }
                                         ?> 
+                                        <a href="#/Inicio" onclick="mesaDeAyuda()" class="nav-item nav-link active"><i class="fa fa-question-circle-o"></i> Mesa de ayuda</a> 
                                     </div>
                                     <div class="navbar-nav mt-4 justify-content-end">
                                         <a href="#/" onclick="requestLogout()" class="nav-item nav-link"><i class="fa fa-sign-out"></i> Salir</a>

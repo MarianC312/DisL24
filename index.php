@@ -1,3 +1,11 @@
+<?php
+    if(false){
+        echo 'Redireccionando al nuevo servidor...';
+        echo '<meta http-equiv="refresh" content="5;URL=https://www.emine.com.ar" />';
+        exit;
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 

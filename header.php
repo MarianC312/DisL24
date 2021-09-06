@@ -1,9 +1,12 @@
 <?php
     require_once 'autoload.class.php';
     Session::iniciar();
-    if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
-        //Sistema::reloadStaticData();
-    }
+
+    // Globally define the Timezone
+    define( 'TIMEZONE', 'America/Buenos_aires' );
+
+    // Set Timezone
+    date_default_timezone_set( TIMEZONE );
 ?>
 <head>
     <meta charset="UTF-8" />
@@ -80,6 +83,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bs-stepper/dist/css/bs-stepper.min.css">
 
     <!-- MiNe -->
-    <link rel="stylesheet" href="./css/style.css?v=<?php echo Sistema::$version ?>" />
-    <script src="./js/mine-actions.js?v=<?php echo Sistema::$version ?>"></script>
+    <link rel="stylesheet" href="./css/style.css?v=<?php echo Sistema::$version ?>" /> 
+    <?php 
+        if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
+            Sistema::reloadStaticData();
+            echo '<script src="./js/mine-actions.js?v=<?php echo Sistema::$version ?>"></script>';
+        }else{
+            echo '<script src="./js/login/index.js?v=<?php echo Sistema::$version ?>"></script>';
+        }
+    ?> 
 </head> 

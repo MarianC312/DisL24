@@ -117,8 +117,9 @@
             }
         } 
 
-        public static function producto(){
-            $query = DataBase::select("producto", "*", "estado = 1", "ORDER BY nombre ASC");
+        public static function producto($fechaUpdate = null){
+            $fechaUpdateQuery = (!is_null($fechaUpdate)) ? " AND fechaUpdate IS NOT NULL AND fechaUpdate >= '".$fechaUpdate."'" : "";
+            $query = DataBase::select("producto", "*", "estado = 1".$fechaUpdateQuery, "ORDER BY nombre ASC");
             if($query){
                 if(DataBase::getNumRows($query) > 0){
                     $data = [];

@@ -7,8 +7,92 @@
         'ö'=>'o', 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' );
         private static $alg = "sha512";
         private static $key = "m\$t*rK.yEf3c";
+        private static $key2 = "ry.E40c*&mEsKft3rECgu¡$"; 
+        private static $prime = [2,3,5,7,11,13,17,19];
 
-        public static $version = "alpha-1.107.239f";
+        public static $version = "Beta-1.134.444b";
+
+        public static function buscarProductoIdEnStock($idProducto, $tipo = "producto"){
+            Session::iniciar();
+            foreach($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] AS $key => $value){
+                if($value[$tipo] == $idProducto){
+                    return $key;
+                }
+            }
+            return null;
+        }
+
+        public static function hashCheck($string, $hash){
+            $procesadas = 0;
+            if(isset($string) && !is_null($string) && strlen($string) > 0){
+                $cadena = Sistema::createSM($string);
+                if(isset($hash) && !is_null($hash) && strlen($hash) > 0){
+                    $hash = explode("-", $hash);
+                    if(is_array($hash) && count($hash) === 3){
+                        foreach($hash AS $key => $value){ 
+                            if(strpos($cadena, $value) !== false){
+                                $procesadas += 1;
+                            }
+                        }
+                    }
+                }
+            } 
+            return ($procesadas == 3) ? true : false;
+        }
+
+        public static function createSM($data){
+            $context = hash_init(Sistema::$alg, HASH_HMAC, Sistema::$key2);
+            hash_update($context, $data);
+            return hash_final($context);
+        }
+
+        public static function hash($string){ 
+            $hash = Sistema::createSM($string);
+            $data = [
+                "hash" => "",
+                "dice" => [
+                    1 => [],
+                    2 => [],
+                    3 => []
+                ]
+            ]; 
+            for($i = 0; $i < 3; $i++){ 
+                $r2 = Sistema::$prime[rand(2,4)];
+                $r1 = rand(1, (128 - $r2));
+                $data["hash"] .= ((strlen($data["hash"]) > 0) ? "-" : "").substr($hash, $r1, $r2);
+                $data["dice"][$i + 1] = [$r1,$r2];
+            }
+            return $data;
+        }
+
+        public static function alerta($titulo = "Advertencia!", $contenido = null, $callback = null){
+            $hash = Sistema::hash(rand(0,100));
+            ?>
+            <div class="ventana-flotante" id="<?php echo $hash["hash"]; ?>">
+                <div class="ventana-container">
+                    <div class="ventana-header-container">
+                        <span class="ventana-header-span"><?php echo $titulo ?></span>
+                    </div>
+                    <div class="ventana-body-container">
+                        <span class="ventana-body-span">
+                            <?php
+                                if(is_array($contenido)){
+                                    echo '<pre>';
+                                    print_r($contenido);
+                                    echo '</pre>';
+                                }else{
+                                    print_r($contenido);
+                                }
+                            ?>
+                        </span>
+                        <div class="d-flex p-1 justify-content-end">
+                            <button type="button" onclick="$('#<?php echo $hash['hash'] ?>').remove(); setTimeout(() => { <?php echo $callback ?> }, 350)" class="btn btn-primary">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php
+        } 
 
         public static function facturaImpagaAlerta($compañia = null){
             if(Sistema::usuarioLogueado()){
@@ -305,12 +389,47 @@
             }
         }
 
-        public static function reloadStaticData(){
+        public static function dataBaseProductoCodificadoUpdate($fecha = null, $debug = false){
+            Session::iniciar();
+            $fecha = (!is_null($fecha) && $_SESSION["usuario"]->isAdmin()) ? $fecha : $_SESSION["usuario"]->getLastReloadStaticData();
+            $data = Lista::producto($fecha);
+            if($debug && $_SESSION["usuario"]->isAdmin()) return $data;
+            echo $fecha; 
+            if(is_array($data)){
+                if(count($data) > 0){
+                    foreach($data AS $key => $value){
+                        $_SESSION["lista"]["producto"]["codificado"][$key] = $value;
+                    }
+                }
+            }
+        }
+
+        public static function dataBaseProductoStock($fecha = null, $debug = false){
+            Session::iniciar();
+            $fecha = (!is_null($fecha) && $_SESSION["usuario"]->isAdmin()) ? $fecha : $_SESSION["usuario"]->getLastReloadStaticData();
+            $data = Compania::stockData(null, null, $fecha);
+            if($debug && $_SESSION["usuario"]->isAdmin()) return $data;
+            echo $fecha;
+            if(is_array($data)){
+                if(count($data) > 0){
+                    foreach($data AS $key => $value){
+                        $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$key] = $value;
+                    }
+                }
+            }
+        }
+
+        public static function reloadStaticData($force = false, $login = false){
             Sistema::debug('info', 'sistema.class.php - reloadStaticData - Inicio recarga de datos estáticos...'); 
             Session::iniciar();
-            if($_SESSION["usuario"]->shouldReloadStaticData()){
+            //echo '<script>console.log("'.$force.'")</script>';
+            if(($force == "true" && $_SESSION["usuario"]->isAdmin()) || $_SESSION["usuario"]->shouldReloadStaticData()){
                 $_SESSION["usuario"]->reloadStaticData();
-                $_SESSION["lista"]["producto"]["codificado"] = Lista::producto();
+                if(($force == "true" && $_SESSION["usuario"]->isAdmin()) || (!isset($_SESSION["lista"]) || !isset($_SESSION["lista"]["producto"]) || !isset($_SESSION["lista"]["producto"]["codificado"]) || !is_array($_SESSION["lista"]["producto"]["codificado"]))){
+                    $_SESSION["lista"]["producto"]["codificado"] =  Lista::producto();
+                }else{
+                    Sistema::dataBaseProductoCodificadoUpdate();
+                }
                 $_SESSION["lista"]["producto"]["noCodificado"] = Compania::productoNoCodifData();
                 $_SESSION["lista"]["producto"]["tipo"] = Lista::productoTipo();
                 $_SESSION["lista"]["producto"]["categoria"] = Lista::productoCategoria();
@@ -324,7 +443,11 @@
                 $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"] = Lista::compañiaCliente();
                 $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["credito"] = Lista::compañiaCredito();
                 $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["caja"] = Compania::sucursalCajaData();
-                $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] = Compania::stockData();
+                if(($force == "true" && $_SESSION["usuario"]->isAdmin()) || (!isset($_SESSION["lista"]) || !isset($_SESSION["lista"]["compañia"]) || (!isset($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]) || !isset($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"]) || is_null($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"])))){
+                    $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] =  Compania::stockData();
+                }else{
+                    Sistema::dataBaseProductoStock();
+                }
                 $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia());
                 $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["facturacion"]["pendiente"] = Compania::facturacionData($_SESSION["usuario"]->getCompañia(), 1);
                 $_SESSION["lista"]["caja"]["accion"]["tipo"] = Lista::cajaAccionTipo();
@@ -333,12 +456,13 @@
                 $_SESSION["componente"]["header"]["usuario"]["data"] = Sistema::componenteEstado(2);
                 $_SESSION["componente"]["header"]["usuario"]["opcion"] = (isset($_SESSION["componente"]["header"]["usuario"]["opcion"])) ? $_SESSION["componente"]["header"]["usuario"]["opcion"] : [];
                 $_SESSION["componente"]["menu"]["data"] = Sistema::componenteEstado(1);
-                $_SESSION["componente"]["menu"]["data"]["opcion"] = (isset($_SESSION["componente"]["menu"]["data"]["opcion"])) ? $_SESSION["componente"]["menu"]["data"]["opcion"] : [];
+                $_SESSION["componente"]["menu"]["data"]["opcion"] = (isset($_SESSION["componente"]["menu"]["data"]["opcion"])) ? $_SESSION["componente"]["menu"]["data"]["opcion"] : []; 
                 $_SESSION["usuario"]->setLastReloadStaticData();
                 Sistema::debug('info', 'sistema.class.php - reloadStaticData - Fin recarga de datos estáticos.');
             }else{
                 Sistema::debug('info', 'sistema.class.php - reloadStaticData - Aún no se debe recargar la información.');
-            } 
+            }
+            
         }
 
         public static function componenteEstado($idComponente){

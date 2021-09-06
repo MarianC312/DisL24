@@ -11,7 +11,7 @@
             null => "no"
         ];
 
-        function __construct($data, $auth){
+        function __construct($data, $auth, $reload = false){
             $this->id = $data["id"];
             $this->nombre = $data["nombre"];
             $this->compañia = $data["compañia"];
@@ -26,7 +26,8 @@
             $this->actividadFechaFin = $data["actividadFechaFin"];
             $this->debug = $this->debugTipo[$data["debug"]];
             $this->auth = $auth;
-            $this->lastReloadStaticData = date("Y-m-d H:i:s", strtotime("Y-m-d H:i:s -1 hour")); 
+            $this->lastReloadStaticData = ($reload) ? $this->lastReloadStaticData : null; 
+            $this->lastReloadFEStaticData = ($reload) ? $this->lastReloadFEStaticData : null; 
         }
 
         function getAuth(){ return $this->auth; }
@@ -42,6 +43,7 @@
         function getActividadFechaFin(){ return $this->actividadFechaFin; }
         function getActividadJornada(){ return $this->actividadJornada; }
         function getLastReloadStaticData(){ return $this->lastReloadStaticData; }
+        function getLastReloadFEStaticData(){ return $this->lastReloadFEStaticData; }
         function getCajaData(){
             $this->setDataActividadCaja();
             return [
@@ -59,15 +61,37 @@
         function setActividadCaja($idCaja){ $this->actividadCaja = $idCaja; }
         function setActividadFechaInicio($fecha){ $this->actividadFechaInicio = $fecha; }
         function setActividadFechaFin($fecha){ $this->actividadFechaFin = $fecha; }
-        function setLastReloadStaticData(){ $this->lastReloadStaticData = date("Y-m-d H:i:s"); }
+        function setLastReloadStaticData(){ $this->lastReloadStaticData = Date::current(); }
+        function setLastReloadFEStaticData(){ $this->lastReloadFEStaticData = Date::current(); }
 
         function shouldReloadStaticData(){
             $date1 = $this->getLastReloadStaticData();
-            $date2 = date("Y-m-d H:i:s");
-            $timestamp1 = strtotime($date1);
-            $timestamp2 = strtotime($date2);
-            $minutes = abs($timestamp2 - $timestamp1)/(60);
-            return ($minutes >= 30) ? true : false;
+            //$dataProducto = Sistema::dataBaseProductoCodificadoUpdate($_SESSION["usuario"]->getLastReloadStaticData(), true);
+            //$dataProductoStock = Sistema::dataBaseProductoStock($_SESSION["usuario"]->getLastReloadStaticData(), true);
+            if(is_null($date1)){ //  || (is_array($dataProducto) && count($dataProducto) > 0) || (is_array($dataProductoStock) && count($dataProductoStock) > 0)
+                return true;
+            }else{ 
+                $date2 = Date::current();
+                $timestamp1 = strtotime($date1);
+                $timestamp2 = strtotime($date2);
+                $minutes = abs($timestamp2 - $timestamp1)/(60);
+                return ($minutes >= 60) ? true : false; //60
+            }
+        }
+
+        function shouldReloadFEStaticData(){
+            $date1 = $this->getLastReloadFEStaticData();
+            //$dataProducto = Sistema::dataBaseProductoCodificadoUpdate($_SESSION["usuario"]->getLastReloadStaticData(), true);
+            //$dataProductoStock = Sistema::dataBaseProductoStock($_SESSION["usuario"]->getLastReloadStaticData(), true);
+            if(is_null($date1)){ //  || (is_array($dataProducto) && count($dataProducto) > 0) || (is_array($dataProductoStock) && count($dataProductoStock) > 0)
+                return true;
+            }else{ 
+                $date2 = Date::current();
+                $timestamp1 = strtotime($date1);
+                $timestamp2 = strtotime($date2);
+                $minutes = abs($timestamp2 - $timestamp1)/(60);
+                return ($minutes >= 60) ? true : false; //60
+            }
         }
 
         function updateActividadJornada($idJornada){
@@ -251,7 +275,7 @@
         function reloadStaticData(){
             Session::iniciar();
             $response = $this->getData($this->getEmail());
-            $_SESSION["usuario"] = New Usuario($response, $this->getEstado());
+            $_SESSION["usuario"] = New Usuario($response, $this->getEstado(), true);
         }
 
         function getInfo($idUsuario = null, $row = null){

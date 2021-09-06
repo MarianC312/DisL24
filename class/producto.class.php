@@ -1,5 +1,70 @@
 <?php
     class Producto{
+
+        public static function FEChunkLoad($chunk = 0, $force){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                $limit = 2500;
+                $productoCodificadoCantidad = count($_SESSION["lista"]["producto"]["codificado"]);
+                $productoNoCodificadoCantidad = count($_SESSION["lista"]["producto"]["noCodificado"]);
+                $productoCantidadMayor = ($productoCodificadoCantidad >= $productoNoCodificadoCantidad) ? $productoCodificadoCantidad : $productoNoCodificadoCantidad;
+                $data = [
+                    "tipo" => ($force) ? 1 : 0, 
+                    "chunk" => [
+                        "totales" => ceil(($productoCodificadoCantidad / $limit)),
+                        "actual" => $chunk
+                    ],
+                    "producto" => [
+                        "total" => ($productoCodificadoCantidad + $productoNoCodificadoCantidad),
+                        "codificado" => [
+                            "total" => $productoCodificadoCantidad,
+                            "cargado" => 0, 
+                            "lista" => []
+                        ],
+                        "noCodificado" => [
+                            "total" => $productoNoCodificadoCantidad,
+                            "cargado" => 0, 
+                            "lista" => []
+                        ]
+                    ]
+                ];
+                for($i = ($chunk * $limit); $i <= ($limit * ($chunk + 1)); $i++){
+                    if($i <= $productoCantidadMayor){
+                        if($i <= $productoCodificadoCantidad){ 
+                            if(array_key_exists($i, $_SESSION["lista"]["producto"]["codificado"])){
+                                $data["producto"]["codificado"]["cargado"]++;
+                                $data["producto"]["codificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["codificado"][$i];
+                                $idStock = Sistema::buscarProductoIdEnStock($data["producto"]["codificado"]["lista"][$i]["data"]["id"]);
+                                if(is_numeric($idStock) && $idStock >= 0){
+                                    $data["producto"]["codificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock];
+                                }else{
+                                    $data["producto"]["codificado"]["lista"][$i]["stock"] = null;
+                                }
+                            }
+                        }
+                        if($i <= $productoNoCodificadoCantidad){
+                            if(array_key_exists($i, $_SESSION["lista"]["producto"]["noCodificado"])){
+                                $data["producto"]["noCodificado"]["cargado"]++;
+                                $data["producto"]["noCodificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["noCodificado"][$i];
+                                $idStock = Sistema::buscarProductoIdEnStock($data["producto"]["noCodificado"]["lista"][$i]["data"]["id"], "productoNC");
+                                if(is_numeric($idStock) && $idStock >= 0){
+                                    $data["producto"]["noCodificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock];
+                                }else{
+                                    $data["producto"]["noCodificado"]["lista"][$i]["stock"] = null;
+                                }
+                            }
+                        }
+                    }else{
+                        break;
+                    }
+                }
+                return $data;
+            }else{
+                Sistema::debug('error', 'producto.class.php - FEChunkLoad - Usuario no logueado.');
+            }
+            return false;
+        }
+
         public static function stockCorroboraExistencia($idProducto, $sucursal = null, $compañia = null){
             if(Sistema::usuarioLogueado()){
                 if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){

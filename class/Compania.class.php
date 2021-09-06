@@ -2337,10 +2337,11 @@
             }
         }
 
-        public static function stockData($idCompañia = null, $idSucursal = null){
+        public static function stockData($idCompañia = null, $idSucursal = null, $fechaUpdate = null){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                $query = DataBase::select("producto_stock", "*", "compañia = '".((is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia())."' ".((is_numeric($idSucursal) && $idSucursal > 0) ? " AND sucursal = '".$idSucursal."'" : "" ), "");
+                $fechaUpdateQuery = (!is_null($fechaUpdate)) ? " AND fechaModificacion IS NOT NULL AND fechaModificacion >= '".$fechaUpdate."'" : "";
+                $query = DataBase::select("producto_stock", "*", "compañia = '".((is_numeric($idCompañia)) ? $idCompañia : $_SESSION["usuario"]->getCompañia())."' ".((is_numeric($idSucursal) && $idSucursal > 0) ? " AND sucursal = '".$idSucursal."'" : "" ).$fechaUpdateQuery, "");
                 if($query){
                     $data = [];
                     if(DataBase::getNumRows($query) > 0){

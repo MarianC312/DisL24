@@ -1,6 +1,255 @@
-const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); }
+const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></span>'); },
+    prime = [2, 3, 5, 7, 11, 13, 17, 19],
+    randomHexa = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
+    productoChunkLimit = 2500;
 
-let cart = [];
+const dragElement = (elmnt, scope) => {
+    var pos1 = 0,
+        pos2 = 0,
+        pos3 = 0,
+        pos4 = 0;
+    if (document.getElementById(elmnt.id + scope)) {
+        // if present, the header is where you move the DIV from:
+        document.getElementById(elmnt.id + scope).onmousedown = dragMouseDown;
+    } else {
+        // otherwise, move the DIV from anywhere inside the DIV:
+        elmnt.onmousedown = dragMouseDown;
+    }
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // get the mouse cursor position at startup:
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        // call a function whenever the cursor moves:
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // calculate the new cursor position:
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        // set the element's new position:
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        // stop moving when mouse button is released:
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}
+
+let cart = [],
+    reloadStaticData = setInterval(() => {
+
+        /*
+        let date = new Date();
+
+        var h = date.getHours();
+        var m = date.getMinutes();
+        var s = date.getSeconds();
+
+        console.log(h + " : " + m + " : " + s);
+        */
+
+        sistemaReloadStaticData();
+    }, (30 * 60 * 1000)), // 30min, 
+    baseProducto = {
+        estado: "no cargado",
+        fechaUpdate: null,
+        producto: []
+    },
+    baseStock = {
+        estado: "no cargado",
+        fechaUpdate: null,
+        stock: []
+    },
+    debug = true;
+
+const sistemaLoadBaseData = (fecha = null, force = false) => {
+    let idVentana = ventanaAlertaFlotante("Acción en proceso...", "Cargando base de productos y base de stock de productos.<br>Esto puede llevar un tiempo prolongado dependiendo de la velocidad de internet y la cantidad de productos registrados que tengas.");
+    setTimeout(() => {
+        $("#" + idVentana + "processContainer").html(loading());
+        sistemaLoadBaseProducto(((fecha == null || fecha == "") ? null : fecha), force, idVentana);
+    }, 1500);
+}
+
+const sistemaLoadBaseProducto = (fecha = null, force = false, idVentana = null, chunk = 0) => {
+    if (idVentana !== null) {
+        if (chunk == 0) {
+            $("#" + idVentana + "processContainer .loader").remove();
+            $("#" + idVentana + "processContainer").html('<div class="progress"><div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div></div>');
+        }
+    } else {
+        idVentana = ventanaAlertaFlotante("Acción en proceso...", "Cargando base de productos.<br>Esto puede llevar un tiempo prolongado dependiendo de la velocidad de internet y la cantidad de productos registrados que tengas.<br><b>Te avisaremos cuando la carga finalice.</b>");
+        $("#" + idVentana + "processContainer").html(loading());
+    }
+    let formData = new FormData();
+    formData.append("force", (force == true || baseProducto.producto == null || baseProducto.producto.length == 0) ? true : false);
+    formData.append("fecha", fecha);
+    formData.append("chunk", chunk);
+    this.serverRequest =
+        axios({
+            method: "post",
+            url: "./engine/control/compania/base-producto.php",
+            data: formData,
+            headers: { "Content-Type": "multipart/form-data" }
+        })
+        .then((result) => {
+                if (debug) console.log(result);
+                if (result.status === 200) {
+                    if (debug) console.log("sistemaReloadBaseProductos status 200 ok");
+                    if (result.data["status"] === true) {
+                        if (debug) console.log("sistemaReloadBaseProductos status true ok");
+                        if (parseInt(result.data["data"]["array"]["chunk"]["actual"]) <= result.data["data"]["array"]["chunk"]["totales"]) {
+
+                            if (parseInt(result.data["data"]["array"]["chunk"]["actual"]) in baseProducto.producto) {
+                                baseProducto.producto[parseInt(result.data["data"]["array"]["chunk"]["actual"])] = result.data["data"]["array"]["producto"];
+                            } else {
+                                baseProducto.producto.push(result.data["data"]["array"]["producto"]);
+                            }
+                            baseProducto.estado = "Cargando";
+                            let porcentaje = parseInt(Math.round(parseInt(result.data["data"]["array"]["chunk"]["actual"]) * 100 / result.data["data"]["array"]["chunk"]["totales"]));
+                            $("#" + idVentana + "processContainer .progress .progress-bar").css({ "width": porcentaje + "%" });
+                            $("#" + idVentana + "processContainer .progress .progress-bar").attr("aria-valuenow", porcentaje);
+                            setTimeout(() => { sistemaLoadBaseProducto(fecha, force, idVentana, (parseInt(result.data["data"]["array"]["chunk"]["actual"]) + 1)); }, 225);
+
+                        } else {
+                            baseProducto.fechaUpdate = fecha;
+                            baseProducto.estado = "Cargado";
+                            if (idVentana !== null && $("#" + idVentana).length > 0) {
+                                $("#" + idVentana + "processContainer").html("<span><b>Resultado carga base de productos:</b> base de productos y stock cargada satisfactoriamente.</span>");
+                            } else {
+                                setTimeout(() => { ventanaAlertaFlotante("Información!", "<span><b>Resultado carga base de productos:</b> base de productos y stock cargada satisfactoriamente.</span>"); }, 750);
+                            }
+                        }
+                    } else {
+                        if (idVentana !== null && $("#" + idVentana).length > 0) {
+                            $("#" + idVentana + "processContainer").html("<span><b>Resultado carga base de productos:</b> " + result.data["mensajeUser"]);
+                        } else {
+                            setTimeout(() => { handleFail(result.data["mensajeUser"], "Información de base de productos!") }, 450);
+                        }
+                    }
+                }
+            },
+            (error) => {
+                handleFail("Ocurrió un error al cargar la base de productos. <br><br>Request error, " + error);
+            }
+        )
+        .catch(function(error) {
+            handleFail("Ocurrió un error al cargar la base de productos. <br><br>Catch request error, " + error);
+        });
+}
+
+const handleFail = (mensaje = null, titulo = "Advertencia", form = null, process = null, callback = null) => {
+    if (form !== null) $(form).show(150);
+    if (process !== null) $(process).hide(150);
+    ventanaAlertaFlotante(titulo, mensaje, callback);
+}
+
+const handleSuccess = (mensaje = null, titulo = "Correcto!", callback = null) => {
+    ventanaAlertaFlotante(titulo, mensaje, callback);
+}
+
+const handleRunning = () => {
+    alert("Ya se está realizando una solicitud. Aguarde un momento e intente nuevamente...");
+}
+
+const handleBeforeSend = () => {
+
+}
+
+const handleComplete = () => {
+
+}
+
+const ventanaAlertaFlotante = (titulo = "Advertencia", mensaje = null, callback = null) => {
+    let hex = randomHexa(64);
+
+    let idVentana = "";
+
+    for (let i = 0; i < 3; i++) {
+        let r2 = prime[Math.floor((Math.random() * 5) + 2)]
+        let r1 = Math.floor((Math.random() * (64 - r2)) + 1);
+        idVentana += ((idVentana.length > 0) ? "-" : "") + hex.substr(r1, r2);
+    }
+
+    let container = document.createElement("div");
+    container.className = "ventana-flotante";
+    container.id = idVentana;
+
+    let ventanaContainer = document.createElement("div");
+    ventanaContainer.className = "ventana-container";
+
+    let ventanaHeaderContainer = document.createElement("div");
+    ventanaHeaderContainer.className = "ventana-header-container";
+
+    let headerTituloSpan = document.createElement("span");
+    headerTituloSpan.className = "ventana-header-span";
+    headerTituloSpan.innerHTML = titulo;
+
+    let ventanaBodyContainer = document.createElement("div");
+    ventanaBodyContainer.className = "ventana-body-container";
+
+    let bodyMensajeSpan = document.createElement("span");
+    bodyMensajeSpan.className = "ventana-body-span";
+    bodyMensajeSpan.innerHTML = (mensaje !== null && mensaje.length > 0) ? mensaje : "Error desconocido.";
+
+    let ventanaBodyProcessContainer = document.createElement("div");
+    ventanaBodyProcessContainer.className = "process-container";
+    ventanaBodyProcessContainer.id = idVentana + "processContainer";
+
+    let bodyBotonContainer = document.createElement("div");
+    bodyBotonContainer.className = "d-flex p-1 " + ((callback === null) ? "justify-content-end" : "justify-content-around");
+
+    let bodyBotonLeft = document.createElement("button");
+    bodyBotonLeft.type = "button";
+    bodyBotonLeft.className = "btn btn-primary";
+    bodyBotonLeft.innerHTML = "Aceptar";
+    bodyBotonLeft.onclick = () => {
+        if (callback === null) {
+            $("#" + idVentana).remove();
+        } else {
+            callback();
+            $("#" + idVentana).remove();
+        }
+    }
+
+    bodyBotonContainer.appendChild(bodyBotonLeft);
+
+    if (callback !== null) {
+        let bodyBotonRight = document.createElement("button");
+        bodyBotonRight.type = "button";
+        bodyBotonRight.className = "btn btn-outline-danger";
+        bodyBotonRight.innerHTML = "Cancelar";
+        bodyBotonRight.onclick = () => {
+            $(".ventana-flotante").remove();
+        }
+
+        bodyBotonContainer.appendChild(bodyBotonRight);
+    }
+
+    ventanaBodyContainer.appendChild(bodyMensajeSpan);
+    ventanaBodyContainer.appendChild(ventanaBodyProcessContainer);
+    ventanaBodyContainer.appendChild(bodyBotonContainer);
+    ventanaHeaderContainer.appendChild(headerTituloSpan);
+    ventanaContainer.appendChild(ventanaHeaderContainer);
+    ventanaContainer.appendChild(ventanaBodyContainer);
+    container.appendChild(ventanaContainer);
+
+    document.getElementsByTagName("body")[0].appendChild(container);
+    //dragElement(document.getElementById(idVentana), " .ventana-header-container");
+    $("#" + idVentana + " .btn").focus();
+    return idVentana;
+}
 
 const cartErase = () => { cart = []; }
 
@@ -204,30 +453,79 @@ const dataTableSet = (componente, sort = false, lengthMenu = [
     });
 }
 
-function ventaProductoAgregarInput(idParent, dataset) {
+function ventaProductoAgregarInput(idParent, productoBuscado, productoNombre = null, precio = 0) {
 
-    if (dataset.barCode !== null) {
-        if (dataset.stock <= 0) {
-            alert("El producto " + dataset.producto + " se encuentra sin stock.");
-            return;
+    let producto = [];
+
+    let productoEncontrado = null;
+
+    if (productoBuscado != null && productoBuscado != "") {
+        if (productoBuscado.substring(0, 3) == "PFC") {
+            let codigo = productoBuscado.split("-");
+            for (key in baseProducto.producto) {
+                productoEncontrado = Object.keys(baseProducto.producto[key].noCodificado.lista).filter((iKey) => {
+                    return baseProducto.producto[key].noCodificado.lista[iKey]["data"].codigoBarra == codigo[(codigo.length - 1)];
+                });
+                if (productoEncontrado.length > 0) break;
+            }
+        } else {
+            for (key in baseProducto.producto) {
+                productoEncontrado = Object.keys(baseProducto.producto[key].codificado.lista).filter((iKey) => {
+                    return baseProducto.producto[key].codificado.lista[iKey]["data"].codigoBarra == productoBuscado;
+                });
+                if (productoEncontrado.length > 0) break;
+            }
+        }
+        if (productoEncontrado.length == 1) {
+            producto = (productoBuscado.substring(0, 3) == "PFC") ? baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].noCodificado.lista[productoEncontrado[0]] : baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].codificado.lista[productoEncontrado[0]];
+        } else {
+            if (productoEncontrado.length > 1) {
+                ventanaAlertaFlotante("Información!", "Se encontraron varios productos con el mismo código de barra'" + productoBuscado + "'", () => { $("#producto").focus(); });
+                return;
+            } else {
+                ventanaAlertaFlotante("Información!", "No se encontró el producto con el código de barra '" + productoBuscado + "'", () => { $("#producto").focus(); });
+                return;
+            }
         }
 
-        if (dataset.precio <= 0 || dataset.precio === null || dataset.precio == "") {
-            alert("El producto " + dataset.producto + " no tiene un precio registrado.");
-            return;
+        if (producto.data.codigoBarra !== null) {
+            if (producto.stock == null || producto.stock.stock == null || producto.stock.stock <= 0) {
+                ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " se encuentra sin stock.");
+                return;
+            }
+
+            if (producto.stock.precio === null || producto.stock.precio <= 0 || producto.stock.precio == "") {
+                ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " no tiene un precio registrado.");
+                return;
+            }
         }
+    } else {
+        producto = {
+            data: {
+                id: 0,
+                nombre: (productoNombre == null || productoNombre == "") ? "VARIOS" : productoNombre,
+                codigoBarra: null
+            },
+            stock: {
+                id: 0,
+                stock: 500,
+                precio: precio,
+                precioMayorista: 0,
+                precioKiosco: 0,
+            }
+        };
     }
 
     let cantidad = document.getElementById(idParent + "-agregados").childElementCount;
     let container = document.createElement("tr");
-    container.id = "producto-" + cantidad + "-" + dataset.idProducto;
-    container.setAttribute("data-id-producto", dataset.idProducto);
-    container.setAttribute("data-producto", dataset.producto);
-    container.setAttribute("data-stock", dataset.stock);
-    container.setAttribute("data-precio", dataset.precio);
-    container.setAttribute("data-precio-mayorista", dataset.precioMayorista);
-    container.setAttribute("data-precio-kiosco", dataset.precioKiosco);
-    container.setAttribute("data-bar-code", dataset.barCode);
+    container.id = "producto-" + cantidad + "-" + producto.data.id;
+    container.setAttribute("data-id-producto", producto.data.id);
+    container.setAttribute("data-producto", producto.data.nombre);
+    container.setAttribute("data-stock", producto.stock.stock);
+    container.setAttribute("data-precio", producto.stock.precio);
+    container.setAttribute("data-precio-mayorista", producto.stock.precioMayorista);
+    container.setAttribute("data-precio-kiosco", producto.stock.precioKiosco);
+    container.setAttribute("data-bar-code", (productoBuscado != null && productoBuscado.substring(0, 3) == "PFC") ? productoBuscado : producto.data.codigoBarra);
     container.setAttribute("data-pos", cantidad);
 
     var icon = document.createElement("i");
@@ -235,9 +533,9 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     var btn = document.createElement("button");
     btn.type = "button";
-    btn.id = "btn-acc-" + dataset.idProducto;
+    btn.id = "btn-acc-" + producto.data.id;
     btn.onclick = () => {
-        $("#producto-" + cantidad + "-" + dataset.idProducto).remove();
+        $("#producto-" + cantidad + "-" + producto.data.id).remove();
         cajaCalculaTotalBruto();
     };
     btn.className = "btn btn-outline-danger";
@@ -248,36 +546,36 @@ function ventaProductoAgregarInput(idParent, dataset) {
     inputContainer0.appendChild(btn);
 
     let inputContainer1 = document.createElement("td");
-    inputContainer1.id = "producto-" + cantidad + "-" + dataset.idProducto + "-barcode";
+    inputContainer1.id = "producto-" + cantidad + "-" + producto.data.id + "-barcode";
 
     let inputContainer2 = document.createElement("td");
     inputContainer2.className = "align-middle";
     inputContainer2.style.cssText = "line-height: 1em;";
-    inputContainer2.innerHTML = dataset.producto + "<br><small class='text-muted'>- " + dataset.barCode + " -</small>";
+    inputContainer2.innerHTML = producto.data.nombre + "<br><small class='text-muted'>- " + producto.data.codigoBarra + " -</small>";
 
     let input5 = document.createElement("select");
     input5.className = "form-control";
-    input5.id = "producto-" + cantidad + "-" + dataset.idProducto + "-precio";
+    input5.id = "producto-" + cantidad + "-" + producto.data.id + "-precio";
     input5.onchange = () => {
-        cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
-        $("#producto-" + cantidad + "-" + dataset.idProducto + "-precio-unitario").val($("#producto-" + cantidad + "-" + dataset.idProducto + "-precio").val());
+        cajaCalculaProductoPrecioBruto(cantidad, producto.data.id);
+        $("#producto-" + cantidad + "-" + producto.data.id + "-precio-unitario").val($("#producto-" + cantidad + "-" + producto.data.id + "-precio").val());
         cajaCalculaTotalBruto();
         cajaCalculaTotal();
     }
 
     var option1 = document.createElement("option");
-    option1.value = dataset.precio;
-    option1.text = "$" + dataset.precio + " (Minorista)";
+    option1.value = producto.stock.precio;
+    option1.text = "$" + producto.stock.precio + " (Minorista)";
     option1.setAttribute("selected", "selected");
-    if (isNaN(parseFloat(dataset.precio))) option1.setAttribute("disabled", true);
+    if (isNaN(parseFloat(producto.stock.precio))) option1.setAttribute("disabled", true);
     var option2 = document.createElement("option");
-    option2.value = dataset.precioMayorista;
-    option2.text = "$" + dataset.precioMayorista + " (Mayorista)";
-    if (isNaN(parseFloat(dataset.precioMayorista))) { option2.setAttribute("disabled", true); }
+    option2.value = producto.stock.precioMayorista;
+    option2.text = "$" + producto.stock.precioMayorista + " (Mayorista)";
+    if (isNaN(parseFloat(producto.stock.precioMayorista))) { option2.setAttribute("disabled", true); }
     var option3 = document.createElement("option");
-    option3.value = dataset.precioKiosco;
-    option3.text = "$" + dataset.precioKiosco + " (Kiosco)";
-    if (isNaN(parseFloat(dataset.precioKiosco))) option3.setAttribute("disabled", true);
+    option3.value = producto.stock.precioKiosco;
+    option3.text = "$" + producto.stock.precioKiosco + " (Kiosco)";
+    if (isNaN(parseFloat(producto.stock.precioKiosco))) option3.setAttribute("disabled", true);
 
     input5.appendChild(option1);
     input5.appendChild(option2);
@@ -290,23 +588,23 @@ function ventaProductoAgregarInput(idParent, dataset) {
     let input1 = document.createElement("input");
     input1.type = "number";
     input1.className = "form-control";
-    input1.id = "producto-" + cantidad + "-" + dataset.idProducto + "-cantidad";
+    input1.id = "producto-" + cantidad + "-" + producto.data.id + "-cantidad";
     input1.name = "producto-cantidad[]";
-    input1.max = dataset.stock;
+    input1.max = producto.stock.stock;
     input1.min = 0;
     input1.value = 1;
     input1.onchange = () => {
-        cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
+        cajaCalculaProductoPrecioBruto(cantidad, producto.data.id);
         cajaCalculaTotalBruto();
         cajaCalculaTotal();
     }
     input1.onkeyup = (e) => {
         //console.log(e.keyCode);
-        //cajaCalculaProductoPrecioBruto(cantidad, dataset.idProducto);
+        //cajaCalculaProductoPrecioBruto(cantidad, producto.data.id);
         if ((document.activeElement === document.getElementById(e.currentTarget.id))) {
             var keycode = (e.keyCode ? e.keyCode : e.which);
             if (keycode == '9' || keycode == '17' || keycode == '39' || keycode == '13') {
-                if (dataset.barCode !== null) {
+                if (producto.data.codigoBarra !== null) {
                     $("#container-producto #producto").focus();
                 } else {
                     $("#tipoProducto").prop("checked", true);
@@ -317,20 +615,20 @@ function ventaProductoAgregarInput(idParent, dataset) {
             } else if (!isNaN(e.key)) {
                 let inputVal = parseInt(e.currentTarget.value),
                     min = 0,
-                    max = dataset.stock;
-                let totalBruto = (inputVal * dataset.precio).toFixed(2);
+                    max = producto.stock.stock;
+                let totalBruto = (inputVal * producto.stock.precio).toFixed(2);
                 if (inputVal < min) {
-                    totalBruto = (min * dataset.precio).toFixed(2);
+                    totalBruto = (min * producto.stock.precio).toFixed(2);
                     //console.log(totalBruto);
                     $("#" + e.currentTarget.id).val(min);
                     alert("El valor ingresado es incorrecto.");
                 } else if (inputVal > max) {
-                    totalBruto = (max * dataset.precio).toFixed(2);
+                    totalBruto = (max * producto.stock.precio).toFixed(2);
                     //console.log(totalBruto);
                     $("#" + e.currentTarget.id).val(max);
                     alert("El valor ingresado supera el stock del producto. Stock disponible: " + max);
                 }
-                $('#producto-' + cantidad + '-' + dataset.idProducto + '-total-bruto').html(totalBruto);
+                $('#producto-' + cantidad + '-' + producto.data.id + '-total-bruto').html(totalBruto);
                 setTimeout(cajaCalculaTotalBruto(), 1000);
             }
         } else {
@@ -343,33 +641,41 @@ function ventaProductoAgregarInput(idParent, dataset) {
     input2.type = "number";
     input2.className = "form-control d-none";
     input2.setAttribute("readonly", true);
-    input2.id = "producto-" + cantidad + "-" + dataset.idProducto + "-identificador";
+    input2.id = "producto-" + cantidad + "-" + producto.data.id + "-identificador";
     input2.name = "producto-identificador[]";
-    input2.value = dataset.idProducto;
+    input2.value = producto.stock.id;
+
+    let input7 = document.createElement("input");
+    input7.type = "number";
+    input7.className = "form-control d-none";
+    input7.setAttribute("readonly", true);
+    input7.id = "producto-" + cantidad + "-" + producto.data.id + "-identificador-producto";
+    input7.name = "producto-identificador-producto[]";
+    input7.value = producto.data.id;
 
     let input3 = document.createElement("input");
     input3.type = "text";
     input3.className = "form-control d-none";
     input3.setAttribute("readonly", true);
-    input3.id = "producto-" + cantidad + "-" + dataset.idProducto + "-precio-unitario";
+    input3.id = "producto-" + cantidad + "-" + producto.data.id + "-precio-unitario";
     input3.name = "producto-precio-unitario[]";
-    input3.value = dataset.precio;
+    input3.value = producto.stock.precio;
 
     let input4 = document.createElement("input");
     input4.type = "text";
     input4.className = "form-control d-none";
     input4.setAttribute("readonly", true);
-    input4.id = "producto-" + cantidad + "-" + dataset.idProducto + "-descripcion";
+    input4.id = "producto-" + cantidad + "-" + producto.data.id + "-descripcion";
     input4.name = "producto-descripcion[]";
-    input4.value = dataset.producto;
+    input4.value = producto.data.nombre;
 
     let input6 = document.createElement("input");
     input6.type = "text";
     input6.className = "form-control d-none";
     input6.setAttribute("readonly", true);
-    input6.id = "producto-" + cantidad + "-" + dataset.idProducto + "-tipo";
+    input6.id = "producto-" + cantidad + "-" + producto.data.id + "-tipo";
     input6.name = "producto-tipo[]";
-    input6.value = dataset.productoTipo;
+    input6.value = (productoBuscado != null && productoBuscado.substring(0, 3) == "PFC") ? "noCodificado" : "codificado";
 
     let inputContainer4 = document.createElement("td");
     inputContainer4.className = "align-middle";
@@ -377,12 +683,13 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     let inputContainer5 = document.createElement("td");
     inputContainer5.className = "align-middle";
-    inputContainer5.innerHTML = '$<span id="producto-' + cantidad + '-' + dataset.idProducto + '-total-bruto">' + dataset.precio + '</span>';
+    inputContainer5.innerHTML = '$<span id="producto-' + cantidad + '-' + producto.data.id + '-total-bruto">' + producto.stock.precio + '</span>';
 
     inputContainer0.appendChild(input2);
     inputContainer0.appendChild(input3);
     inputContainer0.appendChild(input4);
     inputContainer0.appendChild(input6);
+    inputContainer0.appendChild(input7);
     container.appendChild(inputContainer0);
     container.appendChild(inputContainer1);
     container.appendChild(inputContainer2);
@@ -392,25 +699,25 @@ function ventaProductoAgregarInput(idParent, dataset) {
 
     document.getElementById(idParent + "-agregados").appendChild(container);
 
-    if (dataset.barCode !== null && false) {
+    if (producto.data.codigoBarra !== null && false) {
         const format = ["CODE128", "CODE39", "EAN13", "EAN8", "EAN5", "EAN2", "UPC", "ITF", "ITF-14", "MSI", "MSI10", "MSI11", "MSI1010", "MSI1110", "Pharmacode", "Codabar"];
         switch (true) {
-            case (dataset.barCode.substring(0, 3) == "PFC"):
+            case (producto.data.codigoBarra.substring(0, 3) == "PFC"):
                 setFormat = format[0];
                 break;
-            case (dataset.barCode.length <= 2):
+            case (producto.data.codigoBarra.length <= 2):
                 setFormat = format[5];
                 break;
-            case (dataset.barCode.length > 2 && dataset.barCode.length <= 5):
+            case (producto.data.codigoBarra.length > 2 && producto.data.codigoBarra.length <= 5):
                 setFormat = format[4];
                 break;
-            case (dataset.barCode.length > 5 && dataset.barCode.length <= 8):
+            case (producto.data.codigoBarra.length > 5 && producto.data.codigoBarra.length <= 8):
                 setFormat = format[3];
                 break;
-            case (dataset.barCode.length > 8 && dataset.barCode.length < 13):
+            case (producto.data.codigoBarra.length > 8 && producto.data.codigoBarra.length < 13):
                 setFormat = format[6];
                 break;
-            case (dataset.barCode.length == 13):
+            case (producto.data.codigoBarra.length == 13):
                 setFormat = format[2];
                 break;
             default:
@@ -418,10 +725,10 @@ function ventaProductoAgregarInput(idParent, dataset) {
                 break;
         }
         console.log(setFormat);
-        let divDOM = document.getElementById("producto-" + cantidad + "-" + dataset.idProducto + "-barcode");
+        let divDOM = document.getElementById("producto-" + cantidad + "-" + producto.data.id + "-barcode");
         let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
         svg.setAttribute('jsbarcode-format', setFormat);
-        svg.setAttribute('jsbarcode-value', dataset.barCode);
+        svg.setAttribute('jsbarcode-value', producto.data.codigoBarra);
         svg.setAttribute('jsbarcode-width', 1);
         svg.setAttribute('jsbarcode-height', 45);
         svg.setAttribute('jsbarcode-fontSize', 11);
@@ -657,28 +964,115 @@ const appendElement = (objUrl, objToAppend, data = {}, clear = false, loadingBar
     });
 }
 
-const requestLogin = () => {
+const headerUsuarioMainData = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#login-form");
-    let data = form.serializeArray();
-    data.push({ name: "form", value: form.attr("form") });
-    data.push({ name: "process", value: form.attr("process") });
-    let divProcess = form.attr("process");
-    let divForm = form.attr("form");
+    let divProcess = "#container-header-usuario";
+    let divForm = "";
     $.ajax({
         type: "POST",
-        url: form.attr("action"),
+        url: "./includes/componente/header-usuario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).load("./includes/loading.php");
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).html(data);
+            }, 1000);
+            setTimeout(() => {
+                headerUsuarioMainData();
+            }, (2 * 60 * 1000));
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const headerUsuarioAlerta = (id) => {
+    let divProcess = "#container-header-usuario-alerta-" + id;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "./includes/componente/header-usuario-alerta.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).load("./includes/loading.php");
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { id: id },
+        complete: function() {},
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).html(data);
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+    });
+}
+
+const sistemaTest = (id) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "includes/sistema/test.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());
             $(divForm).hide(350);
             $(divProcess).show(350);
         },
-        data: data,
+        data: { id: id },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const inicio = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "includes/usuario/inicio.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
         complete: function() {
             me.data('requestRunning', false);
         },
@@ -2211,7 +2605,7 @@ const sistemaCompañiaSucursalCajaUpdate = (data) => {
     });
 }
 
-const sistemaReloadStaticData = () => {
+const sistemaReloadStaticData = (force = false) => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
@@ -2228,14 +2622,14 @@ const sistemaReloadStaticData = () => {
             //$(divForm).hide(350);
             //$(divProcess).show(350);
         },
-        data: {},
+        data: { force: force },
         complete: function() {
             me.data('requestRunning', false);
         },
         success: function(data) {
             setTimeout(function() {
                 $(divProcess).html(data);
-                setTimeout(() => { sistemaReloadStaticData() }, 1800000);
+                //reloadStaticData = setTimeout(() => { sistemaReloadStaticData() }, 1800000); //1800000
             }, 1000);
         }
     }).fail(function(jqXHR) {
@@ -2959,4 +3353,4 @@ const nuevaCompania = () => {
     });
 }
 
-sistemaReloadStaticData();
+setTimeout(() => { sistemaLoadBaseData(); }, 1500);

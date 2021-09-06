@@ -14,6 +14,8 @@
     --violet: #e51b88;
     --white: #FFFFFF;
     --black: #000000;
+    --black-1: #414141;
+    --black-1-rgb: 65, 65, 65;
     --cream: #fdeeef;
     --mono-green-1: #30B200;
     --mono-green-2: #3DE000;
@@ -120,6 +122,72 @@ input::-webkit-inner-spin-button {
 
 input[type=number] {
     -moz-appearance: textfield;
+}
+
+.carousel-item img {
+    display: flex;
+    margin: 0 auto;
+    height: 550px;
+}
+
+.carousel-caption {
+    color: var(--black-1);
+    background-color: rgba(255, 240, 230, 0.875);
+    padding: 1rem 2rem;
+    font-size: 1.25rem;
+    line-height: 1.25rem;
+}
+
+.carousel-caption span {
+    font-size: 2rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 1.25rem;
+    font-family: 'Tajawal-Black';
+}
+
+.ventana-flotante {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(var(--black-1-rgb), .55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0;
+    left: 0;
+    text-align: left;
+    z-index: 10000;
+}
+
+.ventana-container {
+    width: 50%;
+    height: auto;
+    border: 1px solid var(--sec-main);
+    background-color: #FFF;
+    max-height: 75%;
+    overflow: hidden;
+    box-shadow: 0 10px 10px -5px var(--black-1);
+}
+
+.ventana-header-container {
+    width: 100%;
+    padding: 1rem;
+    background-color: var(--mono-orange-3);
+    color: var(--white);
+    font-weight: bold;
+}
+
+.ventana-body-container {
+    padding: .35rem 1rem;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.ventana-body-span {
+    display: block;
+    margin-bottom: 1rem;
+    color: var(--black-1);
 }
 
 .loader-ok {
@@ -345,6 +413,8 @@ body {
     font-family: "Tajawal-Regular", 'Courier New', Courier, monospace;
     background-color: var(--gray);
     background-image: url("../image/bg-general.png");
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
 .cover-container {
