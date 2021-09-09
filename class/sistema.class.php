@@ -12,6 +12,17 @@
 
         public static $version = "Beta-1.134.444b";
 
+        public static function mesaDeAyuda(){
+            ?>
+            <div id="mesa-de-ayuda" class="mine-container">
+                <div class="d-flex justify-content-between"> 
+                    <div class="titulo">Mesa de ayuda</div>
+                    <button type="button" onclick="$('#mesa-de-ayuda').remove()" class="btn delete"><i class="fa fa-times"></i></button>
+                </div>
+            </div>
+            <?php
+        }
+
         public static function buscarProductoIdEnStock($idProducto, $tipo = "producto"){
             Session::iniciar();
             foreach($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"] AS $key => $value){
