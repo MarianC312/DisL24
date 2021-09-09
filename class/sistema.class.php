@@ -19,6 +19,13 @@
                     <div class="titulo">Mesa de ayuda</div>
                     <button type="button" onclick="$('#mesa-de-ayuda').remove()" class="btn delete"><i class="fa fa-times"></i></button>
                 </div>
+                <div class="p-1">
+                    <?php
+                        $mensaje['tipo'] = 'info';
+                        $mensaje['cuerpo'] = 'Esta aplicación estará disponible en breve.';
+                        Alert::mensaje($mensaje);
+                    ?>
+                </div>
             </div>
             <?php
         }

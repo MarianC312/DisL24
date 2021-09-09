@@ -347,8 +347,14 @@
                                                     <div class="d-flex flex-column ml-3"> 
                                                         <a href="#/" onclick="ventaRegistrarFormulario()" class="nav-item nav-link"><i class="fa fa-plus"></i> Nueva Venta</a>
                                                         <a href="#/" onclick="cajaGestion()" class="nav-item nav-link"><i class="fa fa-money" aria-hidden="true"></i> Caja</a>
-                                                        <a href="#/" onclick="ventaHistorial()" class="nav-item nav-link"><i class="fa fa-list-ul" aria-hidden="true"></i> Ventas</a>
-                                                        <a href="#/" onclick="jornadaFormulario()" class="nav-item nav-link"><i class="fa fa-clock-o" aria-hidden="true"></i> Jornadas</a>
+                                                        <?php
+                                                            if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1){
+                                                                ?>
+                                                                <a href="#/" onclick="ventaHistorial()" class="nav-item nav-link"><i class="fa fa-list-ul" aria-hidden="true"></i> Ventas</a>
+                                                                <a href="#/" onclick="jornadaFormulario()" class="nav-item nav-link"><i class="fa fa-clock-o" aria-hidden="true"></i> Jornadas</a>
+                                                                <?php
+                                                            }
+                                                        ?>
                                                     </div>
                                                 </div>
                                                 <a href="#/" onclick="setCollapse('clientes-collapse'); swapClass('#menu-clientes','bg-main text-acc font-weight-bold'); swapClass('#clientes-collapse','bg-main')" id="menu-clientes" class="nav-item nav-link <?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'bg-main text-acc font-weight-bold' : ''; ?>" data-toggle="collapse" data-target="#clientes-collapse" aria-controls="clientes-collapse" aria-haspopup="true" aria-expanded="<?php echo (isset($opcion["clientes-collapse"]) && $opcion["clientes-collapse"]) ? 'true' : 'false'; ?>"><i class="fa fa-user"></i> Clientes</a>
