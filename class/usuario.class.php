@@ -1,7 +1,7 @@
 <?php
     class Usuario{
 
-        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData, $lastReloadFEStaticData;
+        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData, $lastReloadFEStaticData, $lastTicketCheck;
         private $debugTipo = [
             0 => "all",
             1 => "success",
@@ -28,6 +28,7 @@
             $this->auth = $auth;
             $this->lastReloadStaticData = ($reload) ? $this->lastReloadStaticData : null; 
             $this->lastReloadFEStaticData = ($reload) ? $this->lastReloadFEStaticData : null; 
+            $this->lastTicketCheck = ($reload) ? $this->lastTicketCheck : Centroayuda::$publicData["ultimaRevision"]; 
         }
 
         function getAuth(){ return $this->auth; }
@@ -44,6 +45,7 @@
         function getActividadJornada(){ return $this->actividadJornada; }
         function getLastReloadStaticData(){ return $this->lastReloadStaticData; }
         function getLastReloadFEStaticData(){ return $this->lastReloadFEStaticData; }
+        function getLastTicketCheck(){ return $this->lastTicketCheck; }
         function getCajaData(){
             $this->setDataActividadCaja();
             return [
@@ -63,6 +65,7 @@
         function setActividadFechaFin($fecha){ $this->actividadFechaFin = $fecha; }
         function setLastReloadStaticData(){ $this->lastReloadStaticData = Date::current(); }
         function setLastReloadFEStaticData(){ $this->lastReloadFEStaticData = Date::current(); }
+        function setLastTicketCheck(){ $this->lastTicketCheck = Date::current(); }
 
         function shouldReloadStaticData(){
             $date1 = $this->getLastReloadStaticData();

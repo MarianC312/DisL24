@@ -1,17 +1,8 @@
 <?php
     class Componente{
-        public static function inicio(){
-            Componente::headerUsuario()
-            ?>
-            <div id="right-content-alerts"><?php Sistema::facturaImpagaAlerta() ?></div>
-            <div id="right-content-process"></div>
-            <div id="right-content-data">
-                <?php
-                    Session::iniciar();
-                    Alert::feature(1);
-                ?>
-            </div>
-            <?php
+        public static function inicio(){ 
+            Session::iniciar();
+            Alert::feature(1);
         }
 
         public static function headerUsuarioAlert($id, $url, $icon, $test = false){
@@ -321,10 +312,21 @@
 
         public static function menu(){
             Session::iniciar();
-            $data = $_SESSION["componente"]["menu"]["data"];
+            $data = $_SESSION["componente"]["menu"]["data"]; 
+            //$caTicketTieneNuevaActividadResponse = Centroayuda::ticketTieneNuevaActividad();
+            
+            /*
+            if($caTicketTieneNuevaActividadResponse["status"] === true){
+                $caTicketActividad = $caTicketTieneNuevaActividadResponse["data"]["count"];
+            }else{
+                $caTicketActividad = 0;
+                echo '<script>console.log("'.$caTicketTieneNuevaActividadResponse["mensajeUser"].'. '.$caTicketTieneNuevaActividadResponse["mensajeAdmin"].'")</script>';
+            }
+            */
+            $caTicketActividad = 0;
             $opcion = (isset($_SESSION["componente"]["menu"]["opcion"])) ? $_SESSION["componente"]["menu"]["opcion"] : [];
             ?>
-            <div class="w-100" name="<?php echo $data["nombre"] ?>" identificador="<?php echo $data["id"] ?>" version="<?php echo $data["version"] ?>" start="<?php echo $data["carga"] ?>">
+            <div class="main-menu w-100" name="<?php echo $data["nombre"] ?>" identificador="<?php echo $data["id"] ?>" version="<?php echo $data["version"] ?>" start="<?php echo $data["carga"] ?>">
                 <?php
                     if($data["estado"]){
                         ?>
@@ -401,7 +403,7 @@
                                                 <?php
                                             }
                                         ?> 
-                                        <a href="#/Inicio" onclick="mesaDeAyuda()" class="nav-item nav-link active"><i class="fa fa-question-circle-o"></i> Mesa de ayuda</a> 
+                                        <a href="#/Mesa+de+ayuda" onclick="mesaDeAyuda();" class="nav-item nav-link active"><i class="fa fa-question-circle-o"></i> Mesa de ayuda <span id="mesaAyudaActividad" class="badge badge-success badge-pill <?php echo ($caTicketActividad == 0) ? "d-none" : ""; ?>"><?php echo $caTicketActividad ?></span></a> 
                                     </div>
                                     <div class="navbar-nav mt-4 justify-content-end">
                                         <a href="#/" onclick="requestLogout()" class="nav-item nav-link"><i class="fa fa-sign-out"></i> Salir</a>
@@ -425,7 +427,8 @@
                 ?>
             </div>
             <script>
-                const setCollapse = (collapse) => {
+                let setCollapse = (collapse) => {
+                    return false;
                     var me = $(this);
                     if (me.data('requestRunning')) {
                         return;

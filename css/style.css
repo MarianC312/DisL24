@@ -105,6 +105,85 @@
     src: url('./font/Tajawal-Regular.ttf') format('truetype')
 }
 
+.ca-main-header {
+    padding: 1rem;
+    margin-left: 15rem;
+    margin-bottom: 3rem;
+}
+
+.ca-main-body {
+    padding: 1rem;
+}
+
+.ca-ticket-header {
+    padding: 1rem 15rem;
+    margin-bottom: 3rem;
+}
+
+.ca-ticket-header .ticket-subheader {
+    margin-left: 4rem;
+    line-height: 1.25rem;
+}
+
+.ca-ticket-header .ticket-subheader #identificador {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.ca-ticket-header .ticket-subheader #asunto {
+    font-size: 1.3rem;
+}
+
+.ca-ticket-body .comentario-container {
+    display: flex;
+    padding: 1rem 7.5rem;
+    margin: 0rem 7.5rem;
+    margin-bottom: 1rem;
+}
+
+.ca-ticket-body .comentario-container .icono {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: blanchedalmond;
+    font-weight: bold;
+    font-size: 2rem;
+    padding: 2rem;
+    border-radius: 50%;
+}
+
+.ca-ticket-body .comentario-container .contenido .header {
+    display: block;
+    background-color: transparent;
+    box-shadow: none !important;
+    color: inherit;
+    height: 30px;
+    padding: 0.4rem 2rem;
+}
+
+.ca-ticket-body .comentario-container .contenido .body {
+    padding-left: 2rem;
+    font-size: 1.15rem;
+}
+
+.ca-ticket-body .comentario-container .inner {
+    display: flex;
+    border-bottom: 1px solid lightgray;
+    width: 100%;
+    padding: 1rem .5rem;
+}
+
+.ca-ticket-action .ticket-comentario-container {
+    padding: 1rem;
+    margin: 1rem 15rem;
+}
+
+.ca-main-ticket-lista-process .ca-container {
+    padding-bottom: 10rem;
+}
+
 
 /* Input no controls */
 

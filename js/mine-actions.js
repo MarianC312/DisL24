@@ -3,6 +3,13 @@ const loading = (tipo = "loader") => { return ('<span class="' + tipo + '"></spa
     randomHexa = size => [...Array(size)].map(() => Math.floor(Math.random() * 16).toString(16)).join(''),
     productoChunkLimit = 2500;
 
+function goToByScroll(div) {
+    $(div).show(150);
+    $('html,body').animate({
+        scrollTop: $(div).offset().top
+    }, 'slow');
+}
+
 const dragElement = (elmnt, scope) => {
     var pos1 = 0,
         pos2 = 0,
@@ -61,7 +68,7 @@ let cart = [],
         */
 
         sistemaReloadStaticData();
-    }, (30 * 60 * 1000)), // 30min, 
+    }, (30 * 60 * 1000)), // 30min,
     baseProducto = {
         estado: "no cargado",
         fechaUpdate: null,
@@ -75,6 +82,8 @@ let cart = [],
     debug = true;
 
 const sistemaLoadBaseData = (fecha = null, force = false) => {
+    console.log("Sistema: sistemaLoadBaseData cancelado.");
+    return false;
     let idVentana = ventanaAlertaFlotante("Acción en proceso...", "Cargando base de productos y base de stock de productos.<br>Esto puede llevar un tiempo prolongado dependiendo de la velocidad de internet y la cantidad de productos registrados que tengas.");
     setTimeout(() => {
         $("#" + idVentana + "processContainer").html(loading());
@@ -114,7 +123,7 @@ const sistemaLoadBaseProducto = (fecha = null, force = false, idVentana = null, 
                             if (parseInt(result.data["data"]["array"]["chunk"]["actual"]) in baseProducto.producto) {
                                 baseProducto.producto[parseInt(result.data["data"]["array"]["chunk"]["actual"])] = result.data["data"]["array"]["producto"];
                             } else {
-                                baseProducto.producto.push(result.data["data"]["array"]["producto"]);
+                                //baseProducto.producto.push(result.data["data"]["array"]["producto"]);
                             }
                             baseProducto.estado = "Cargando";
                             let porcentaje = parseInt(Math.round(parseInt(result.data["data"]["array"]["chunk"]["actual"]) * 100 / result.data["data"]["array"]["chunk"]["totales"]));
@@ -457,47 +466,44 @@ function ventaProductoAgregarInput(idParent, productoBuscado, productoNombre = n
 
     let producto = [];
 
+    //let base = document.querySelector("#companiaProductoLista li[id='7794529041424']");
+
     let productoEncontrado = null;
 
     if (productoBuscado != null && productoBuscado != "") {
-        if (productoBuscado.substring(0, 3) == "PFC") {
-            let codigo = productoBuscado.split("-");
-            for (key in baseProducto.producto) {
-                productoEncontrado = Object.keys(baseProducto.producto[key].noCodificado.lista).filter((iKey) => {
-                    return baseProducto.producto[key].noCodificado.lista[iKey]["data"].codigoBarra == codigo[(codigo.length - 1)];
-                });
-                if (productoEncontrado.length > 0) break;
-            }
-        } else {
-            for (key in baseProducto.producto) {
-                productoEncontrado = Object.keys(baseProducto.producto[key].codificado.lista).filter((iKey) => {
-                    return baseProducto.producto[key].codificado.lista[iKey]["data"].codigoBarra == productoBuscado;
-                });
-                if (productoEncontrado.length > 0) break;
-            }
-        }
-        if (productoEncontrado.length == 1) {
-            producto = (productoBuscado.substring(0, 3) == "PFC") ? baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].noCodificado.lista[productoEncontrado[0]] : baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].codificado.lista[productoEncontrado[0]];
-        } else {
-            if (productoEncontrado.length > 1) {
-                ventanaAlertaFlotante("Información!", "Se encontraron varios productos con el mismo código de barra'" + productoBuscado + "'", () => { $("#producto").focus(); });
-                return;
-            } else {
-                ventanaAlertaFlotante("Información!", "No se encontró el producto con el código de barra '" + productoBuscado + "'", () => { $("#producto").focus(); });
-                return;
-            }
-        }
-
-        if (producto.data.codigoBarra !== null) {
-            if (producto.stock == null || producto.stock.stock == null || producto.stock.stock <= 0) {
-                ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " se encuentra sin stock.");
-                return;
+        productoEncontrado = document.querySelector("#companiaProductoLista li[data-producto-codigoBarra='" + productoBuscado + "']");
+        console.log(productoEncontrado);
+        if (productoEncontrado != null) {
+            producto = {
+                data: {
+                    id: productoEncontrado.dataset.productoId,
+                    nombre: productoEncontrado.dataset.productoNombre,
+                    codigoBarra: productoEncontrado.dataset.productoCodigobarra
+                },
+                stock: {
+                    id: productoEncontrado.dataset.stockId,
+                    stock: productoEncontrado.dataset.stockStock,
+                    precio: productoEncontrado.dataset.stockPrecio,
+                    precioMayorista: productoEncontrado.dataset.stockPrecioMayorista,
+                    precioKiosco: productoEncontrado.dataset.stockPrecioKiosco
+                }
             }
 
-            if (producto.stock.precio === null || producto.stock.precio <= 0 || producto.stock.precio == "") {
-                ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " no tiene un precio registrado.");
-                return;
+            if (producto.data.codigoBarra !== null) {
+                if (producto.stock == null || producto.stock.stock == null || producto.stock.stock <= 0) {
+                    ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " se encuentra sin stock.");
+                    return;
+                }
+
+                if (producto.stock.precio === null || producto.stock.precio <= 0 || producto.stock.precio == "") {
+                    ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " no tiene un precio registrado.");
+                    return;
+                }
             }
+            //producto = (productoBuscado.substring(0, 3) == "PFC") ? baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].noCodificado.lista[productoEncontrado[0]] : baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].codificado.lista[productoEncontrado[0]];
+        } else {
+            ventanaAlertaFlotante("Advertencia!", "El producto no se encontró en la base de productos.");
+            return;
         }
     } else {
         producto = {
@@ -525,7 +531,7 @@ function ventaProductoAgregarInput(idParent, productoBuscado, productoNombre = n
     container.setAttribute("data-precio", producto.stock.precio);
     container.setAttribute("data-precio-mayorista", producto.stock.precioMayorista);
     container.setAttribute("data-precio-kiosco", producto.stock.precioKiosco);
-    container.setAttribute("data-bar-code", (productoBuscado != null && productoBuscado.substring(0, 3) == "PFC") ? productoBuscado : producto.data.codigoBarra);
+    container.setAttribute("data-bar-code", producto.data.codigoBarra);
     container.setAttribute("data-pos", cantidad);
 
     var icon = document.createElement("i");
@@ -1055,17 +1061,17 @@ const sistemaTest = (id) => {
     });
 }
 
-const mesaDeAyuda = () => {
+const caTicketFormulario = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let divProcess = "#right-content-data";
+    let divProcess = "#right-content-process";
     let divForm = "";
     $.ajax({
         type: "POST",
-        url: "includes/sistema/mesa-ayuda.php",
+        url: "includes/sistema/ca/ticket-formulario.php",
         timeout: 45000,
         beforeSend: function() {
             $(divProcess).html(loading());
@@ -1087,13 +1093,243 @@ const mesaDeAyuda = () => {
     });
 }
 
+const caTicketFormularioRegistro = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#ticket-form");
+    let data = form.serializeArray();
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+            $(divProcess).html(loading());
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const caTicketVisualizarFormulario = (idTicket, hash, admin = false) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#ca-main-ticket-lista-process";
+    let divForm = "#ca-main-ticket-lista";
+    $.ajax({
+        type: "POST",
+        url: "includes/sistema/ca/ticket-visualizar-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idTicket: idTicket, hash: hash, admin: admin, process: divProcess, form: divForm },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const caTicketComentarioFormularioRegistro = (idTicket) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let form = $("#ticket-comentario-form");
+    let data = form.serializeArray();
+    data.push({ name: "idTicket", value: idTicket });
+    data.push({ name: "form", value: form.attr("form") });
+    data.push({ name: "process", value: form.attr("process") });
+    let divProcess = form.attr("process");
+    let divForm = form.attr("form");
+    $.ajax({
+        type: "POST",
+        url: form.attr("action"),
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+            $(divProcess).html(loading());
+        },
+        data: data,
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+                goToByScroll(divForm);
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const caTicketComentarioRecarga = (idTicket, fecha = null) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#ca-main-ticket-lista-process .ca-ticket-body";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "engine/sistema/ca/ticket-comentario-recarga.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).append(loading());
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: { idTicket: idTicket, fecha: fecha, process: divProcess },
+        complete: function() {
+            me.data('requestRunning', false);
+            //$(divProcess + " .loader-container").remove();
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).append(data).fadeIn("slow");
+                $("html, body").animate({ scrollTop: $(document).height() }, 1000);
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const caTicketTieneNuevaActividad = () => {
+    this.serverRequest =
+        axios({
+            method: "post",
+            url: "./engine/sistema/ca/ticket-tiene-nueva-actividad.php",
+            data: []
+        })
+        .then((result) => {
+                if (debug) console.log(result);
+                if (result.status === 200) {
+                    if (debug) console.log("caTicketTieneNuevaActividad status 200 ok");
+                    if (result.data["status"] === true) {
+                        if (debug) console.log("caTicketTieneNuevaActividad status true ok");
+                        if (result.data["data"]["count"] != null && result.data["data"]["count"] > 0) {
+                            $(".main-left .navbar #mesaAyudaActividad").html(result.data["data"]["count"]).toggleClass('d-none');
+                            for (key in result.data["data"]["array"]) {
+                                if ($(".ca-container.ca-ticket-container")["length"] > 0 && $(".ca-container.ca-ticket-container")[0]["id"] == result.data["data"]["array"][key]["id"]) {
+                                    var ultimaActividad = new Date(result.data["data"]["array"][key]["ultimaActividad"]);
+                                    ultimaActividad.setSeconds(ultimaActividad.getSeconds() - 1)
+                                    var ultimaActividadFormateada = [ultimaActividad.getFullYear(),
+                                        (ultimaActividad.getMonth() + 1).padLeft(),
+                                        ultimaActividad.getDate().padLeft()
+                                    ].join('-') + ' ' + [ultimaActividad.getHours().padLeft(),
+                                        ultimaActividad.getMinutes().padLeft(),
+                                        ultimaActividad.getSeconds().padLeft()
+                                    ].join(':');
+                                    setTimeout(() => { caTicketComentarioRecarga(result.data["data"]["array"][key]["id"], ultimaActividadFormateada) }, 350);
+                                    setTimeout(() => { caTicketNuevaActividadMensajeAudio.play() }, 1150);
+                                }
+                            }
+                        }
+                    } else {
+                        handleFail(result.data["mensajeUser"]);
+                        console.log(result.data["mensajeAdmin"]);
+                    }
+                }
+            },
+            (error) => {
+                handleFail("Ocurrió un error al consultar la actividad del centro de ayuda. <br><br>Request error, " + error);
+            }
+        )
+        .catch(function(error) {
+            handleFail("Ocurrió un error al consultar la actividad del centro de ayuda. <br><br>Catch request error, " + error);
+        });
+}
+
+function getRand(min, max) {
+    //console.log(Math.floor(Math.random() * max) + min)
+    let rand = Math.floor(Math.random() * max) + min;
+    return rand;
+}
+
+const caTicketNuevaActividadIntervalo = setInterval(() => { caTicketTieneNuevaActividad(); }, (getRand(5, 15) * 60 * 1000)),
+    caTicketNuevaActividadMensajeAudio = new Audio('includes/sistema/ca/spl-msg.mp3');
+
+const mesaDeAyuda = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "includes/sistema/mesa-ayuda.php",
+        timeout: 45000,
+        beforeSend: function() {
+            $(divProcess).html(loading());
+            $(divForm).hide(350);
+            $(divProcess).show(350);
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+            if (!$('.main-menu #mesaAyudaActividad').hasClass('d-none')) {
+                $('.main-menu #mesaAyudaActividad').toggleClass('d-none');
+            }
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const inicio = () => {
     var me = $(this);
     if (me.data('requestRunning')) {
         return;
     }
     me.data('requestRunning', true);
-    let divProcess = "#right-content";
+    let divProcess = "#right-content-data";
     let divForm = "";
     $.ajax({
         type: "POST",
@@ -3386,3 +3622,9 @@ const nuevaCompania = () => {
 }
 
 setTimeout(() => { sistemaLoadBaseData(); }, 1500);
+
+
+Number.prototype.padLeft = function(base, chr) {
+    var len = (String(base || 10).length - String(this).length) + 1;
+    return len > 0 ? new Array(len).join(chr || '0') + this : this;
+}

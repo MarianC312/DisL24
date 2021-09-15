@@ -442,10 +442,6 @@
         public static function registrar($data){
             if(Sistema::usuarioLogueado()){
                 //echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>'; 
-                
-                echo '<pre>';
-                print_r($data);
-                echo '</pre>';
 
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
@@ -477,9 +473,6 @@
                             $dataCaja["productoCantidad"] = "";
                             $dataCaja["productoPrecio"] = "";
                             foreach($data["producto-identificador"] AS $key => $value){ 
-                                echo '<pre>';
-                                print_r($value);
-                                echo '</pre>';
                                 $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value][(($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC")];
                                 $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
                                 $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["stock"];
@@ -487,7 +480,7 @@
                                 $dataProducto[$key]["cantidad"] = trim($data["producto-cantidad"][$key]);
                                 $dataProducto[$key]["tipo"] = $data["producto-tipo"][$key];
                                 $dataProducto[$key]["nombre"] = ($value == 0) ? $data["producto-descripcion"][$key] : $_SESSION["lista"]["producto"][$dataProducto[$key]["tipo"]][$dataProducto[$key]["id"]]["nombre"];
-                                $dataProducto[$key]["subtotal"] = $dataProducto[$key]["cantidad"] * $dataProducto[$key]["precio"];
+                                $dataProducto[$key]["subtotal"] = intval($dataProducto[$key]["cantidad"]) * floatval($dataProducto[$key]["precio"]);
                                 $dataCaja["subtotal"] += $dataProducto[$key]["subtotal"];
                                 if($value != 0){
                                     if($dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precio"]

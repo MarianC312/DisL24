@@ -10,7 +10,7 @@
         private static $key2 = "ry.E40c*&mEsKft3rECgu¡$"; 
         private static $prime = [2,3,5,7,11,13,17,19];
 
-        public static $version = "Beta-1.134.444b";
+        public static $version = "Beta-1.212.661b";
 
         public static function mesaDeAyuda(){
             ?>
@@ -21,9 +21,7 @@
                 </div>
                 <div class="p-1">
                     <?php
-                        $mensaje['tipo'] = 'info';
-                        $mensaje['cuerpo'] = 'Esta aplicación estará disponible en breve.';
-                        Alert::mensaje($mensaje);
+                        Centroayuda::mainContainer();
                     ?>
                 </div>
             </div>

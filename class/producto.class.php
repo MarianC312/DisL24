@@ -4,7 +4,7 @@
         public static function FEChunkLoad($chunk = 0, $force){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                $limit = 2500;
+                $limit = 125000;
                 $productoCodificadoCantidad = count($_SESSION["lista"]["producto"]["codificado"]);
                 $productoNoCodificadoCantidad = count($_SESSION["lista"]["producto"]["noCodificado"]);
                 $productoCantidadMayor = ($productoCodificadoCantidad >= $productoNoCodificadoCantidad) ? $productoCodificadoCantidad : $productoNoCodificadoCantidad;

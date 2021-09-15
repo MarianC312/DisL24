@@ -2454,5 +2454,39 @@
                 return null;
             }
         }
+
+        public static function productoLista(){
+            $producto = Producto::FEChunkLoad(0, true);
+            if(is_array($producto)){ 
+                Session::iniciar();
+                if($_SESSION["usuario"]->isAdmin()){
+                    
+                }
+                ?>
+                <ul id="companiaProductoLista" class="list-group d-none">
+                    <?php
+                        foreach(array_merge($producto["producto"]["noCodificado"]["lista"], $producto["producto"]["codificado"]["lista"]) AS $key => $value){
+                            ?>
+                            <li class="list-group-item producto" id="<?php echo $value["data"]["codigoBarra"] ?>" 
+                            data-producto-id="<?php echo $value["data"]["id"] ?>" 
+                            data-producto-nombre="<?php echo $value["data"]["nombre"] ?>" 
+                            data-producto-codigoBarra="<?php echo (($value["data"]["tipo"] == 5) ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$value["data"]["codigoBarra"] ?>"
+                            data-producto-fechaUpdate="<?php echo $value["data"]["fechaUpdate"] ?>"
+                            data-stock-id="<?php echo (is_array($value["stock"])) ? $value["stock"]["id"] : "0" ?>"
+                            data-stock-productoId="<?php echo (is_array($value["stock"])) ? $value["stock"]["producto"] : "0" ?>"
+                            data-stock-productoNCId="<?php echo (is_array($value["stock"])) ? $value["stock"]["productoNC"] : "0" ?>"
+                            data-stock-stock="<?php echo (is_array($value["stock"])) ? $value["stock"]["stock"] : "0" ?>"
+                            data-stock-precio="<?php echo (is_array($value["stock"])) ? $value["stock"]["precio"] : "0" ?>"
+                            data-stock-precioMayorista="<?php echo (is_array($value["stock"])) ? $value["stock"]["precioMayorista"] : "0" ?>"
+                            data-stock-precioKiosco="<?php echo (is_array($value["stock"])) ? $value["stock"]["precioKiosco"] : "0" ?>"
+                            data-stock-fechaModificacion="<?php echo (is_array($value["stock"])) ? $value["stock"]["fechaModificacion"] : "0" ?>"
+                            </li>
+                            <?php
+                        }
+                    ?>
+                </ul>
+                <?php
+            }
+        }
     }
 ?>

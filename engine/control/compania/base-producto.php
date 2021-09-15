@@ -14,7 +14,7 @@
     if(Sistema::usuarioLogueado()){ 
         Session::iniciar();
         if(isset($_POST)){
-            if((isset($_POST["chunk"]) && $_POST["chunk"] > 0) || (isset($_POST["force"]) && $_POST["force"] == "true" && $_SESSION["usuario"]->isAdmin()) || $_SESSION["usuario"]->shouldReloadFEStaticData()){
+            if((isset($_POST["chunk"]) && $_POST["chunk"] > 0) || (isset($_POST["force"]) && $_POST["force"] == "true") || $_SESSION["usuario"]->shouldReloadFEStaticData()){
                 $response["status"] = true;
                 $response["data"]["array"] = Producto::FEChunkLoad($_POST["chunk"], $_POST["force"]);
                 $_SESSION["usuario"]->setLastReloadFEStaticData();
