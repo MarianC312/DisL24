@@ -1,7 +1,7 @@
 <?php
     class Usuario{
 
-        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData, $lastReloadFEStaticData, $lastTicketCheck;
+        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData, $lastReloadFEStaticData, $lastTicketCheck = null;
         private $debugTipo = [
             0 => "all",
             1 => "success",
@@ -27,8 +27,7 @@
             $this->debug = $this->debugTipo[$data["debug"]];
             $this->auth = $auth;
             $this->lastReloadStaticData = ($reload) ? $this->lastReloadStaticData : null; 
-            $this->lastReloadFEStaticData = ($reload) ? $this->lastReloadFEStaticData : null; 
-            $this->lastTicketCheck = ($reload) ? $this->lastTicketCheck : Centroayuda::$publicData["ultimaRevision"]; 
+            $this->lastReloadFEStaticData = ($reload) ? $this->lastReloadFEStaticData : null;
         }
 
         function getAuth(){ return $this->auth; }

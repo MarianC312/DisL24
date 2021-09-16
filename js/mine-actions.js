@@ -1247,7 +1247,7 @@ const caTicketTieneNuevaActividad = () => {
                     if (result.data["status"] === true) {
                         if (debug) console.log("caTicketTieneNuevaActividad status true ok");
                         if (result.data["data"]["count"] != null && result.data["data"]["count"] > 0) {
-                            $(".main-left .navbar #mesaAyudaActividad").html(result.data["data"]["count"]).toggleClass('d-none');
+                            $("#left-content .navbar #mesaAyudaActividad").html(result.data["data"]["count"]).toggleClass('d-none');
                             for (key in result.data["data"]["array"]) {
                                 if ($(".ca-container.ca-ticket-container")["length"] > 0 && $(".ca-container.ca-ticket-container")[0]["id"] == result.data["data"]["array"][key]["id"]) {
                                     var ultimaActividad = new Date(result.data["data"]["array"][key]["ultimaActividad"]);

@@ -313,16 +313,14 @@
         public static function menu(){
             Session::iniciar();
             $data = $_SESSION["componente"]["menu"]["data"]; 
-            //$caTicketTieneNuevaActividadResponse = Centroayuda::ticketTieneNuevaActividad();
+            $caTicketTieneNuevaActividadResponse = Centroayuda::ticketTieneNuevaActividad();
             
-            /*
             if($caTicketTieneNuevaActividadResponse["status"] === true){
                 $caTicketActividad = $caTicketTieneNuevaActividadResponse["data"]["count"];
             }else{
                 $caTicketActividad = 0;
-                echo '<script>console.log("'.$caTicketTieneNuevaActividadResponse["mensajeUser"].'. '.$caTicketTieneNuevaActividadResponse["mensajeAdmin"].'")</script>';
+                //echo '<script>console.log("'.$caTicketTieneNuevaActividadResponse["mensajeUser"].'. '.$caTicketTieneNuevaActividadResponse["mensajeAdmin"].'")</script>';
             }
-            */
             $caTicketActividad = 0;
             $opcion = (isset($_SESSION["componente"]["menu"]["opcion"])) ? $_SESSION["componente"]["menu"]["opcion"] : [];
             ?>

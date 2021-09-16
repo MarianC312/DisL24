@@ -57,8 +57,8 @@
             ];
             if(Centroayuda::deberiaRevisarActividad()){
                 Session::iniciar();
-                $ultimaRevision = Centroayuda::getLastTicketCheck();
-                $query = DataBase::select("ticket", "id,ultimaActividad", "estado = 1 AND idOperador = '".$_SESSION["usuario"]->getId()."' AND ultimaActividad > '".((!is_null($ultimaRevision)) ? $ultimaRevision : Date::current())."'", "", Centroayuda::$data["database"]);
+                $ultimaRevision = Centroayuda::getLastTicketCheck(); 
+                $query = DataBase::select("ticket", "id,ultimaActividad", "estado = 1 AND idOperador = '".$_SESSION["usuario"]->getId()."' AND (idOperadorActual != '".$_SESSION["usuario"]->getId()."' AND ultimaActividad > '".((!is_null($ultimaRevision)) ? $ultimaRevision : Date::current())."')", "", Centroayuda::$data["database"]);
                 if($query){
                     Centroayuda::setLastTicketCheck();
                     $data = [];
@@ -394,8 +394,8 @@
                 if($query){
                     $mensaje['tipo'] = 'success';
                     $mensaje['cuerpo'] = 'Se registró tu comentario satisfactoriamente.';
-                    Alert::mensaje($mensaje);
-                    echo '<script>setTimeout(() => { $("'.$data["form"].' #comentario").val("") }, 1750)</script>';
+                    //Alert::mensaje($mensaje);
+                    echo '<script>setTimeout(() => { $("'.$data["form"].' #comentario").val("") }, 1150)</script>';
                 }else{
                     $mensaje['tipo'] = 'danger';
                     $mensaje['cuerpo'] = 'Ocurrió un error al registrar el ticket. <br><b>Intente nuevamente o contacte al administrador.</b>';
@@ -406,7 +406,7 @@
                 $mensaje['cuerpo'] = 'Ocurrió un error con la información recibida. No se registró la consulta. <br><b>Intente nuevamente o contacte al administrador</b>.';
                 Alert::mensaje($mensaje);
             }
-            echo '<script>setTimeout(() => { $("'.$data["process"].'").hide(250); $("'.$data["form"].' #comentario").focus(); caTicketComentarioRecarga('.$data["idTicket"].', "'.Date::current().'") }, 2500)</script>';
+            echo '<script>setTimeout(() => { $("'.$data["process"].'").hide(250); $("'.$data["form"].' #comentario").focus(); caTicketComentarioRecarga('.$data["idTicket"].', "'.Date::current().'") }, 1500)</script>';
         }
 
         private static function ticketComentarioData($idTicket, $fecha = null){
