@@ -13,7 +13,7 @@
 </head> 
 
 <body>
-    <div id="loadProgressContainer" class="ventana-flotante" style="backdrop-filter: blur(10px);">
+    <div id="loadProgressContainer" class="ventana-flotante d-none" style="backdrop-filter: blur(10px);">
         <div class="h1 w-50 font-weight-bold text-light text-uppercase">Estamos cargando los módulos necesarios para comenzar a trabajar, aguarda un momento por favor...</div>
     </div>
     <div id="main-body" class="d-flex">
@@ -30,7 +30,11 @@
             <div id="right-content-data">
                 <?php Componente::inicio(); ?>
             </div>
-            <div id="right-content-producto-data"><?php Compania::productoLista(); ?></div> 
+            <div id="right-content-producto-data">
+                <?php
+                    Compania::productoLista();
+                ?>
+            </div> 
         </div>
     </div>
 </body>

@@ -530,7 +530,7 @@
                                 $totalCredito = 0;
                             }
     
-                            $dataCaja["total"] = round($dataCaja["contado"] + $dataCaja["debito"] + $totalCredito - ($dataCaja["subtotal"] / 100 * $dataCaja["descuento"]), 2); 
+                            $dataCaja["total"] = round($dataCaja["contado"] + $dataCaja["debito"] + $totalCredito, 2); 
     
                             $nComprobante = Compania::facturaIdUltima();
 

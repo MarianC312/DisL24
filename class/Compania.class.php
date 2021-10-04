@@ -1223,16 +1223,16 @@
                                                         ?>
                                                     </tbody>
                                                     <tfoot style="border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; ">
-                                                        <tr style="margin-bottom: 1em; <?php echo ($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4) ? "display: none" : "" ?>">
-                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Subtotal:</td>
+                                                        <tr style="margin-bottom: 1em; <?php echo (($data[$idVenta]["pago"] == 1 && $data[$idVenta]["descuento"] == 0) || $data[$idVenta]["pago"] == 2 || $data[$idVenta]["pago"] == 4) ? "display: none" : "" ?>">
+                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
                                                             <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["subtotal"], 2); ?></td>
                                                         </tr>
                                                         <tr class="margin-bottom: 1em; <?php echo ($data[$idVenta]["descuento"] == 0) ? "d-none" : "" ?>">
                                                             <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Descuento:</td>
-                                                            <td style="padding: 0.215em 0; text-align: right">% <?php echo $data[$idVenta]["descuento"] ?></td>
+                                                            <td style="padding: 0.215em 0; text-align: right">$ <?php echo round(($data[$idVenta]["subtotal"] * ($data[$idVenta]["descuento"] / 100)), 2) ?></td>
                                                         </tr>
                                                         <?php
-                                                            if($data[$idVenta]["pago"] == 1 || $data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 5){
+                                                            if($data[$idVenta]["pago"] == 4 || $data[$idVenta]["pago"] == 5){
                                                                 ?> 
                                                                 <tr>
                                                                     <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Contado:</td>
@@ -1266,8 +1266,8 @@
                                                             }
                                                         ?>
                                                         <tr style="margin-top: 1em; ">
-                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total:</td>
-                                                            <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["total"] - ($data[$idVenta]["subtotal"] / 100 * $data[$idVenta]["descuento"]) - ($data[$idVenta]["subtotal"] / 100 * (($data[$idVenta]["iva"] == 1) ? 0 : 21)), 2) ?></td>
+                                                            <td style="padding: 0.215em 0; text-align: right; font-weight: bold; font-size: 1.15em;" colspan="3">Total a pagar:</td>
+                                                            <td style="padding: 0.215em 0; text-align: right">$ <?php echo round($data[$idVenta]["total"] - ($data[$idVenta]["subtotal"] / 100 * (($data[$idVenta]["iva"] == 1) ? 0 : 21)), 2) ?></td>
                                                         </tr>
                                                     </tfoot>
                                                 </table>

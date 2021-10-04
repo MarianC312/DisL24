@@ -201,7 +201,15 @@
                                             <td><?php echo mb_strtoupper($value["asunto"]) ?></td>
                                             <td><?php echo (!is_null($value["ultimaActividad"])) ? $value["ultimaActividad"] : "Sin actividad" ?></td>
                                             <td><?php echo $estado ?></td>
-                                            <td class="text-right"><button type="button" class="btn btn-sm btn-primary" onclick="caTicketVisualizarFormulario(<?php echo $value['id'] ?>, '<?php echo $hash['hash'] ?>', <?php echo $admin ?>)"><i class="fa fa-long-arrow-right"></i></button></td>
+                                            <td class="text-right">
+                                                <?php
+                                                    if($value["estado"] == 1){
+                                                        ?>
+                                                        <button type="button" class="btn btn-sm btn-primary" onclick="caTicketVisualizarFormulario(<?php echo $value['id'] ?>, '<?php echo $hash['hash'] ?>', <?php echo $admin ?>)"><i class="fa fa-long-arrow-right"></i></button>
+                                                        <?php
+                                                    }
+                                                ?>
+                                            </td>
                                         </tr>
                                         <?php
                                     }

@@ -4,7 +4,7 @@
         public static function FEChunkLoad($chunk = 0, $force){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
-                $limit = 125000;
+                $limit = 60000;
                 $productoCodificadoCantidad = count($_SESSION["lista"]["producto"]["codificado"]);
                 $productoNoCodificadoCantidad = count($_SESSION["lista"]["producto"]["noCodificado"]);
                 $productoCantidadMayor = ($productoCodificadoCantidad >= $productoNoCodificadoCantidad) ? $productoCodificadoCantidad : $productoNoCodificadoCantidad;
@@ -32,26 +32,22 @@
                     if($i <= $productoCantidadMayor){
                         if($i <= $productoCodificadoCantidad){ 
                             if(array_key_exists($i, $_SESSION["lista"]["producto"]["codificado"])){
-                                $data["producto"]["codificado"]["cargado"]++;
-                                $data["producto"]["codificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["codificado"][$i];
-                                $idStock = Sistema::buscarProductoIdEnStock($data["producto"]["codificado"]["lista"][$i]["data"]["id"]);
+                                $idStock = Sistema::buscarProductoIdEnStock($_SESSION["lista"]["producto"]["codificado"][$i]["id"]);
                                 if(is_numeric($idStock) && $idStock >= 0){
-                                    $data["producto"]["codificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock];
-                                }else{
-                                    $data["producto"]["codificado"]["lista"][$i]["stock"] = null;
+                                    $data["producto"]["codificado"]["cargado"]++;
+                                    $data["producto"]["codificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["codificado"][$i]; 
+                                    $data["producto"]["codificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock]; 
                                 }
                             }
                         }
                         if($i <= $productoNoCodificadoCantidad){
                             if(array_key_exists($i, $_SESSION["lista"]["producto"]["noCodificado"])){
-                                $data["producto"]["noCodificado"]["cargado"]++;
-                                $data["producto"]["noCodificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["noCodificado"][$i];
-                                $idStock = Sistema::buscarProductoIdEnStock($data["producto"]["noCodificado"]["lista"][$i]["data"]["id"], "productoNC");
+                                $idStock = Sistema::buscarProductoIdEnStock($_SESSION["lista"]["producto"]["noCodificado"][$i]["id"], "productoNC");
                                 if(is_numeric($idStock) && $idStock >= 0){
-                                    $data["producto"]["noCodificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock];
-                                }else{
-                                    $data["producto"]["noCodificado"]["lista"][$i]["stock"] = null;
-                                }
+                                    $data["producto"]["noCodificado"]["cargado"]++;
+                                    $data["producto"]["noCodificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["noCodificado"][$i];
+                                    $data["producto"]["noCodificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock]; 
+                                } 
                             }
                         }
                     }else{

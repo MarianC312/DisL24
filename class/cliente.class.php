@@ -74,7 +74,7 @@
                         if(is_array($data)){
                             if(count($data) > 0){
                                 switch($formData["filtroOpcion"]){
-                                    case 1:
+                                    default:
                                         ?>
                                         <table id="tabla-clientes" class="table table-hover">
                                             <thead>
@@ -130,9 +130,6 @@
                                             });
                                         </script>
                                         <?php
-                                    break;
-                                    case 2:
-                                        echo '<script>gotoClienteLegajo('.$data[0]["id"].')</script>';
                                     break;
                                 }
                             }else{
@@ -575,7 +572,7 @@
                         switch($data["filtroOpcion"]){
                             case 1:
                                 $nombre = preg_replace( '/[\W]/', '', $data["nombre"]);
-                                $query = DataBase::select("cliente", "id", "nombre LIKE '%".$nombre."%' AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
+                                $query = DataBase::select("cliente", "id", "LOWER(nombre) LIKE LOWER('%".$nombre."%') AND compañia = '".$_SESSION["usuario"]->getCompañia()."'", "");
                             break;
                             case 2:
                                 if(isset($data["documento"]) && is_numeric($data["documento"]) && $data["documento"] > 0){ 
@@ -593,7 +590,7 @@
                             break;
                         }
                         if($query){
-                            return (DataBase::getNumRows($query) == 1) ? true : false;
+                            return (DataBase::getNumRows($query) >= 1) ? true : false;
                         }else{
                             Sistema::debug("error", "cliente.class.php - corroboraExistencia - Error al comprobar la información del cliente. Ref.: ".DataBase::getError());
                         }
