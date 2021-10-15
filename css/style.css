@@ -25,6 +25,8 @@
     --mono-light-blue-2: #034EB6;
     --mono-light-blue-3: #1D76F1;
     --mono-light-blue-4: #4B8FED;
+    --mono-brown-1: #9B4800;
+    --mono-brown-7: #FFAB63;
     --mono-orange-1: #a15412;
     --mono-orange-2: #b86015;
     --mono-orange-3: #cf6c18;
@@ -42,6 +44,7 @@
     --orange-rgb: 229, 120, 27;
     --red-rgb: 229, 27, 35;
     --violet-rgb: 229, 27, 136;
+    --mono-orange-1-rgb: 161, 84, 18;
     --mono-orange-7-rgb: 93, 63, 38;
     --mono-red-5-rgb: 91, 20, 22;
     --mono-red-7-rgb: 93, 38, 40;
@@ -103,6 +106,118 @@
 @font-face {
     font-family: 'Tajawal-Regular';
     src: url('./font/Tajawal-Regular.ttf') format('truetype')
+}
+
+.list-group-item {
+    background-color: inherit;
+    border: 1px solid rgba(0, 0, 0, 0.0525);
+}
+
+.mn-btn-secondary {
+    background-color: var(--mono-brown-1);
+    color: var(--white);
+}
+
+.mn-btn-secondary:hover {
+    background-color: var(--mono-brown-7);
+    color: var(--mono-brown-1);
+}
+
+.cg-noticia-container {
+    display: flex;
+}
+
+.cg-noticia-container .cg-cartel-izquierdo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    background-color: var(--mono-orange-3);
+    color: var(--white);
+}
+
+.cg-noticia-container .cg-carousel-container {
+    background-color: rgba(var(--green-1-rgb), .3);
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-indicators li {
+    background-color: rgba(var(--mono-orange-1-rgb), 0.5);
+    border-radius: 50%;
+    width: 10px;
+    height: 10px;
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-indicators .active {
+    background-color: var(--mono-orange-7);
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-inner img {}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-inner .carousel-item .icon::before {
+    font-family: FontAwesome;
+    content: "\f05a";
+    position: absolute;
+    top: .25rem;
+    right: 1rem;
+    font-size: 2.5rem;
+    color: var(--black-1);
+    opacity: .5;
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-inner .carousel-item .cg-block {
+    width: 45rem;
+    height: 40rem;
+    overflow: hidden;
+    display: block;
+    border: 0px solid var(--black-1);
+}
+
+.cg-noticia-container.small .cg-carousel-container .carousel .carousel-inner .carousel-item .cg-block {
+    width: 29.5rem;
+    height: 28rem;
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-inner .carousel-item .carousel-caption {
+    color: var(--mono-orange-1) !important;
+    top: 0;
+    bottom: 0;
+    text-align: left;
+    left: 0;
+    right: 0;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-controls {
+    position: absolute;
+    width: auto;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cg-noticia-container.small .cg-carousel-container .carousel .carousel-controls {
+    bottom: 2rem;
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-controls .carousel-control-prev,
+.cg-noticia-container .cg-carousel-container .carousel .carousel-controls .carousel-control-next {
+    position: initial;
+    padding: 0.5rem;
+    width: auto;
+    background-color: rgba(var(--orange-rgb), 0.75);
+    margin: 0 .25rem;
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-controls .carousel-control-prev .carousel-control-prev-icon {
+    font-family: FontAwesome;
+    content: "\f053";
+}
+
+.cg-noticia-container .cg-carousel-container .carousel .carousel-controls .carousel-control-prev .carousel-control-next-icon {
+    font-family: FontAwesome;
+    content: "\f054";
 }
 
 .ca-main-header {
@@ -207,6 +322,7 @@ input[type=number] {
     display: flex;
     margin: 0 auto;
     height: 550px;
+    max-width: 100%;
 }
 
 .carousel-caption {
@@ -247,6 +363,14 @@ input[type=number] {
     max-height: 75%;
     overflow: hidden;
     box-shadow: 0 10px 10px -5px var(--black-1);
+}
+
+.ventana-container.small {
+    position: absolute;
+    z-index: 1000;
+    bottom: 1rem;
+    right: 1rem;
+    width: 20rem;
 }
 
 .ventana-header-container {

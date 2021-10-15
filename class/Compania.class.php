@@ -1,5 +1,214 @@
 <?php
     class Compania{ 
+        public static function consultaProductoNuevoActualizado($data){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    Session::iniciar();
+                    if(!isset($_SESSION["productoActualizado"]) || $_SESSION["productoActualizado"] == null || count($_SESSION["productoActualizado"]) == 0){ 
+                        $_SESSION["productoActualizado"] = [
+                            "data" => array_merge(Lista::producto($_SESSION["usuario"]->getLastReloadBaseProducto()), Lista::productoNoCodificado($_SESSION["usuario"]->getLastReloadBaseProducto())),
+                            "stock" => Compania::stockData(null, null, $_SESSION["usuario"]->getLastReloadBaseProducto())
+                        ];
+                    }
+                    if((is_array($_SESSION["productoActualizado"]["data"]) && count($_SESSION["productoActualizado"]["data"]) > 0) || (is_array($_SESSION["productoActualizado"]["stock"]) && count($_SESSION["productoActualizado"]["stock"]) > 0)){ 
+                        if($data["force"] === true || $data["force"] === "true" || $data["venta"] === false || $data["venta"] === "false"){
+                            Sistema::alertaSmall("Actualizando base de productos <span class='ml-2 loader-circle-1'></span>");
+                            if((is_array($_SESSION["productoActualizado"]["data"]) && count($_SESSION["productoActualizado"]["data"]) > 0)){
+                                foreach($_SESSION["productoActualizado"]["data"] AS $key => $value){
+                                    if(array_key_exists($value["id"], $_SESSION["lista"]["producto"][($value["tipo"] == 5) ? "noCodificado" : "codificado"])){
+                                        $producto = $_SESSION["lista"]["producto"][($value["tipo"] == 5) ? "noCodificado" : "codificado"][$value["id"]];
+                                        $codigoBarra = (($value["tipo"] == 5) ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$producto["codigoBarra"]; 
+                                        $_SESSION["lista"]["producto"][($value["tipo"] == 5) ? "noCodificado" : "codificado"][$value["id"]]["nombre"] = $value["nombre"];
+                                        $_SESSION["lista"]["producto"][($value["tipo"] == 5) ? "noCodificado" : "codificado"][$value["id"]]["fechaUpdate"] = $value["fechaUpdate"];
+                                        ?>
+                                        <script>
+                                            var producto = document.querySelector('#right-content-producto-data #companiaProductoLista [data-producto-codigoBarra="<?php echo $codigoBarra ?>"]') 
+                                            if(producto !== null){
+                                                producto.dataset["productoNombre"] = '<?php echo $value["nombre"] ?>';
+                                                producto.dataset["productoFechaupdate"] = '<?php echo $value["fechaUpdate"] ?>';
+                                            }else{
+                                                ventanaAlertaFlotante("Error", "Ocurrió un error al actualizar la lista física de productos. <br>Esto no es un error mayor, antes de comenzar a registrar ventas recargá la web para actualizar la lista física.");
+                                            }
+                                        </script>
+                                        <?php
+                                    }
+                                }
+                            }
+                            if((is_array($_SESSION["productoActualizado"]["stock"]) && count($_SESSION["productoActualizado"]["stock"]) > 0)){
+                                foreach($_SESSION["productoActualizado"]["stock"] AS $key => $value){
+                                    if(is_numeric($value["producto"]) && $value["producto"] > 0){
+                                        $tipo = "codificado";
+                                        $idProducto = $value["producto"];
+                                    }else{
+                                        $tipo = "noCodificado";
+                                        $idProducto = $value["productoNC"];
+                                    }
+                                    if(array_key_exists($idProducto, $_SESSION["lista"]["producto"][$tipo])){
+                                        $producto = $_SESSION["lista"]["producto"][$tipo][$idProducto];
+                                        $codigoBarra = (($tipo == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$producto["codigoBarra"]; 
+                                        ?>
+                                        <script>
+                                            var producto = document.querySelector('#right-content-producto-data #companiaProductoLista [data-producto-codigoBarra="<?php echo $codigoBarra ?>"]') 
+                                            if(producto !== null){
+                                                producto.dataset["stockStock"] = '<?php echo $value["stock"] ?>';
+                                                producto.dataset["stockPrecio"] = '<?php echo $value["precio"] ?>';
+                                                producto.dataset["stockPreciomayorista"] = '<?php echo $value["precioMayorista"] ?>';
+                                                producto.dataset["stockPreciokiosco"] = '<?php echo $value["precioKiosco"] ?>';
+                                                producto.dataset["stockFechamodificacion"] = '<?php echo $value["fechaModificacion"] ?>';
+                                            }else{
+                                                ventanaAlertaFlotante("Error", "Ocurrió un error al actualizar la lista física de productos. <br>Esto no es un error mayor, antes de comenzar a registrar ventas recargá la web para actualizar la lista física.");
+                                            }
+                                        </script>
+                                        <?php
+                                    }else{
+                                        Sistema::alerta("Advertencia", "Encontramos productos para actualizar en tu base física, pero es necesario que recargues la web con F5. <br><br>Enviá una captura al administrador para corregir este inconveniente.");
+                                    }
+                                }
+                            }
+                            unset($_SESSION["productoActualizado"]["data"]);
+                            unset($_SESSION["productoActualizado"]["stock"]);
+                            $_SESSION["usuario"]->setLastReloadBaseProducto();
+                            echo '<script>
+                                setTimeout(() => { 
+                                    $("#menu-stock-recarga-badge").html("0").addClass("d-none");
+                                }, 350);
+                            </script>';
+                        }else{ 
+                            $cantidad = count($_SESSION["productoActualizado"]["data"]) + count($_SESSION["productoActualizado"]["stock"]);
+                            ?>
+                            <script>
+                                console.log("En venta");
+                                var cantidad = parseInt(<?php echo $cantidad ?>);
+                                console.log(cantidad + " productos por actualizar.");
+                                setTimeout(() => { 
+                                    if(cantidad > 0){
+                                        $("#menu-stock-recarga-badge").html(cantidad).removeClass("d-none");
+                                    }else{
+                                        $("#menu-stock-recarga-badge").html(cantidad).addClass("d-none");
+                                    }
+                                }, 350);
+                            </script>
+                            <?php
+                            if($data["alerta"] === true || $data["alerta"] === "true") Sistema::alerta("Advertencia", "Tenés ".$cantidad." productos por actualizar pero es necesario que termines o cierres la venta antes de continuar.");
+                        }
+                    }else{
+                        unset($_SESSION["productoActualizado"]["data"]);
+                        unset($_SESSION["productoActualizado"]["stock"]);
+                        echo '<script>console.log("Sin productos para actualizar.")</script>';
+                        if($data["alerta"] === true || $data["alerta"] === "true") Sistema::alerta("Advertencia", "No tenes productos o stock para actualizar.");
+                    }
+                }else{
+                    Sistema::alerta("Error", "Al recibir la información necesaria para consultar la actualización del stock. <br>Contacte al administrador...");
+                }
+            }else{
+                Sistema::debug('Error', 'Compania > consultaProductoNuevoActualizado - Usuario no logueado.');
+            }
+        }
+
+        public static function stockEditar($data){
+            if(Sistema::usuarioLogueado()){
+                if(isset($data) && is_array($data) && count($data) > 0){
+                    if($data["idProducto"] === $data["idProducto2"]){ 
+                        if($data["idStock"] === $data["idStock2"]){
+                            Session::iniciar();
+                            if(array_key_exists($data["idProducto"], $_SESSION["lista"]["producto"][$data["tipo"]])){
+                                $producto = $_SESSION["lista"]["producto"][$data["tipo"]][$data["idProducto"]];
+                                if(($data["tipo"] == "codificado" && $producto["codigoBarra"] === $data["codigoBarra"]) || ($data["tipo"] == "noCodificado" && "PFC-".$_SESSION["usuario"]->getCompañia()."-".$producto["codigoBarra"] === $data["codigoBarra"])){
+                                    if(array_key_exists($data["idStock"], $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"])){
+                                        $stock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]];
+                                        if($data["idProducto"] === $stock[($data["tipo"] == "codificado") ? "producto" : "productoNC"]){
+                                            if($data["nombre"] != $producto["nombre"]){
+                                                switch($data["tipo"]){
+                                                    case "codificado":
+                                                        $query = DataBase::update("producto", "nombre = '".$data["nombre"]."', operador = '".$_SESSION["usuario"]->getId()."', revision = 1", "id = '".$data["idProducto"]."' && codigoBarra = '".$data["codigoBarra"]."' && estado = 1");
+                                                        break;
+                                                    case "noCodificado":
+                                                        $codigo = explode("-", $data["codigoBarra"]);
+                                                        $query = DataBase::update("compañia_producto", "nombre = '".$data["nombre"]."', operador = '".$_SESSION["usuario"]->getId()."'", "id = '".$data["idProducto"]."' && codigoBarra = '".$codigo[count($codigo) - 1]."' && compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                                        break;
+                                                }
+                                                if($query){
+                                                    $_SESSION["lista"]["producto"][$data["tipo"]][$data["idProducto"]]["nombre"] = $data["nombre"];
+                                                    $_SESSION["lista"]["producto"][$data["tipo"]][$data["idProducto"]]["fechaUpdate"] = Date::current();
+                                                    if($data["stock"] == $stock["stock"] && $data["precio"] == $stock["precio"] && $data["precioMayorista"] == $stock["precioMayorista"] && $data["precioKiosco"] == $stock["precioKiosco"]){
+                                                        ?>
+                                                        <script>
+                                                            var producto = document.querySelector('#right-content-producto-data #companiaProductoLista [data-producto-codigoBarra="<?php echo $data["codigoBarra"] ?>"]') 
+                                                            if(producto !== null){
+                                                                producto.dataset["productoNombre"] = '<?php echo $data["nombre"] ?>';
+                                                                producto.dataset["productoFechaupdate"] = '<?php echo Date::current() ?>';
+                                                            }else{
+                                                                ventanaAlertaFlotante("Error", "Ocurrió un error al actualizar la lista física de productos. <br>Esto no es un error mayor, antes de comenzar a registrar ventas recargá la web para actualizar la lista física.");
+                                                            }
+                                                        </script>
+                                                        <?php
+                                                        Sistema::alerta("Satisfactorio", "Se actualizó toda la información del producto satisfactoriamente.", "$('#buscador-input').val('').focus()"); 
+                                                    }
+                                                }else{
+                                                    Sistema::alerta("Error", "Ocurrió un error al modificar el nombre del producto. Intente nuevamente o contacte al administrador. <br><br> Ref.: ".DataBase::getError());
+                                                }
+                                            }
+                                            if($data["stock"] != $stock["stock"] || $data["precio"] != $stock["precio"] || $data["precioMayorista"] != $stock["precioMayorista"] || $data["precioKiosco"] != $stock["precioKiosco"]){
+                                                $productoStockColumna = ($data["tipo"] == "codificado") ? "producto" : "productoNC";
+                                                $query = DataBase::update("producto_stock", "stock = '".$data["stock"]."', precio = '".$data["precio"]."', precioMayorista = '".$data["precioMayorista"]."', precioKiosco = '".$data["precioKiosco"]."'", "id = '".$data["idStock"]."' && ".$productoStockColumna." = '".$data["idProducto"]."' && compañia = '".$_SESSION["usuario"]->getCompañia()."'");
+                                                if($query){
+                                                    $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]]["stock"] = $data["stock"];
+                                                    $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]]["precio"] = $data["precio"];
+                                                    $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]]["precioMayorista"] = $data["precioMayorista"];
+                                                    $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]]["precioKiosco"] = $data["precioKiosco"];
+                                                    $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]]["fechaModificacion"] = Date::current();
+
+                                                    ?>
+                                                    <script>
+                                                        var producto = document.querySelector('#right-content-producto-data #companiaProductoLista [data-producto-codigoBarra="<?php echo $data["codigoBarra"] ?>"]') 
+                                                        if(producto !== null){
+                                                            producto.dataset["productoNombre"] = '<?php echo $data["nombre"] ?>';
+                                                            producto.dataset["productoFechaupdate"] = '<?php echo Date::current() ?>';
+                                                            producto.dataset["stockStock"] = '<?php echo $data["stock"] ?>';
+                                                            producto.dataset["stockPrecio"] = '<?php echo $data["precio"] ?>';
+                                                            producto.dataset["stockPreciomayorista"] = '<?php echo $data["precioMayorista"] ?>';
+                                                            producto.dataset["stockPreciokiosco"] = '<?php echo $data["precioKiosco"] ?>';
+                                                            producto.dataset["stockFechamodificacion"] = '<?php echo Date::current() ?>';
+                                                        }else{
+                                                            ventanaAlertaFlotante("Error", "Ocurrió un error al actualizar la lista física de productos. <br>Esto no es un error mayor, antes de comenzar a registrar ventas recargá la web para actualizar la lista física.");
+                                                        }
+                                                    </script>
+                                                    <?php 
+                                                    Sistema::alerta("Satisfactorio", "Se actualizó toda la información del producto y stock satisfactoriamente.", "$('#buscador-input').val('').focus()");
+                                                }else{
+                                                    Sistema::alerta("Error", "Ocurrió un error al modificar la información de stock del producto. Intente nuevamente o contacte al administrador. <br><br> Ref.: ".DataBase::getError());
+                                                }
+                                            }else{
+                                                if($data["nombre"] == $producto["nombre"]){
+                                                    Sistema::alerta("Advertencia", "Cambia al menos algún dato del formulario para realizar la actualización en tus productos y stock.", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                                                }
+                                            }
+                                        }else{
+                                            Sistema::alerta("Error", "El identificador del producto recibido no concuerda con el de stock de la base de la compañía. Contacte al administrador.", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                                        }
+                                    }else{
+                                        Sistema::alerta("Error", "No se encontró el producto en la base de stock de productos de la compañía. Intente nuevamente o contacte al administrador.", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                                    }
+                                }else{
+                                    Sistema::alerta("Error", "No se pudieron comprobar los datos del producto en la base de productos existente. Contacte al administrador...", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                                }
+                            }else{
+                                Sistema::alerta("Error", "No se encontró el producto en la base de productos de la compañía. Intente nuevamente o contacte al administrador.", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                            }
+                        }else{
+                            Sistema::alerta("Advertencia", "No se pudo comprobar el identificador de stock del producto. Intente nuevamente...", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                        }
+                    }else{
+                        Sistema::alerta("Advertencia", "No se pudo comprobar el identificador del producto. Intente nuevamente...", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                    }
+                }else{
+                    Sistema::alerta("Error", "Ocurrió un error con la información recibida. Intente nuevamente, si el problema persiste, contacte al administrador...", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                }
+            }else{
+                Sistema::debug('error', 'compania.class.php - stockEditar - Usuario no logueado.');
+            }
+        }
+
         public static function facturaImpagaData($compañia = null){
             if(Sistema::usuarioLogueado()){
                 $idCompañia = (is_numeric($compañia) && $compañia > 0) ? $compañia : $_SESSION["usuario"]->getCompañia();
@@ -2043,6 +2252,7 @@
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();
                 $data = Compania::stockData();
+                Alert::feature(2);
                 ?>
                 <div class="mine-container">
                     <div class="d-flex justify-content-between">
@@ -2057,6 +2267,7 @@
                         $(document).ready(function(){
                             $("#buscador-input").on("keyup", 
                                 function(){
+                                    return;
                                     $("#tabla-producto-inventario #loading").removeClass("d-none");
                                     $("#tabla-producto-inventario").find("tbody tr").css({display: "none"}); 
                                     $("#tabla-producto-inventario #not-found").addClass("d-none");
@@ -2094,8 +2305,13 @@
                         </div>
                     </div>
 
-                    <div class="p-1 w-100 mh-50 overflow-auto"> 
-                        <table id="tabla-producto-inventario" class="table table-hover">
+                    <div id="stock-producto"> 
+                        
+                    </div>
+
+
+                    <div class="p-1 w-100 mh-50 overflow-auto d-none"> <!-- Tabla vieja, cancelada -->
+                        <table id="tabla-producto-inventario" class="table table-hover d-none">
                             <thead>
                                 <tr>
                                     <th id="tag-codigo" scope="col">Código</th>
@@ -2112,7 +2328,7 @@
                             </thead>
                             <tbody>
                                 <?php
-                                    if(is_array($data)){
+                                    if(is_array($data) && false){
                                         if(count($data) > 0){
                                             $producto = $_SESSION["lista"]["producto"];
                                             $productoTipo = $_SESSION["lista"]["producto"]["tipo"];
@@ -2230,6 +2446,7 @@
                             </tfoot>
                         </table>
                     </div>
+
                     <script> 
                         $(document).ready(function() {
                             $('td a').on('click', (e) => {
@@ -2325,6 +2542,30 @@
                                 allowHTML: true
                             });
                             $("#buscador-input").focus();
+                            $("#buscador-input").on("keydown", (e) => {
+                                let keycode = (e.keyCode ? e.keyCode : e.which);
+                                let barcode = $("#buscador-input").val();
+                                let strokes = [96,97,98,99,100,101,102,103,104,105];
+                                switch(keycode){
+                                    case 45:
+                                        $("#buscador-input").val("PFC-<?php echo $_SESSION["usuario"]->getCompañia() ?>-").focus();    
+                                    break;
+                                    case 13:
+                                        if(barcode.length > 0){
+                                            stockProductoAgregarInput("stock-producto", barcode);
+                                        }else{
+                                            ventanaAlertaFlotante("Advertencia", "Debés ingresar algún valor para buscar...", $("#producto").focus());
+                                        }
+                                    break;
+                                    case 17:
+                                        e.preventDefault();
+                                        break;
+                                    case 46: 
+                                        e.preventDefault();
+                                        $("#buscador-input").val("").focus();
+                                    break;
+                                } 
+                            });
                             $("#tabla-producto-inventario #loading").addClass("d-none");
                             $("#tabla-producto-inventario #not-found").addClass("d-none");
                             $("#tabla-producto-inventario #go-find").removeClass("d-none");
@@ -2459,6 +2700,7 @@
             $producto = Producto::FEChunkLoad(0, true);
             if(is_array($producto)){ 
                 Session::iniciar();
+                $_SESSION["usuario"]->setLastReloadBaseProducto();
                 if($_SESSION["usuario"]->isAdmin()){
                     
                 }

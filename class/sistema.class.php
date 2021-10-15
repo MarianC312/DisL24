@@ -10,7 +10,7 @@
         private static $key2 = "ry.E40c*&mEsKft3rECgu¡$"; 
         private static $prime = [2,3,5,7,11,13,17,19];
 
-        public static $version = "Beta-1.213.662a";
+        public static $version = "Beta-1.223.741a";
 
         public static function mesaDeAyuda(){
             ?>
@@ -80,6 +80,60 @@
             }
             return $data;
         }
+
+        public static function alertaSmall($contenido = null, $callback = null){
+            $hash = Sistema::hash(rand(0,100));
+            ?>
+            <div class="ventana-container small" id="<?php echo $hash["hash"]; ?>">
+                <div class="ventana-body-container">
+                    <span class="d-flex justify-content-center align-items-center">
+                        <?php
+                            if(is_array($contenido)){
+                                echo '<pre>';
+                                print_r($contenido);
+                                echo '</pre>';
+                            }else{
+                                print_r($contenido);
+                            }
+                        ?>
+                    </span>
+                </div>
+                <script>
+                    setTimeout(() => {
+                        
+                        setTimeout(() => { $('#<?php echo $hash['hash'] ?>').remove(); }, 750)
+                        setTimeout(() => { <?php echo $callback ?> }, 350)
+                    }, 2500)
+                </script>
+            </div>
+            <?php
+        } 
+
+        public static function alertaLimpia($contenido = null, $callback = null){
+            $hash = Sistema::hash(rand(0,100));
+            ?>
+            <div class="ventana-flotante" id="<?php echo $hash["hash"]; ?>">
+                <div class="ventana-container">
+                    <div class="ventana-body-container">
+                        <span class="ventana-body-span">
+                            <?php
+                                if(is_array($contenido)){
+                                    echo '<pre>';
+                                    print_r($contenido);
+                                    echo '</pre>';
+                                }else{
+                                    print_r($contenido);
+                                }
+                            ?>
+                        </span>
+                        <div class="d-flex p-1 justify-content-end">
+                            <button type="button" onclick="$('#<?php echo $hash['hash'] ?>').remove(); setTimeout(() => { <?php echo $callback ?> }, 350)" class="btn btn-primary">Aceptar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <?php
+        } 
 
         public static function alerta($titulo = "Advertencia!", $contenido = null, $callback = null){
             $hash = Sistema::hash(rand(0,100));

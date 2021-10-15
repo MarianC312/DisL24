@@ -348,6 +348,7 @@
                                                     <div class="d-flex flex-column ml-3"> 
                                                         <a href="#/" onclick="ventaRegistrarFormulario()" class="nav-item nav-link"><i class="fa fa-plus"></i> Nueva Venta</a>
                                                         <a href="#/" onclick="cajaGestion()" class="nav-item nav-link"><i class="fa fa-money" aria-hidden="true"></i> Caja</a>
+                                                        <a href="#/" onclick="sistemaConsultaProductoNuevoActualizado(false, true)" class="nav-item nav-link d-flex justify-content-between align-items-center"><span><i class="fa fa-refresh" aria-hidden="true"></i> Recargar stock</span> <span id="menu-stock-recarga-badge" class="badge badge-pill badge-primary d-none">0</span></a>
                                                         <?php
                                                             if($_SESSION["usuario"]->isAdmin() || $_SESSION["usuario"]->getRol() == 1){
                                                                 ?>

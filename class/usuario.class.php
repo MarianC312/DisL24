@@ -1,7 +1,7 @@
 <?php
     class Usuario{
 
-        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData, $lastReloadFEStaticData, $lastTicketCheck = null;
+        private $id, $nombre, $compañia, $sucursal, $rol, $email, $estado, $admin = false, $actividadJornada, $actividadCaja, $actividadFechaInicio, $actividadFechaFin, $debug = false, $auth = false, $lastReloadStaticData, $lastReloadFEStaticData, $lastTicketCheck = null, $lastReloadBaseProducto = null, $shouldReloadBaseProducto = false;
         private $debugTipo = [
             0 => "all",
             1 => "success",
@@ -28,6 +28,8 @@
             $this->auth = $auth;
             $this->lastReloadStaticData = ($reload) ? $this->lastReloadStaticData : null; 
             $this->lastReloadFEStaticData = ($reload) ? $this->lastReloadFEStaticData : null;
+            $this->shouldReloadBaseProducto = ($reload) ? $this->shouldReloadBaseProducto : false;
+            $this->lastReloadBaseProducto = ($reload) ? $this->lastReloadBaseProducto : null;
         }
 
         function getAuth(){ return $this->auth; }
@@ -45,6 +47,8 @@
         function getLastReloadStaticData(){ return $this->lastReloadStaticData; }
         function getLastReloadFEStaticData(){ return $this->lastReloadFEStaticData; }
         function getLastTicketCheck(){ return $this->lastTicketCheck; }
+        function getLastReloadBaseProducto(){ return $this->lastReloadBaseProducto; }
+        function getShouldReloadBaseProducto(){ return $this->shouldReloadBaseProducto; }
         function getCajaData(){
             $this->setDataActividadCaja();
             return [
@@ -65,6 +69,8 @@
         function setLastReloadStaticData(){ $this->lastReloadStaticData = Date::current(); }
         function setLastReloadFEStaticData(){ $this->lastReloadFEStaticData = Date::current(); }
         function setLastTicketCheck(){ $this->lastTicketCheck = Date::current(); }
+        function setLastReloadBaseProducto(){ $this->lastReloadBaseProducto = Date::current(); }
+        function setShouldReloadBaseProducto($estado){ $this->shouldReloadBaseProducto = $estado; }
 
         function shouldReloadStaticData(){
             $date1 = $this->getLastReloadStaticData();

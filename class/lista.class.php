@@ -121,8 +121,8 @@
             $fechaUpdateQuery = (!is_null($fechaUpdate)) ? " AND fechaUpdate IS NOT NULL AND fechaUpdate >= '".$fechaUpdate."'" : "";
             $query = DataBase::select("producto", "*", "estado = 1".$fechaUpdateQuery, "ORDER BY nombre ASC");
             if($query){
+                $data = [];
                 if(DataBase::getNumRows($query) > 0){
-                    $data = [];
                     while($dataQuery = DataBase::getArray($query)){
                         $data[$dataQuery["id"]] = $dataQuery;
                     }
@@ -133,10 +133,32 @@
                             }
                         }
                     }
-                    return $data;
-                }else{
-                    return 0;
                 }
+                return $data;
+            }else{
+                return false;
+            }
+        } 
+
+        public static function productoNoCodificado($fechaUpdate = null){
+            Session::iniciar();
+            $fechaUpdateQuery = (!is_null($fechaUpdate)) ? " AND fechaUpdate IS NOT NULL AND fechaUpdate >= '".$fechaUpdate."'" : "";
+            $query = DataBase::select("compañia_producto", "*", "estado = 1 AND compañia = '".$_SESSION["usuario"]->getCompañia()."'".$fechaUpdateQuery, "ORDER BY nombre ASC");
+            if($query){
+                $data = [];
+                if(DataBase::getNumRows($query) > 0){
+                    while($dataQuery = DataBase::getArray($query)){
+                        $data[$dataQuery["id"]] = $dataQuery;
+                    }
+                    foreach($data AS $key => $value){
+                        foreach($value AS $iKey => $iValue){
+                            if(is_int($iKey)){
+                                unset($data[$key][$iKey]);
+                            }
+                        }
+                    }
+                }
+                return $data;
             }else{
                 return false;
             }

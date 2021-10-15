@@ -442,7 +442,6 @@
         public static function registrar($data){
             if(Sistema::usuarioLogueado()){
                 //echo '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>'; 
-
                 if(isset($data) && is_array($data) && count($data) > 0){
                     Session::iniciar();
                     if(Caja::corroboraAcceso($data["idCaja"]) || (isset($data["pedido"]) && $data["pedido"] == 1 && $data["idCaja"] == 0)){
@@ -473,6 +472,7 @@
                             $dataCaja["productoCantidad"] = "";
                             $dataCaja["productoPrecio"] = "";
                             foreach($data["producto-identificador"] AS $key => $value){ 
+                                $codigoBarra = $_SESSION["lista"]["producto"][$data["producto-tipo"][$key]][$data["producto-identificador-producto"][$key]]["codigoBarra"];
                                 $dataProducto[$key]["id"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value][(($data["producto-tipo"][$key] == "codificado") ? "producto" : "productoNC")];
                                 $dataProducto[$key]["idStock"] = ($value == 0) ? null : $value;
                                 $dataProducto[$key]["stock"] = ($value == 0) ? null : $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["stock"];
@@ -487,7 +487,7 @@
                                     && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioMayorista"]
                                     && $dataProducto[$key]["precio"] != $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioKiosco"]){
                                         $mensaje['tipo'] = 'warning';
-                                        $mensaje['cuerpo'] = 'El precio del producto '.$dataProducto[$key]["nombre"].' no coincide con los registrados en stock. Corrobore los datos antes de continuar...';
+                                        $mensaje['cuerpo'] = 'El precio del producto '.$dataProducto[$key]["nombre"].' código de barra <b>['.(($data["producto-tipo"][$key] == "noCodificado") ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$codigoBarra.']</b> no coincide con los registrados en stock. <br>Corroborá los datos, podés retirar el producto y pasarlo nuevamente con el precio actualizado...';
                                         $mensaje['cuerpo'] .= '<div class="d-block p-2"><button onclick="$(\''.$data['form'].'\').show(350);$(\''.$data['process'].'\').hide(350);" class="btn btn-warning">Regresar</button></div>';
                                         Alert::mensaje($mensaje);
                                         echo $dataProducto[$key]["precio"]."<br>pmi = ".$_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precio"]."<br>pma = ".$_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioMayorista"]."<br>pk = ".$_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$value]["precioKiosco"];
@@ -1476,7 +1476,7 @@
 
                         function ventaProductoRegistro(productoBuscado){ 
                             setTimeout(() => { 
-                                let pos = ventaProductoAgregarInput("lista-productos", productoBuscado);
+                                let pos = ventaProductoAgregarInput("lista-productos", productoBuscado, null, 0, <?php echo $_SESSION["usuario"]->getSucursal() ?>, <?php echo $_SESSION["usuario"]->getCompañia() ?>);
                                 cajaCalculaTotalBruto(); 
                                 $("#container-producto #producto").val("");
                                 //$("#container-producto-lista").find("li").css({display: "none"});
@@ -1487,7 +1487,7 @@
                             let producto = $("#container-producto-no-codificado #descripcion").val();
                             let precio = $("#container-producto-no-codificado #precio").val(); 
                             setTimeout(() => { 
-                                let pos = ventaProductoAgregarInput("lista-productos", null, producto, precio);
+                                let pos = ventaProductoAgregarInput("lista-productos", null, producto, precio, <?php echo $_SESSION["usuario"]->getSucursal() ?>, <?php echo $_SESSION["usuario"]->getCompañia() ?>);
                                 cajaCalculaTotalBruto(); 
                             }, 550);
                         }
