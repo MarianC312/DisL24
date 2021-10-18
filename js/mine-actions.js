@@ -608,13 +608,15 @@ function ventaProductoAgregarInput(idParent, productoBuscado, productoNombre = n
     input1.max = producto.stock.stock;
     input1.min = 0;
     input1.value = 1;
-    input1.onchange = () => {
-        cajaCalculaProductoPrecioBruto(cantidad, producto.data.id);
-        cajaCalculaTotalBruto();
-        cajaCalculaTotal();
-    }
     input1.onkeyup = (e) => {
-        //console.log(e.keyCode);
+        /*
+        console.log(e.keyCode);
+        console.log(e.key);
+        console.log(typeof e.key);
+        console.log(isNaN(e.key));
+        console.log(isNaN(parseInt(e.key)));
+        */
+        console.log(e.currentTarget.id);
         //cajaCalculaProductoPrecioBruto(cantidad, producto.data.id);
         if ((document.activeElement === document.getElementById(e.currentTarget.id))) {
             var keycode = (e.keyCode ? e.keyCode : e.which);
@@ -625,9 +627,9 @@ function ventaProductoAgregarInput(idParent, productoBuscado, productoNombre = n
                     $("#tipoProducto").prop("checked", true);
                     ventaRegistrarFormularioUpdatetipoProducto();
                 }
-            } else if (keycode == '32') {
-                ventaRegistrar();
-            } else if (!isNaN(e.key)) {
+                return;
+            }
+            if (!isNaN(parseInt(e.key))) {
                 let inputVal = parseInt(e.currentTarget.value),
                     min = 0,
                     max = producto.stock.stock;
@@ -645,7 +647,19 @@ function ventaProductoAgregarInput(idParent, productoBuscado, productoNombre = n
                 }
                 $('#producto-' + cantidad + '-' + producto.data.id + '-total-bruto').html(totalBruto);
                 setTimeout(cajaCalculaTotalBruto(), 1000);
+            } else {
+                $("#" + e.currentTarget.id).val(1)
+                alert("El valor ingresado en la cantidad del producto es incorrecto. 0 (cero) es el valor mínimo.");
             }
+            setTimeout(() => {
+                cajaCalculaProductoPrecioBruto(cantidad, producto.data.id);
+                setTimeout(() => {
+                    cajaCalculaTotalBruto();
+                    setTimeout(() => {
+                        cajaCalculaTotal();
+                    }, 350);
+                }, 350);
+            }, 350);
         } else {
             //console.log(document.activeElement);
             //console.log(document.getElementById(e.currentTarget.id));

@@ -10,7 +10,7 @@
         private static $key2 = "ry.E40c*&mEsKft3rECgu¡$"; 
         private static $prime = [2,3,5,7,11,13,17,19];
 
-        public static $version = "Beta-1.223.741a";
+        public static $version = "Beta-1.224.742a";
 
         public static function mesaDeAyuda(){
             ?>
