@@ -374,6 +374,7 @@
                                                 <div class="collapse w-100 <?php echo (isset($opcion["producto-collapse"]) && $opcion["producto-collapse"]) ? 'show bg-main' : ''; ?>" id="producto-collapse">
                                                     <div class="d-flex flex-column ml-3">
                                                         <a href="#/" onclick="compañiaStock()" class="nav-item nav-link"><i class="fa fa-truck"></i> Mi stock</a>
+                                                        <a href="#/" onclick="compañiaProductoHistorial()" class="nav-item nav-link new"><i class="fa fa-history"></i> Historial</a>
                                                         <a href="#/" onclick="compañiaSucursalPedido()" class="nav-item nav-link"><i class="fa fa-cart-plus"></i> Pedidos</a>
                                                     </div>
                                                 </div>

@@ -920,6 +920,26 @@ body {
     border-bottom: var(--gray) 0.5px groove;
 }
 
+.main-menu nav .nav-link {
+    position: relative;
+}
+
+.new::after {
+    content: "Nuevo!";
+    margin-left: 0.5rem;
+    position: absolute;
+    top: 0;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--mono-red-5);
+}
+
+.table td.fit,
+.table th.fit {
+    white-space: nowrap;
+    width: 1%;
+}
+
 .navbar-light .navbar-nav .nav-link {
     color: var(--black);
 }

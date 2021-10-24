@@ -1,6 +1,49 @@
 <?php
     class Producto{
 
+        public static function historial($idProducto, $tipo = "codificado"){ 
+            $response = [
+                "status" => false,
+                "mensajeUser" => "",
+                "mensajeAdmin" => "",
+                "dependencia" => "Producto / historial",
+                "data" => [
+                    "array" => null,
+                    "count" => null
+                ]
+            ];
+            if(Sistema::usuarioLogueado()){
+                if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
+                    $query = DataBase::select("sistema_snapshot_producto_stock", "*", (($tipo == "codificado") ? "producto" : "productoNC")." = '".$idProducto."'", "ORDER BY fechaModificacion DESC");
+                    if($query){
+                        $response["status"] = true;
+                        $data = [];
+                        if(DataBase::getNumRows($query) > 0){
+                            while($dataQuery = DataBase::getArray($query)){
+                                $data[] = $dataQuery;
+                            }
+                            foreach($data AS $key => $value){
+                                foreach($value AS $iKey => $iValue){
+                                    if(is_int($iKey)){
+                                        unset($data[$key][$iKey]);
+                                    }
+                                }
+                            }
+                        }
+                        $response["data"]["array"] = $data;
+                    }else{
+                        $response["mensajeUser"] = "Ocurrió un error al consultar el historial del producto.";
+                        $response["mensajeAdmin"] = "<b>Ref.:</b> ".DataBase::getError();
+                    }
+                }else{
+                    $response["mensajeUser"] = "El identificador del producto tiene un valor incorrecto o nulo. <b>Intente nuevamente o contacte al administrador.</b>";
+                }
+            }else{
+                $response["mensajeUser"] = "Debe estar logueado para ingresar a esta sección.";
+            }
+            return $response;
+        }
+
         public static function FEChunkLoad($chunk = 0, $force){
             if(Sistema::usuarioLogueado()){
                 Session::iniciar();

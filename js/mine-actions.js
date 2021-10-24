@@ -71,7 +71,7 @@ let cart = [],
     }, (30 * 60 * 1000)), // 30min,
     alertaBaseProductoNuevoActualizado = setInterval(() => {
         sistemaConsultaProductoNuevoActualizado();
-    }, (15 * 60 * 1000)), // 15 min
+    }, (1 * 60 * 1000)), // 15 min
     baseProducto = {
         estado: "no cargado",
         fechaUpdate: null,
@@ -1548,6 +1548,7 @@ const compañiaStockEditarFormularioRegistro = (idProducto, idStock) => {
 }
 
 const sistemaConsultaProductoNuevoActualizado = (force = false, alerta = false) => {
+    console.log("Sistema: consultando base de productos actualizados.");
     let divProcess = "#right-content-alerts";
     let divForm = "";
     $.ajax({
@@ -2011,6 +2012,98 @@ const requestLogout = () => {
             $(divProcess).show(350);
         },
         data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaProductoHistorial = () => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-data";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "includes/compania/producto-historial.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+            $(divProcess).html(loading());
+        },
+        data: {},
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            setTimeout(function() {
+                $(divProcess).hide().html(data).fadeIn("slow");
+            }, 1000);
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
+const compañiaProductoHistorialFormulario = (div = "#right-content-data", codigoBarra) => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    productoEncontrado = document.querySelector("#companiaProductoLista li[data-producto-codigoBarra='" + codigoBarra + "']");
+    console.log(productoEncontrado);
+    producto = [];
+    if (productoEncontrado != null) {
+        producto = {
+                data: {
+                    id: productoEncontrado.dataset.productoId,
+                    nombre: productoEncontrado.dataset.productoNombre,
+                    codigoBarra: productoEncontrado.dataset.productoCodigobarra,
+                    fechaUpdate: productoEncontrado.dataset.productoFechaupdate
+                },
+                stock: {
+                    id: productoEncontrado.dataset.stockId,
+                    productoId: productoEncontrado.dataset.stockProductoid,
+                    productoNCId: productoEncontrado.dataset.stockProductoncid,
+                    stock: productoEncontrado.dataset.stockStock,
+                    precio: productoEncontrado.dataset.stockPrecio,
+                    precioMayorista: productoEncontrado.dataset.stockPreciomayorista,
+                    precioKiosco: productoEncontrado.dataset.stockPreciokiosco,
+                    operador: productoEncontrado.dataset.stockOperador,
+                    fechaModificacion: productoEncontrado.dataset.stockFechamodificacion
+                }
+            }
+            //producto = (productoBuscado.substring(0, 3) == "PFC") ? baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].noCodificado.lista[productoEncontrado[0]] : baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].codificado.lista[productoEncontrado[0]];
+    } else {
+        ventanaAlertaFlotante("Advertencia!", "El producto no se encontró en la base de productos.");
+        return;
+    }
+    let divProcess = div;
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "engine/compania/producto-historial-formulario.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divForm).hide(350);
+            $(divProcess).show(350);
+            $(divProcess).html(loading());
+        },
+        data: { codigoBarra, codigoBarra, producto: producto },
         complete: function() {
             me.data('requestRunning', false);
         },

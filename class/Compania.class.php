@@ -1,5 +1,139 @@
 <?php
     class Compania{ 
+        public static function productoHistorialFormulario($codigoBarra, $producto){
+            if(Sistema::usuarioLogueado()){
+                if(isset($codigoBarra) && !is_null($codigoBarra) && strlen($codigoBarra) > 0){
+                    Session::iniciar();
+                    $productoHistorialResponse = Producto::historial($producto["data"]["id"], ((strpos($codigoBarra, "PFC") !== false) ? "noCodificado" : "codificado"));
+                    if($productoHistorialResponse["status"] === true){ 
+                        ?>
+                        <table id="producto-historial" class="table table-hover w-100">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Producto</th>
+                                    <th scope="col">Código</th>
+                                    <th class="fit" scope="col">Stock</th>
+                                    <th class="fit" scope="col">Precio</th>
+                                    <th class="fit" scope="col">Precio Mayorista</th>
+                                    <th class="fit" scope="col">Precio Kiosco</th>
+                                    <th scope="col">Operador</th>
+                                    <th class="fit" scope="col">Fecha y Hora</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td scope="row"><?php echo $producto["data"]["nombre"] ?></td>
+                                    <td><?php echo $producto["data"]["codigoBarra"] ?></td>
+                                    <td><?php echo $producto["stock"]["stock"] ?></td>
+                                    <td>$ <?php echo $producto["stock"]["precio"] ?></td>
+                                    <td>$ <?php echo $producto["stock"]["precioMayorista"] ?></td>
+                                    <td>$ <?php echo $producto["stock"]["precioKiosco"] ?></td>
+                                    <td><?php echo $_SESSION["lista"]["operador"][$producto["stock"]["operador"]]["nombre"] ?></td>
+                                    <td><?php echo date("d/m/Y, H:i A", strtotime($producto["stock"]["fechaModificacion"])) ?></td>
+                                </tr>
+                                <?php
+                                    if(count($productoHistorialResponse["data"]["array"]) > 0){
+                                        foreach($productoHistorialResponse["data"]["array"] AS $key => $value){
+                                            ?>
+                                            <tr>
+                                                <td scope="row"><?php echo $producto["data"]["nombre"] ?></td>
+                                                <td><?php echo $producto["data"]["codigoBarra"] ?></td>
+                                                <td class="fit"><?php echo $value["stock"] ?></td>
+                                                <td class="fit">$ <?php echo $value["precio"] ?></td>
+                                                <td class="fit">$ <?php echo $value["precioMayorista"] ?></td>
+                                                <td class="fit">$ <?php echo $value["precioKiosco"] ?></td>
+                                                <td><?php echo $_SESSION["lista"]["operador"][$value["operador"]]["nombre"] ?></td>
+                                                <td class="fit"><?php echo date("d/m/Y, H:i A", strtotime($value["fechaModificacion"])) ?></td>
+                                            </tr>
+                                            <?php
+                                        }
+                                    }else{
+
+                                    }
+                                ?>
+                            </tbody>
+                        </table>
+                        <script>
+                            
+                            dataTableSet("#producto-historial"); 
+                                
+                        </script>
+                        <?php
+                    }else{
+                        Sistema::alerta("Error", $productoHistorialResponse["mensajeUser"]."<br><br>".$productoHistorialResponse["mensajeAdmin"]);
+                    }
+                }else{
+                    Sistema::alerta("Error", "Ocurrió un error con la información recibida. <b>Intente nuevamente o contacte al administrador.</b>");
+                }
+            }else{
+                Sistema::debug('Error', 'Compania > productoHistorialFormulario - Usuario no logueado.');
+            }
+        }
+
+        public static function productoHistorial(){
+            if(Sistema::usuarioLogueado()){
+                Session::iniciar();
+                ?>
+                <div class="mine-container">
+                    <div class="d-flex justify-content-between">
+                        <div class="titulo">Historial de productos - <?php echo mb_strtoupper(Compania::getNombre($_SESSION["usuario"]->getCompañia())) ?></div>
+                    </div> 
+
+                    <div class="">
+                        <div class="d-flex justify-content-center mb-3">
+                            <div class="d-flex flex-column" style="height: fit-content; width: 75vw; text-align: left; position: sticky; top: 125px;">
+                                <span id="titulo"><i class="fa fa-barcode"></i> Buscar producto</span>
+                                <input class="form-control form-control-lg w-100 align-self-center" type="text" placeholder="" autocomplete="off" id="buscador-input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="stock-producto"></div> 
+
+                    <script> 
+                        $(document).ready(function() {
+                            tippy('td a', {
+                                content: 'Click para agregar un nuevo valor.',
+                                delay: [150,150],
+                                animation: 'fade'
+                            });
+                            $("#buscador-input").focus();
+                            $("#buscador-input").on("keydown", (e) => {
+                                let keycode = (e.keyCode ? e.keyCode : e.which);
+                                let barcode = $("#buscador-input").val();
+                                let strokes = [96,97,98,99,100,101,102,103,104,105];
+                                switch(keycode){
+                                    case 45:
+                                        $("#buscador-input").val("PFC-2-").focus();    
+                                    break;
+                                    case 13:
+                                        if(barcode.length > 0){
+                                            compañiaProductoHistorialFormulario("#stock-producto", barcode);
+                                        }else{
+                                            ventanaAlertaFlotante("Advertencia", "Debés ingresar algún valor para buscar...", $("#buscador-input").focus());
+                                        }
+                                    break;
+                                    case 17:
+                                        e.preventDefault();
+                                        break;
+                                    case 46: 
+                                        e.preventDefault();
+                                        $("#buscador-input").val("").focus();
+                                    break;
+                                } 
+                            });
+                            $("#tabla-producto-inventario #loading").addClass("d-none");
+                            $("#tabla-producto-inventario #not-found").addClass("d-none");
+                            $("#tabla-producto-inventario #go-find").removeClass("d-none");
+                        } ); 
+                    </script>
+                </div>
+                <?php
+            }else{
+                Sistema::debug('Error', 'Compania > productoHistorial - Usuario no logueado.');
+            }
+        }
+
         public static function consultaProductoNuevoActualizado($data){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
@@ -2721,6 +2855,7 @@
                             data-stock-precio="<?php echo (is_array($value["stock"])) ? $value["stock"]["precio"] : "0" ?>"
                             data-stock-precioMayorista="<?php echo (is_array($value["stock"])) ? $value["stock"]["precioMayorista"] : "0" ?>"
                             data-stock-precioKiosco="<?php echo (is_array($value["stock"])) ? $value["stock"]["precioKiosco"] : "0" ?>"
+                            data-stock-operador="<?php echo (is_array($value["stock"])) ? $value["stock"]["operador"] : "0" ?>"
                             data-stock-fechaModificacion="<?php echo (is_array($value["stock"])) ? $value["stock"]["fechaModificacion"] : "0" ?>"
                             </li>
                             <?php
