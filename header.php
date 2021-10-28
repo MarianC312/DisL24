@@ -87,9 +87,9 @@
     <?php 
         if(isset($_SESSION["usuario"]) && $_SESSION["usuario"]->getAuth()){ 
             Sistema::reloadStaticData();
-            echo '<script src="./js/mine-actions.js?v=<?php echo Sistema::$version ?>"></script>';
+            echo '<script src="./js/mine-actions.js?v='.Sistema::$version.'"></script>';
         }else{
-            echo '<script src="./js/login/index.js?v=<?php echo Sistema::$version ?>"></script>';
+            echo '<script src="./js/login/index.js?v='.Sistema::$version.'"></script>';
         }
     ?> 
 </head> 
