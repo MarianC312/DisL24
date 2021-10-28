@@ -783,38 +783,65 @@ function stockProductoAgregarInput(idParent, productoBuscado, productoNombre = n
     document.getElementById(idParent).innerHTML = "";
     document.getElementById(idParent).innerHTML = loading();
 
-    let producto = null;
+    let producto = [];
 
     //let base = document.querySelector("#companiaProductoLista li[id='7794529041424']");
 
     let productoEncontrado = null;
 
     if (productoBuscado != null && productoBuscado != "") {
-        productoEncontrado = document.querySelector("#companiaProductoLista li[data-producto-codigoBarra='" + productoBuscado + "']");
+        if (isNaN(parseInt(productoBuscado)) && !productoBuscado.includes("PFC-")) {
+            console.log("es nan");
+            productoEncontrado = document.querySelectorAll("#companiaProductoLista li[data-producto-nombre*='" + productoBuscado + "' i]");
+        } else {
+            console.log("es num");
+            productoEncontrado = document.querySelector("#companiaProductoLista li[data-producto-codigoBarra='" + productoBuscado + "' i]");
+        }
+
         //console.log(productoEncontrado);
         if (productoEncontrado != null) {
-            producto = {
-                data: {
-                    id: productoEncontrado.dataset.productoId,
-                    nombre: productoEncontrado.dataset.productoNombre,
-                    codigoBarra: productoEncontrado.dataset.productoCodigobarra
-                },
-                stock: {
-                    id: productoEncontrado.dataset.stockId,
-                    stock: productoEncontrado.dataset.stockStock,
-                    precio: productoEncontrado.dataset.stockPrecio,
-                    precioMayorista: productoEncontrado.dataset.stockPreciomayorista,
-                    precioKiosco: productoEncontrado.dataset.stockPreciokiosco
+            if (isNaN(parseInt(productoBuscado)) && !productoBuscado.includes("PFC-")) {
+                for (let index in productoEncontrado) {
+                    if (!isNaN(parseInt(index))) {
+                        producto.push({
+                            data: {
+                                id: productoEncontrado[index].dataset.productoId,
+                                nombre: productoEncontrado[index].dataset.productoNombre,
+                                codigoBarra: productoEncontrado[index].dataset.productoCodigobarra
+                            },
+                            stock: {
+                                id: productoEncontrado[index].dataset.stockId,
+                                stock: productoEncontrado[index].dataset.stockStock,
+                                precio: productoEncontrado[index].dataset.stockPrecio,
+                                precioMayorista: productoEncontrado[index].dataset.stockPreciomayorista,
+                                precioKiosco: productoEncontrado[index].dataset.stockPreciokiosco
+                            }
+                        })
+                    }
                 }
-            }
+            } else {
+                producto.push({
+                    data: {
+                        id: productoEncontrado.dataset.productoId,
+                        nombre: productoEncontrado.dataset.productoNombre,
+                        codigoBarra: productoEncontrado.dataset.productoCodigobarra
+                    },
+                    stock: {
+                        id: productoEncontrado.dataset.stockId,
+                        stock: productoEncontrado.dataset.stockStock,
+                        precio: productoEncontrado.dataset.stockPrecio,
+                        precioMayorista: productoEncontrado.dataset.stockPreciomayorista,
+                        precioKiosco: productoEncontrado.dataset.stockPreciokiosco
+                    }
+                })
+                if (producto[0].data.codigoBarra !== null) {
+                    if (producto[0].stock == null || producto[0].stock.stock == null || producto[0].stock.stock <= 0) {
+                        ventanaAlertaFlotante("Advertencia!", "El producto " + producto[0].data.nombre + " se encuentra sin stock.");
+                    }
 
-            if (producto.data.codigoBarra !== null) {
-                if (producto.stock == null || producto.stock.stock == null || producto.stock.stock <= 0) {
-                    ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " se encuentra sin stock.");
-                }
-
-                if (producto.stock.precio === null || producto.stock.precio <= 0 || producto.stock.precio == "") {
-                    ventanaAlertaFlotante("Advertencia!", "El producto " + producto.data.nombre + " no tiene un precio registrado.");
+                    if (producto[0].stock.precio === null || producto[0].stock.precio <= 0 || producto[0].stock.precio == "") {
+                        ventanaAlertaFlotante("Advertencia!", "El producto " + producto[0].data.nombre + " no tiene un precio registrado.");
+                    }
                 }
             }
             //producto = (productoBuscado.substring(0, 3) == "PFC") ? baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].noCodificado.lista[productoEncontrado[0]] : baseProducto.producto[Math.floor(productoEncontrado[0] / productoChunkLimit)].codificado.lista[productoEncontrado[0]];
@@ -824,7 +851,7 @@ function stockProductoAgregarInput(idParent, productoBuscado, productoNombre = n
             return;
         }
     } else {
-        producto = {
+        producto.push({
             data: {
                 id: 0,
                 nombre: (productoNombre == null || productoNombre == "") ? "VARIOS" : productoNombre,
@@ -837,366 +864,420 @@ function stockProductoAgregarInput(idParent, productoBuscado, productoNombre = n
                 precioMayorista: 0,
                 precioKiosco: 0,
             }
-        };
+        });
     }
 
-    setTimeout(() => {
-        let containerGeneral = document.createElement("div");
+    /*
+    console.log("Lista productos");
+    console.log(producto);
+    */
 
-        // INPUT CODIGO =======================
+    document.getElementById(idParent).innerHTML = "";
 
-        let inputCodigo = document.createElement("input");
-        inputCodigo.type = "text";
-        inputCodigo.className = "form-control";
-        inputCodigo.value = producto.data.codigoBarra;
-        inputCodigo.setAttribute("readonly", true);
+    let accordionContainer = document.createElement("div");
+    accordionContainer.id = "accordion-1";
 
-        let inputCodigoLabel = document.createElement("label");
-        inputCodigoLabel.className = "col-form-label";
-        inputCodigoLabel.setAttribute("for", "codigoBarra");
-        inputCodigoLabel.innerHTML = "<i class='fa fa-barcode'></i> Código";
 
-        let inputCodigoContainer = document.createElement("div");
-        inputCodigoContainer.className = "form-group";
-        // =====================================
 
-        // INPUT NOMBRE ======================= 
-        let inputNombre = document.createElement("input");
-        inputNombre.type = "text";
-        inputNombre.className = "form-control";
-        inputNombre.id = "nombre";
-        inputNombre.name = "nombre";
-        inputNombre.value = producto.data.nombre;
-
-        let inputNombreLabel = document.createElement("label");
-        inputNombreLabel.className = "col-form-label";
-        inputNombreLabel.setAttribute("for", "nombre");
-        inputNombreLabel.innerHTML = "<i class='fa fa-tag'></i> Nombre";
-
-        let inputNombreContainer = document.createElement("div");
-        inputNombreContainer.className = "form-group flex-grow-1 mr-2";
-        // =====================================
-
-        // INPUT ID ======================= 
-        let inputIdLabel = document.createElement("label");
-        inputIdLabel.className = "col-form-label";
-        inputIdLabel.setAttribute("for", "idProducto");
-        inputIdLabel.innerHTML = "Identificador";
-
-        let inputId = document.createElement("input");
-        inputId.type = "text";
-        inputId.className = "form-control";
-        inputId.id = "idProducto";
-        inputId.name = "idProducto";
-        inputId.value = producto.data.id;
-        inputId.setAttribute("readonly", true);
-
-        let inputIdContainer = document.createElement("div");
-        inputIdContainer.className = "form-group mr-2 d-none";
-        // =====================================
-
-
-        let productoInformacionContainer = document.createElement("div");
-        productoInformacionContainer.className = "d-flex flex-wrap";
-        productoInformacionContainer.style.padding = ".25rem 2.5rem";
-
-        let productoTitulo = document.createElement("h5");
-        productoTitulo.className = "font-weight-bold";
-        productoTitulo.innerText = "Información básica";
-        let productoTituloContainer = document.createElement("div");
-
-        let containerProducto = document.createElement("div");
-        containerProducto.className = "mb-2";
-        containerProducto.style.padding = ".5rem 7rem";
-
-        let containerProcess = document.createElement("div");
-        containerProcess.id = "stock-producto-process";
-        containerProcess.style.display = "none";
-
-
-        let containerForm = document.createElement("form");
-        containerForm.id = "stock-producto-form";
-        containerForm.action = "./engine/compania/producto-stock-editar-formulario-registro.php";
-        containerForm.setAttribute("form", "#stock-producto-form");
-        containerForm.setAttribute("process", "#stock-producto-process");
-        containerForm.setAttribute("data-codigo-barra", producto.data.codigoBarra);
-        containerForm.setAttribute("data-tipo", (producto.data.codigoBarra.substring(0, 3) != "PFC") ? "codificado" : "noCodificado");
-
-
-        inputIdContainer.appendChild(inputIdLabel);
-        inputIdContainer.appendChild(inputId);
-
-        inputNombreContainer.appendChild(inputNombreLabel);
-        inputNombreContainer.appendChild(inputNombre);
-
-        inputCodigoContainer.appendChild(inputCodigoLabel);
-        inputCodigoContainer.appendChild(inputCodigo);
-
-        productoInformacionContainer.appendChild(inputIdContainer);
-        productoInformacionContainer.appendChild(inputNombreContainer);
-        productoInformacionContainer.appendChild(inputCodigoContainer);
-
-        productoTituloContainer.appendChild(productoTitulo);
-
-        containerProducto.appendChild(productoTituloContainer);
-
-        containerProducto.appendChild(productoInformacionContainer);
-
-        /* FORMULARIO STOCK */
-        let stockInformacionContainer = document.createElement("div");
-        stockInformacionContainer.className = "d-flex justify-content-start flex-wrap";
-        stockInformacionContainer.style.padding = ".25rem 2.5rem";
-
-        let stockTitulo = document.createElement("h5");
-        stockTitulo.className = "font-weight-bold";
-        stockTitulo.innerText = "Stock";
-        let stockTituloContainer = document.createElement("div");
-
-        let containerStock = document.createElement("div");
-        containerStock.className = "mb-2";
-        containerStock.style.padding = ".5rem 7rem";
-
-        // INPUT STOCK ID ======================= 
-        let inputStockIdLabel = document.createElement("label");
-        inputStockIdLabel.className = "col-form-label";
-        inputStockIdLabel.setAttribute("for", "idStock");
-        inputStockIdLabel.innerHTML = "Identificador Stock";
-
-        let inputStockId = document.createElement("input");
-        inputStockId.type = "text";
-        inputStockId.className = "form-control";
-        inputStockId.id = "idStock";
-        inputStockId.name = "idStock";
-        inputStockId.value = producto.stock.id;
-        inputStockId.setAttribute("readonly", true);
-
-        let inputStockIdContainer = document.createElement("div");
-        inputStockIdContainer.className = "form-group mr-2 d-none";
-        inputStockIdContainer.appendChild(inputStockIdLabel);
-        inputStockIdContainer.appendChild(inputStockId);
-
-        // ========================================
-
-        // INPUT STOCK DISPONIBLE ======================= 
-        let inputStockLabel = document.createElement("label");
-        inputStockLabel.className = "col-form-label";
-        inputStockLabel.setAttribute("for", "stock");
-        inputStockLabel.innerText = "Disponible";
-
-        let inputStock = document.createElement("input");
-        inputStock.type = "text";
-        inputStock.className = "form-control";
-        inputStock.id = "stock";
-        inputStock.name = "stock";
-        inputStock.value = producto.stock.stock;
-        inputStock.setAttribute("min", 0);
-
-        let inputStockContainer = document.createElement("div");
-        inputStockContainer.className = "form-group mr-2";
-        inputStockContainer.appendChild(inputStockLabel);
-        inputStockContainer.appendChild(inputStock);
-        // ========================================
-
-        // INPUT STOCK PRECIO MINORISTA ======================= 
-        let inputStockPrecioLabel = document.createElement("label");
-        inputStockPrecioLabel.className = "control-label";
-        inputStockPrecioLabel.setAttribute("for", "stock");
-        inputStockPrecioLabel.innerText = "Precio minorista";
-
-        let inputStockPrecioContainer = document.createElement("div");
-        inputStockPrecioContainer.className = "form-group";
-
-        let inputStockPrecioContainerInner = document.createElement("div");
-        inputStockPrecioContainerInner.className = "input-group mb-3";
-
-        let inputStockPrecioContainerInnerPrependContainer = document.createElement("div");
-        inputStockPrecioContainerInnerPrependContainer.className = "input-group-prepend";
-
-        let inputStockPrecioContainerInnerPrependContainerSpan = document.createElement("span");
-        inputStockPrecioContainerInnerPrependContainerSpan.className = "input-group-text";
-        inputStockPrecioContainerInnerPrependContainerSpan.innerText = "$";
-
-        inputStockPrecioContainerInnerPrependContainer.appendChild(inputStockPrecioContainerInnerPrependContainerSpan);
-
-        let inputStockPrecio = document.createElement("input");
-        inputStockPrecio.type = "text";
-        inputStockPrecio.className = "form-control";
-        inputStockPrecio.id = "precio";
-        inputStockPrecio.name = "precio";
-        inputStockPrecio.value = (isNaN(parseInt(producto.stock.precio))) ? 0 : parseInt(producto.stock.precio);
-        inputStock.setAttribute("min", 0);
-
-        let inputStockPrecioContainerInnerAppendContainer = document.createElement("div");
-        inputStockPrecioContainerInnerAppendContainer.className = "input-group-append";
-
-        let inputStockPrecioContainerInnerAppendContainerSpan = document.createElement("span");
-        inputStockPrecioContainerInnerAppendContainerSpan.className = "input-group-text";
-        inputStockPrecioContainerInnerAppendContainerSpan.innerText = ".00";
-
-        inputStockPrecioContainerInnerAppendContainer.appendChild(inputStockPrecioContainerInnerAppendContainerSpan);
-
-        let inputStockPrecioContainerGeneral = document.createElement("div");
-        inputStockPrecioContainerGeneral.className = "form-group";
-
-        inputStockPrecioContainerInner.appendChild(inputStockPrecioContainerInnerPrependContainer);
-        inputStockPrecioContainerInner.appendChild(inputStockPrecio);
-        inputStockPrecioContainerInner.appendChild(inputStockPrecioContainerInnerAppendContainer);
-        inputStockPrecioContainer.appendChild(inputStockPrecioContainerInner);
-        inputStockPrecioContainerGeneral.appendChild(inputStockPrecioLabel);
-        inputStockPrecioContainerGeneral.appendChild(inputStockPrecioContainer);
-        // ========================================
-
-        // INPUT STOCK PRECIO MAYORISTA ======================= 
-        let inputStockPrecioMayoristaLabel = document.createElement("label");
-        inputStockPrecioMayoristaLabel.className = "control-label";
-        inputStockPrecioMayoristaLabel.setAttribute("for", "stock");
-        inputStockPrecioMayoristaLabel.innerText = "Precio mayorista";
-
-        let inputStockPrecioMayoristaContainer = document.createElement("div");
-        inputStockPrecioMayoristaContainer.className = "form-group";
-
-        let inputStockPrecioMayoristaContainerInner = document.createElement("div");
-        inputStockPrecioMayoristaContainerInner.className = "input-group mb-3";
-
-        let inputStockPrecioMayoristaContainerInnerPrependContainer = document.createElement("div");
-        inputStockPrecioMayoristaContainerInnerPrependContainer.className = "input-group-prepend";
-
-        let inputStockPrecioMayoristaContainerInnerPrependContainerSpan = document.createElement("span");
-        inputStockPrecioMayoristaContainerInnerPrependContainerSpan.className = "input-group-text";
-        inputStockPrecioMayoristaContainerInnerPrependContainerSpan.innerText = "$";
-
-        inputStockPrecioMayoristaContainerInnerPrependContainer.appendChild(inputStockPrecioMayoristaContainerInnerPrependContainerSpan);
-
-        let inputStockPrecioMayorista = document.createElement("input");
-        inputStockPrecioMayorista.type = "text";
-        inputStockPrecioMayorista.className = "form-control";
-        inputStockPrecioMayorista.id = "precioMayorista";
-        inputStockPrecioMayorista.name = "precioMayorista";
-        inputStockPrecioMayorista.value = (isNaN(parseInt(producto.stock.precioMayorista))) ? 0 : parseInt(producto.stock.precioMayorista);
-        inputStockPrecioMayorista.setAttribute("min", 0);
-
-        let inputStockPrecioMayoristaContainerInnerAppendContainer = document.createElement("div");
-        inputStockPrecioMayoristaContainerInnerAppendContainer.className = "input-group-append";
-
-        let inputStockPrecioMayoristaContainerInnerAppendContainerSpan = document.createElement("span");
-        inputStockPrecioMayoristaContainerInnerAppendContainerSpan.className = "input-group-text";
-        inputStockPrecioMayoristaContainerInnerAppendContainerSpan.innerText = ".00";
-
-        inputStockPrecioMayoristaContainerInnerAppendContainer.appendChild(inputStockPrecioMayoristaContainerInnerAppendContainerSpan);
-
-        let inputStockPrecioMayoristaContainerGeneral = document.createElement("div");
-        inputStockPrecioMayoristaContainerGeneral.className = "form-group";
-
-        inputStockPrecioMayoristaContainerInner.appendChild(inputStockPrecioMayoristaContainerInnerPrependContainer);
-        inputStockPrecioMayoristaContainerInner.appendChild(inputStockPrecioMayorista);
-        inputStockPrecioMayoristaContainerInner.appendChild(inputStockPrecioMayoristaContainerInnerAppendContainer);
-        inputStockPrecioMayoristaContainer.appendChild(inputStockPrecioMayoristaContainerInner);
-        inputStockPrecioMayoristaContainerGeneral.appendChild(inputStockPrecioMayoristaLabel);
-        inputStockPrecioMayoristaContainerGeneral.appendChild(inputStockPrecioMayoristaContainer);
-        // ========================================
-
-        // INPUT STOCK PRECIO KIOSCO ======================= 
-        let inputStockPrecioKioscoLabel = document.createElement("label");
-        inputStockPrecioKioscoLabel.className = "control-label";
-        inputStockPrecioKioscoLabel.setAttribute("for", "stock");
-        inputStockPrecioKioscoLabel.innerText = "Precio kiosco";
-
-        let inputStockPrecioKioscoContainer = document.createElement("div");
-        inputStockPrecioKioscoContainer.className = "form-group";
-
-        let inputStockPrecioKioscoContainerInner = document.createElement("div");
-        inputStockPrecioKioscoContainerInner.className = "input-group mb-3";
-
-        let inputStockPrecioKioscoContainerInnerPrependContainer = document.createElement("div");
-        inputStockPrecioKioscoContainerInnerPrependContainer.className = "input-group-prepend";
-
-        let inputStockPrecioKioscoContainerInnerPrependContainerSpan = document.createElement("span");
-        inputStockPrecioKioscoContainerInnerPrependContainerSpan.className = "input-group-text";
-        inputStockPrecioKioscoContainerInnerPrependContainerSpan.innerText = "$";
-
-        inputStockPrecioKioscoContainerInnerPrependContainer.appendChild(inputStockPrecioKioscoContainerInnerPrependContainerSpan);
-
-        let inputStockPrecioKiosco = document.createElement("input");
-        inputStockPrecioKiosco.type = "text";
-        inputStockPrecioKiosco.className = "form-control";
-        inputStockPrecioKiosco.id = "precioKiosco";
-        inputStockPrecioKiosco.name = "precioKiosco";
-        inputStockPrecioKiosco.value = (isNaN(parseInt(producto.stock.precioKiosco))) ? 0 : parseInt(producto.stock.precioKiosco);
-        inputStockPrecioKiosco.setAttribute("min", 0);
-
-        let inputStockPrecioKioscoContainerInnerAppendContainer = document.createElement("div");
-        inputStockPrecioKioscoContainerInnerAppendContainer.className = "input-group-append";
-
-        let inputStockPrecioKioscoContainerInnerAppendContainerSpan = document.createElement("span");
-        inputStockPrecioKioscoContainerInnerAppendContainerSpan.className = "input-group-text";
-        inputStockPrecioKioscoContainerInnerAppendContainerSpan.innerText = ".00";
-
-        inputStockPrecioKioscoContainerInnerAppendContainer.appendChild(inputStockPrecioKioscoContainerInnerAppendContainerSpan);
-
-        let inputStockPrecioKioscoContainerGeneral = document.createElement("div");
-        inputStockPrecioKioscoContainerGeneral.className = "form-group";
-
-        inputStockPrecioKioscoContainerInner.appendChild(inputStockPrecioKioscoContainerInnerPrependContainer);
-        inputStockPrecioKioscoContainerInner.appendChild(inputStockPrecioKiosco);
-        inputStockPrecioKioscoContainerInner.appendChild(inputStockPrecioKioscoContainerInnerAppendContainer);
-        inputStockPrecioKioscoContainer.appendChild(inputStockPrecioKioscoContainerInner);
-        inputStockPrecioKioscoContainerGeneral.appendChild(inputStockPrecioKioscoLabel);
-        inputStockPrecioKioscoContainerGeneral.appendChild(inputStockPrecioKioscoContainer);
-        // ========================================
-
-
-        // CONTAINER STOCK PRECIOS =======================
-        let stockInformacionPreciosContainer = document.createElement("div");
-        stockInformacionPreciosContainer.className = "d-flex justify-content-between w-100 flex-wrap";
-
-        stockInformacionPreciosContainer.appendChild(inputStockPrecioContainerGeneral);
-
-        stockInformacionPreciosContainer.appendChild(inputStockPrecioMayoristaContainerGeneral);
-
-        stockInformacionPreciosContainer.appendChild(inputStockPrecioKioscoContainerGeneral);
-        // =========================================
-
-        // BOTON GUARDADO
-        let boton = document.createElement("button");
-        boton.type = "button";
-        boton.className = "btn btn-success";
-        boton.onclick = () => {
-            compañiaStockEditarFormularioRegistro(producto.data.id, producto.stock.id);
-        }
-        boton.innerHTML = "<i class='fa fa-pencil-square-o'></i> Guardar cambios";
-
-        let botonContainer = document.createElement("div");
-        botonContainer.className = "form-group d-flex justify-content-center";
-        botonContainer.appendChild(boton);
-        // =========================================
-
-        stockInformacionContainer.appendChild(inputStockIdContainer);
-        stockInformacionContainer.appendChild(inputStockContainer);
-        stockInformacionContainer.appendChild(stockInformacionPreciosContainer);
-
-        stockTituloContainer.appendChild(stockTitulo);
-
-        containerStock.appendChild(stockTituloContainer);
-        containerStock.appendChild(stockInformacionContainer);
-        containerStock.appendChild(botonContainer);
-
-
-        // WRAP FINAL
-
-        containerForm.appendChild(containerProducto);
-        containerForm.appendChild(containerStock);
-
-        containerGeneral.appendChild(containerProcess);
-        containerGeneral.appendChild(containerForm);
-
+    producto.map((productoData, i) => {
+        console.log(productoData);
         setTimeout(() => {
-            document.getElementById(idParent).innerHTML = "";
-            document.getElementById(idParent).appendChild(containerGeneral);
+
+            let containerGeneral = document.createElement("div");
+
+            // INPUT CODIGO =======================
+
+            let inputCodigo = document.createElement("input");
+            inputCodigo.type = "text";
+            inputCodigo.className = "form-control";
+            inputCodigo.value = productoData.data.codigoBarra;
+            inputCodigo.setAttribute("readonly", true);
+
+            let inputCodigoLabel = document.createElement("label");
+            inputCodigoLabel.className = "col-form-label";
+            inputCodigoLabel.setAttribute("for", "codigoBarra");
+            inputCodigoLabel.innerHTML = "<i class='fa fa-barcode'></i> Código";
+
+            let inputCodigoContainer = document.createElement("div");
+            inputCodigoContainer.className = "form-group";
+            // =====================================
+
+            // INPUT NOMBRE ======================= 
+            let inputNombre = document.createElement("input");
+            inputNombre.type = "text";
+            inputNombre.className = "form-control";
+            inputNombre.id = "nombre";
+            inputNombre.name = "nombre";
+            inputNombre.value = productoData.data.nombre;
+
+            let inputNombreLabel = document.createElement("label");
+            inputNombreLabel.className = "col-form-label";
+            inputNombreLabel.setAttribute("for", "nombre");
+            inputNombreLabel.innerHTML = "<i class='fa fa-tag'></i> Nombre";
+
+            let inputNombreContainer = document.createElement("div");
+            inputNombreContainer.className = "form-group flex-grow-1 mr-2";
+            // =====================================
+
+            // INPUT ID ======================= 
+            let inputIdLabel = document.createElement("label");
+            inputIdLabel.className = "col-form-label";
+            inputIdLabel.setAttribute("for", "idProducto");
+            inputIdLabel.innerHTML = "Identificador";
+
+            let inputId = document.createElement("input");
+            inputId.type = "text";
+            inputId.className = "form-control";
+            inputId.id = "idProducto";
+            inputId.name = "idProducto";
+            inputId.value = productoData.data.id;
+            inputId.setAttribute("readonly", true);
+
+            let inputIdContainer = document.createElement("div");
+            inputIdContainer.className = "form-group mr-2 d-none";
+            // =====================================
+
+
+            let productoInformacionContainer = document.createElement("div");
+            productoInformacionContainer.className = "d-flex flex-wrap";
+            productoInformacionContainer.style.padding = ".25rem 2.5rem";
+
+            let productoTitulo = document.createElement("h5");
+            productoTitulo.className = "font-weight-bold";
+            productoTitulo.innerText = "Información básica";
+            let productoTituloContainer = document.createElement("div");
+
+            let containerProducto = document.createElement("div");
+            containerProducto.className = "mb-2";
+            containerProducto.style.padding = ".5rem 7rem";
+
+            let containerProcess = document.createElement("div");
+            containerProcess.id = "stock-producto-" + productoData.data.id + "-stock-" + productoData.stock.id + "-process";
+            containerProcess.style.display = "none";
+
+
+            let containerForm = document.createElement("form");
+            containerForm.id = "stock-producto-" + productoData.data.id + "-stock-" + productoData.stock.id + "-form";
+            containerForm.action = "./engine/compania/producto-stock-editar-formulario-registro.php";
+            containerForm.setAttribute("form", "#stock-producto-" + productoData.data.id + "-stock-" + productoData.stock.id + "-form");
+            containerForm.setAttribute("process", "#stock-producto-" + productoData.data.id + "-stock-" + productoData.stock.id + "-process");
+            containerForm.setAttribute("data-codigo-barra", productoData.data.codigoBarra);
+            containerForm.setAttribute("data-tipo", (productoData.data.codigoBarra.substring(0, 3) != "PFC") ? "codificado" : "noCodificado");
+
+
+            inputIdContainer.appendChild(inputIdLabel);
+            inputIdContainer.appendChild(inputId);
+
+            inputNombreContainer.appendChild(inputNombreLabel);
+            inputNombreContainer.appendChild(inputNombre);
+
+            inputCodigoContainer.appendChild(inputCodigoLabel);
+            inputCodigoContainer.appendChild(inputCodigo);
+
+            productoInformacionContainer.appendChild(inputIdContainer);
+            productoInformacionContainer.appendChild(inputNombreContainer);
+            productoInformacionContainer.appendChild(inputCodigoContainer);
+
+            productoTituloContainer.appendChild(productoTitulo);
+
+            containerProducto.appendChild(productoTituloContainer);
+
+            containerProducto.appendChild(productoInformacionContainer);
+
+            /* FORMULARIO STOCK */
+            let stockInformacionContainer = document.createElement("div");
+            stockInformacionContainer.className = "d-flex justify-content-start flex-wrap";
+            stockInformacionContainer.style.padding = ".25rem 2.5rem";
+
+            let stockTitulo = document.createElement("h5");
+            stockTitulo.className = "font-weight-bold";
+            stockTitulo.innerText = "Stock";
+            let stockTituloContainer = document.createElement("div");
+
+            let containerStock = document.createElement("div");
+            containerStock.className = "mb-2";
+            containerStock.style.padding = ".5rem 7rem";
+
+            // INPUT STOCK ID ======================= 
+            let inputStockIdLabel = document.createElement("label");
+            inputStockIdLabel.className = "col-form-label";
+            inputStockIdLabel.setAttribute("for", "idStock");
+            inputStockIdLabel.innerHTML = "Identificador Stock";
+
+            let inputStockId = document.createElement("input");
+            inputStockId.type = "text";
+            inputStockId.className = "form-control";
+            inputStockId.id = "idStock";
+            inputStockId.name = "idStock";
+            inputStockId.value = productoData.stock.id;
+            inputStockId.setAttribute("readonly", true);
+
+            let inputStockIdContainer = document.createElement("div");
+            inputStockIdContainer.className = "form-group mr-2 d-none";
+            inputStockIdContainer.appendChild(inputStockIdLabel);
+            inputStockIdContainer.appendChild(inputStockId);
+
+            // ========================================
+
+            // INPUT STOCK DISPONIBLE ======================= 
+            let inputStockLabel = document.createElement("label");
+            inputStockLabel.className = "col-form-label";
+            inputStockLabel.setAttribute("for", "stock");
+            inputStockLabel.innerText = "Disponible";
+
+            let inputStock = document.createElement("input");
+            inputStock.type = "text";
+            inputStock.className = "form-control";
+            inputStock.id = "stock";
+            inputStock.name = "stock";
+            inputStock.value = productoData.stock.stock;
+            inputStock.setAttribute("min", 0);
+
+            let inputStockContainer = document.createElement("div");
+            inputStockContainer.className = "form-group mr-2";
+            inputStockContainer.appendChild(inputStockLabel);
+            inputStockContainer.appendChild(inputStock);
+            // ========================================
+
+            // INPUT STOCK PRECIO MINORISTA ======================= 
+            let inputStockPrecioLabel = document.createElement("label");
+            inputStockPrecioLabel.className = "control-label";
+            inputStockPrecioLabel.setAttribute("for", "stock");
+            inputStockPrecioLabel.innerText = "Precio minorista";
+
+            let inputStockPrecioContainer = document.createElement("div");
+            inputStockPrecioContainer.className = "form-group";
+
+            let inputStockPrecioContainerInner = document.createElement("div");
+            inputStockPrecioContainerInner.className = "input-group mb-3";
+
+            let inputStockPrecioContainerInnerPrependContainer = document.createElement("div");
+            inputStockPrecioContainerInnerPrependContainer.className = "input-group-prepend";
+
+            let inputStockPrecioContainerInnerPrependContainerSpan = document.createElement("span");
+            inputStockPrecioContainerInnerPrependContainerSpan.className = "input-group-text";
+            inputStockPrecioContainerInnerPrependContainerSpan.innerText = "$";
+
+            inputStockPrecioContainerInnerPrependContainer.appendChild(inputStockPrecioContainerInnerPrependContainerSpan);
+
+            let inputStockPrecio = document.createElement("input");
+            inputStockPrecio.type = "text";
+            inputStockPrecio.className = "form-control";
+            inputStockPrecio.id = "precio";
+            inputStockPrecio.name = "precio";
+            inputStockPrecio.value = (isNaN(parseInt(productoData.stock.precio))) ? 0 : parseInt(productoData.stock.precio);
+            inputStock.setAttribute("min", 0);
+
+            let inputStockPrecioContainerInnerAppendContainer = document.createElement("div");
+            inputStockPrecioContainerInnerAppendContainer.className = "input-group-append";
+
+            let inputStockPrecioContainerInnerAppendContainerSpan = document.createElement("span");
+            inputStockPrecioContainerInnerAppendContainerSpan.className = "input-group-text";
+            inputStockPrecioContainerInnerAppendContainerSpan.innerText = ".00";
+
+            inputStockPrecioContainerInnerAppendContainer.appendChild(inputStockPrecioContainerInnerAppendContainerSpan);
+
+            let inputStockPrecioContainerGeneral = document.createElement("div");
+            inputStockPrecioContainerGeneral.className = "form-group";
+
+            inputStockPrecioContainerInner.appendChild(inputStockPrecioContainerInnerPrependContainer);
+            inputStockPrecioContainerInner.appendChild(inputStockPrecio);
+            inputStockPrecioContainerInner.appendChild(inputStockPrecioContainerInnerAppendContainer);
+            inputStockPrecioContainer.appendChild(inputStockPrecioContainerInner);
+            inputStockPrecioContainerGeneral.appendChild(inputStockPrecioLabel);
+            inputStockPrecioContainerGeneral.appendChild(inputStockPrecioContainer);
+            // ========================================
+
+            // INPUT STOCK PRECIO MAYORISTA ======================= 
+            let inputStockPrecioMayoristaLabel = document.createElement("label");
+            inputStockPrecioMayoristaLabel.className = "control-label";
+            inputStockPrecioMayoristaLabel.setAttribute("for", "stock");
+            inputStockPrecioMayoristaLabel.innerText = "Precio mayorista";
+
+            let inputStockPrecioMayoristaContainer = document.createElement("div");
+            inputStockPrecioMayoristaContainer.className = "form-group";
+
+            let inputStockPrecioMayoristaContainerInner = document.createElement("div");
+            inputStockPrecioMayoristaContainerInner.className = "input-group mb-3";
+
+            let inputStockPrecioMayoristaContainerInnerPrependContainer = document.createElement("div");
+            inputStockPrecioMayoristaContainerInnerPrependContainer.className = "input-group-prepend";
+
+            let inputStockPrecioMayoristaContainerInnerPrependContainerSpan = document.createElement("span");
+            inputStockPrecioMayoristaContainerInnerPrependContainerSpan.className = "input-group-text";
+            inputStockPrecioMayoristaContainerInnerPrependContainerSpan.innerText = "$";
+
+            inputStockPrecioMayoristaContainerInnerPrependContainer.appendChild(inputStockPrecioMayoristaContainerInnerPrependContainerSpan);
+
+            let inputStockPrecioMayorista = document.createElement("input");
+            inputStockPrecioMayorista.type = "text";
+            inputStockPrecioMayorista.className = "form-control";
+            inputStockPrecioMayorista.id = "precioMayorista";
+            inputStockPrecioMayorista.name = "precioMayorista";
+            inputStockPrecioMayorista.value = (isNaN(parseInt(productoData.stock.precioMayorista))) ? 0 : parseInt(productoData.stock.precioMayorista);
+            inputStockPrecioMayorista.setAttribute("min", 0);
+
+            let inputStockPrecioMayoristaContainerInnerAppendContainer = document.createElement("div");
+            inputStockPrecioMayoristaContainerInnerAppendContainer.className = "input-group-append";
+
+            let inputStockPrecioMayoristaContainerInnerAppendContainerSpan = document.createElement("span");
+            inputStockPrecioMayoristaContainerInnerAppendContainerSpan.className = "input-group-text";
+            inputStockPrecioMayoristaContainerInnerAppendContainerSpan.innerText = ".00";
+
+            inputStockPrecioMayoristaContainerInnerAppendContainer.appendChild(inputStockPrecioMayoristaContainerInnerAppendContainerSpan);
+
+            let inputStockPrecioMayoristaContainerGeneral = document.createElement("div");
+            inputStockPrecioMayoristaContainerGeneral.className = "form-group";
+
+            inputStockPrecioMayoristaContainerInner.appendChild(inputStockPrecioMayoristaContainerInnerPrependContainer);
+            inputStockPrecioMayoristaContainerInner.appendChild(inputStockPrecioMayorista);
+            inputStockPrecioMayoristaContainerInner.appendChild(inputStockPrecioMayoristaContainerInnerAppendContainer);
+            inputStockPrecioMayoristaContainer.appendChild(inputStockPrecioMayoristaContainerInner);
+            inputStockPrecioMayoristaContainerGeneral.appendChild(inputStockPrecioMayoristaLabel);
+            inputStockPrecioMayoristaContainerGeneral.appendChild(inputStockPrecioMayoristaContainer);
+            // ========================================
+
+            // INPUT STOCK PRECIO KIOSCO ======================= 
+            let inputStockPrecioKioscoLabel = document.createElement("label");
+            inputStockPrecioKioscoLabel.className = "control-label";
+            inputStockPrecioKioscoLabel.setAttribute("for", "stock");
+            inputStockPrecioKioscoLabel.innerText = "Precio kiosco";
+
+            let inputStockPrecioKioscoContainer = document.createElement("div");
+            inputStockPrecioKioscoContainer.className = "form-group";
+
+            let inputStockPrecioKioscoContainerInner = document.createElement("div");
+            inputStockPrecioKioscoContainerInner.className = "input-group mb-3";
+
+            let inputStockPrecioKioscoContainerInnerPrependContainer = document.createElement("div");
+            inputStockPrecioKioscoContainerInnerPrependContainer.className = "input-group-prepend";
+
+            let inputStockPrecioKioscoContainerInnerPrependContainerSpan = document.createElement("span");
+            inputStockPrecioKioscoContainerInnerPrependContainerSpan.className = "input-group-text";
+            inputStockPrecioKioscoContainerInnerPrependContainerSpan.innerText = "$";
+
+            inputStockPrecioKioscoContainerInnerPrependContainer.appendChild(inputStockPrecioKioscoContainerInnerPrependContainerSpan);
+
+            let inputStockPrecioKiosco = document.createElement("input");
+            inputStockPrecioKiosco.type = "text";
+            inputStockPrecioKiosco.className = "form-control";
+            inputStockPrecioKiosco.id = "precioKiosco";
+            inputStockPrecioKiosco.name = "precioKiosco";
+            inputStockPrecioKiosco.value = (isNaN(parseInt(productoData.stock.precioKiosco))) ? 0 : parseInt(productoData.stock.precioKiosco);
+            inputStockPrecioKiosco.setAttribute("min", 0);
+
+            let inputStockPrecioKioscoContainerInnerAppendContainer = document.createElement("div");
+            inputStockPrecioKioscoContainerInnerAppendContainer.className = "input-group-append";
+
+            let inputStockPrecioKioscoContainerInnerAppendContainerSpan = document.createElement("span");
+            inputStockPrecioKioscoContainerInnerAppendContainerSpan.className = "input-group-text";
+            inputStockPrecioKioscoContainerInnerAppendContainerSpan.innerText = ".00";
+
+            inputStockPrecioKioscoContainerInnerAppendContainer.appendChild(inputStockPrecioKioscoContainerInnerAppendContainerSpan);
+
+            let inputStockPrecioKioscoContainerGeneral = document.createElement("div");
+            inputStockPrecioKioscoContainerGeneral.className = "form-group";
+
+            inputStockPrecioKioscoContainerInner.appendChild(inputStockPrecioKioscoContainerInnerPrependContainer);
+            inputStockPrecioKioscoContainerInner.appendChild(inputStockPrecioKiosco);
+            inputStockPrecioKioscoContainerInner.appendChild(inputStockPrecioKioscoContainerInnerAppendContainer);
+            inputStockPrecioKioscoContainer.appendChild(inputStockPrecioKioscoContainerInner);
+            inputStockPrecioKioscoContainerGeneral.appendChild(inputStockPrecioKioscoLabel);
+            inputStockPrecioKioscoContainerGeneral.appendChild(inputStockPrecioKioscoContainer);
+            // ========================================
+
+
+            // CONTAINER STOCK PRECIOS =======================
+            let stockInformacionPreciosContainer = document.createElement("div");
+            stockInformacionPreciosContainer.className = "d-flex justify-content-between w-100 flex-wrap";
+
+            stockInformacionPreciosContainer.appendChild(inputStockPrecioContainerGeneral);
+
+            stockInformacionPreciosContainer.appendChild(inputStockPrecioMayoristaContainerGeneral);
+
+            stockInformacionPreciosContainer.appendChild(inputStockPrecioKioscoContainerGeneral);
+            // =========================================
+
+            // BOTON GUARDADO
+            let boton = document.createElement("button");
+            boton.type = "button";
+            boton.className = "btn btn-success";
+            boton.onclick = () => {
+                compañiaStockEditarFormularioRegistro(productoData.data.id, productoData.stock.id);
+            }
+            boton.innerHTML = "<i class='fa fa-pencil-square-o'></i> Guardar cambios";
+
+            let botonContainer = document.createElement("div");
+            botonContainer.className = "form-group d-flex justify-content-center";
+            botonContainer.appendChild(boton);
+            // =========================================
+
+            stockInformacionContainer.appendChild(inputStockIdContainer);
+            stockInformacionContainer.appendChild(inputStockContainer);
+            stockInformacionContainer.appendChild(stockInformacionPreciosContainer);
+
+            stockTituloContainer.appendChild(stockTitulo);
+
+            containerStock.appendChild(stockTituloContainer);
+            containerStock.appendChild(stockInformacionContainer);
+            containerStock.appendChild(botonContainer);
+
+
+            // WRAP FINAL 
+
+            containerForm.appendChild(containerProducto);
+            containerForm.appendChild(containerStock);
+
+            containerGeneral.appendChild(containerProcess);
+            containerGeneral.appendChild(containerForm);
+
+
+            let accordionCard = document.createElement("div");
+            accordionCard.className = "card";
+
+            let accordionCardHeader = document.createElement("div");
+            accordionCardHeader.className = "card-header";
+            accordionCardHeader.id = "heading-" + i;
+
+            let accordionCardHeaderH5 = document.createElement("h5");
+            accordionCardHeaderH5.className = "mb-0";
+
+            let accordionCardHeaderBtn = document.createElement("button");
+            accordionCardHeaderBtn.className = "btn btn-link font-weight-bold d-flex justify-content-between w-100";
+            accordionCardHeaderBtn.innerHTML = "<span>" + productoData.data.nombre.toUpperCase() + "</span><i class='fa fa-chevron-down'></i>";
+            accordionCardHeaderBtn.setAttribute("data-toggle", "collapse");
+            accordionCardHeaderBtn.setAttribute("data-target", "#collapse-" + i);
+            accordionCardHeaderBtn.setAttribute("aria-expanded", false);
+            accordionCardHeaderBtn.setAttribute("aria-controls", "collapse-" + i);
+
+            accordionCardHeaderH5.appendChild(accordionCardHeaderBtn);
+            accordionCardHeader.appendChild(accordionCardHeaderH5)
+
+            let accordionCardCollapse = document.createElement("div");
+            accordionCardCollapse.className = "collapse";
+            accordionCardCollapse.id = "collapse-" + i;
+            accordionCardCollapse.setAttribute("aria-labelledby", "heading-" + i);
+            accordionCardCollapse.setAttribute("data-parent", "#accordion-1");
+
+            let accordionCardCollapseBody = document.createElement("div");
+            accordionCardCollapseBody.className = "card-body";
+
+            accordionCardCollapseBody.appendChild(containerGeneral);
+            accordionCardCollapse.appendChild(accordionCardCollapseBody);
+
+            accordionCard.appendChild(accordionCardHeader);
+            accordionCard.appendChild(accordionCardCollapse);
+            accordionContainer.appendChild(accordionCard);
+
             setTimeout(() => {
-                $("#stock-producto-form #nombre").focus();
-            }, 150);
-        }, 250);
-    }, 450);
+                //document.getElementById(idParent).appendChild(containerGeneral);
+                document.getElementById(idParent).appendChild(accordionContainer);
+                setTimeout(() => {
+                    $("#stock-producto-form #nombre").focus();
+                }, 150);
+            }, 250);
+        }, 100);
+    })
 
 }
 
@@ -1512,7 +1593,7 @@ const compañiaStockEditarFormularioRegistro = (idProducto, idStock) => {
         return;
     }
     me.data('requestRunning', true);
-    let form = $("#stock-producto-form");
+    let form = $("#stock-producto-" + idProducto + "-stock-" + idStock + "-form");
     let data = form.serializeArray();
     data.push({ name: "idProducto2", value: idProducto });
     data.push({ name: "idStock2", value: idStock });
