@@ -1653,6 +1653,66 @@ const sistemaConsultaProductoNuevoActualizado = (force = false, alerta = false) 
     });
 }
 
+const sistemaCompaniaProductoListaUpdate = (idProducto, tipo = "codificado") => {
+    var me = $(this);
+    if (me.data('requestRunning')) {
+        return;
+    }
+    me.data('requestRunning', true);
+    let divProcess = "#right-content-process";
+    let divForm = "";
+    $.ajax({
+        type: "POST",
+        url: "engine/producto/data.php",
+        timeout: 45000,
+        beforeSend: function() {
+            //$(divProcess).html(loading());
+            //$(divForm).hide(350);
+            //$(divProcess).show(350);
+            console.log("Sistema: Solicitando información de producto...");
+        },
+        data: { idProducto: idProducto, tipo: tipo },
+        complete: function() {
+            me.data('requestRunning', false);
+        },
+        success: function(data) {
+            console.log("Sistema: Actualizando lista de productos...");
+            response = JSON.parse(data);
+            console.log(response);
+            console.log(typeof response["data"]["array"]["data"]["array"]["stock"]);
+            console.log(response["data"]["array"]["data"]["array"]["stock"]);
+            console.log(response["data"]["array"]["data"]["array"]["stock"].length);
+            if (response["status"] == true || response["status"] == "true") {
+                var stockLength = Object.keys(response["data"]["array"]["data"]["array"]["stock"]).length;
+                var elem = document.createElement("li");
+                elem.className = "list-group-item producto";
+                elem.id = response["data"]["array"]["data"]["array"]["data"]["codigoBarra"];
+                elem.setAttribute("data-producto-id", response["data"]["array"]["data"]["array"]["data"]["id"]);
+                elem.setAttribute("data-producto-nombre", response["data"]["array"]["data"]["array"]["data"]["nombre"]);
+                elem.setAttribute("data-producto-codigoBarra", response["data"]["array"]["data"]["array"]["data"]["codigoBarra"]);
+                elem.setAttribute("data-producto-fechaUpdate", response["data"]["array"]["data"]["array"]["data"]["fechaUpdate"]);
+                elem.setAttribute("data-stock-id", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["id"] : "");
+                elem.setAttribute("data-stock-productoId", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["producto"] : "");
+                elem.setAttribute("data-stock-productoNCId", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["productoNC"] : "");
+                elem.setAttribute("data-stock-stock", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["stock"] : "");
+                elem.setAttribute("data-stock-precio", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["precio"] : "");
+                elem.setAttribute("data-stock-precioMayorista", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["precioMayorista"] : "");
+                elem.setAttribute("data-stock-precioKiosco", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["precioKiosco"] : "");
+                elem.setAttribute("data-stock-operador", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["operador"] : "");
+                elem.setAttribute("data-stock-fechaModificacion", (stockLength > 0) ? response["data"]["array"]["data"]["array"]["stock"]["fechaModificacion"] : "");
+                $("#companiaProductoLista #" + response["data"]["array"]["data"]["array"]["data"]["codigoBarra"]).remove();
+                document.getElementById("companiaProductoLista").appendChild(elem);
+                console.log("Sistema: Lista de productos actualizada.");
+            } else {
+                ventanaAlertaFlotante("Advertencia", "Ocurrió un error al actualizar la lista de productos, recomendamos recargar el sistema a la brevedad.", () => { location.reload(true); });
+            }
+        }
+    }).fail(function(jqXHR) {
+        console.log(jqXHR.statusText);
+        me.data('requestRunning', false);
+    });
+}
+
 const caTicketFormulario = () => {
     var me = $(this);
     if (me.data('requestRunning')) {

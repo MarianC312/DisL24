@@ -250,7 +250,7 @@
                                 if(($data["tipo"] == "codificado" && $producto["codigoBarra"] === $data["codigoBarra"]) || ($data["tipo"] == "noCodificado" && "PFC-".$_SESSION["usuario"]->getCompañia()."-".$producto["codigoBarra"] === $data["codigoBarra"])){
                                     if(array_key_exists($data["idStock"], $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"])){
                                         $stock = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$data["idStock"]];
-                                        if($data["idProducto"] === $stock[($data["tipo"] == "codificado") ? "producto" : "productoNC"]){
+                                        if(intval($data["idProducto"]) === intval($stock[($data["tipo"] == "codificado") ? "producto" : "productoNC"])){
                                             if($data["nombre"] != $producto["nombre"]){
                                                 switch($data["tipo"]){
                                                     case "codificado":
@@ -318,7 +318,7 @@
                                                 }
                                             }
                                         }else{
-                                            Sistema::alerta("Error", "El identificador del producto recibido no concuerda con el de stock de la base de la compañía. Contacte al administrador.", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
+                                            Sistema::alerta("Error", "El identificador del producto recibido no concuerda con el de stock de la base de la compañía. Contacte al administrador. <br><br>Ref.: '".$data["idProducto"]."' | '".$stock[($data["tipo"] == "codificado") ? "producto" : "productoNC"]."'", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
                                         }
                                     }else{
                                         Sistema::alerta("Error", "No se encontró el producto en la base de stock de productos de la compañía. Intente nuevamente o contacte al administrador.", "$('".$data["process"]."').hide(150); $('".$data["form"]."').show(150);");
@@ -2288,6 +2288,22 @@
                     if($productoExiste){
                         $query = DataBase::insert("producto_stock", (($codificado) ? "producto" : "productoNC").",sucursal,compañia,stock,minimo,maximo,precio,precioMayorista,precioKiosco,operador", "'".$data["idProducto"]."','".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."',".((is_numeric($data["stock"])) ? $data["stock"] : "NULL").",".((is_numeric($data["minimo"])) ? $data["minimo"] : "NULL").",".((is_numeric($data["maximo"])) ? $data["maximo"] : "NULL").",".((is_numeric($data["precio"])) ? $data["precio"] : "NULL").",".((is_numeric($data["precioMayorista"])) ? $data["precioMayorista"] : "NULL").",".((is_numeric($data["precioKiosco"])) ? $data["precioKiosco"] : "NULL").",'".$_SESSION["usuario"]->getId()."'");
                         if($query){
+                            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][DataBase::getLastId()] = [
+                                "id" => DataBase::getLastId(),
+                                "producto" => (($codificado) ? $data["idProducto"] : ""),
+                                "productoNC" => ((!$codificado) ? $data["idProducto"] : ""),
+                                "sucursal" => $_SESSION["usuario"]->getSucursal(),
+                                "compañia" => $_SESSION["usuario"]->getCompañia(),
+                                "stock" => ((is_numeric($data["stock"])) ? $data["stock"] : 0),
+                                "minimo" => ((is_numeric($data["minimo"])) ? $data["minimo"] : 0),
+                                "maximo" => ((is_numeric($data["maximo"])) ? $data["maximo"] : 0),
+                                "precio" => ((is_numeric($data["precio"])) ? $data["precio"] : 0),
+                                "precioMayorista" => ((is_numeric($data["precioMayorista"])) ? $data["precioMayorista"] : 0),
+                                "precioKiosco" => ((is_numeric($data["precioKiosco"])) ? $data["precioKiosco"] : 0),
+                                "operador" => $_SESSION["usuario"]->getId(),
+                                "fechaModificacion" => "",
+                                "fechaCarga" => Date::current()
+                            ];
                             if($alert){
                                 $mensaje['tipo'] = 'success';
                                 $mensaje['cuerpo'] = 'Se registró el stock del producto satisfactoriamente.';
@@ -2843,20 +2859,20 @@
                     <?php
                         foreach(array_merge($producto["producto"]["noCodificado"]["lista"], $producto["producto"]["codificado"]["lista"]) AS $key => $value){
                             ?>
-                            <li class="list-group-item producto" id="<?php echo $value["data"]["codigoBarra"] ?>" 
+                            <li class="list-group-item producto" id="<?php echo (($value["data"]["tipo"] == 5) ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$value["data"]["codigoBarra"] ?>" 
                             data-producto-id="<?php echo $value["data"]["id"] ?>" 
                             data-producto-nombre="<?php echo $value["data"]["nombre"] ?>" 
                             data-producto-codigoBarra="<?php echo (($value["data"]["tipo"] == 5) ? "PFC-".$_SESSION["usuario"]->getCompañia()."-" : "").$value["data"]["codigoBarra"] ?>"
                             data-producto-fechaUpdate="<?php echo $value["data"]["fechaUpdate"] ?>"
-                            data-stock-id="<?php echo (is_array($value["stock"])) ? $value["stock"]["id"] : "0" ?>"
-                            data-stock-productoId="<?php echo (is_array($value["stock"])) ? $value["stock"]["producto"] : "0" ?>"
-                            data-stock-productoNCId="<?php echo (is_array($value["stock"])) ? $value["stock"]["productoNC"] : "0" ?>"
-                            data-stock-stock="<?php echo (is_array($value["stock"])) ? $value["stock"]["stock"] : "0" ?>"
-                            data-stock-precio="<?php echo (is_array($value["stock"])) ? $value["stock"]["precio"] : "0" ?>"
-                            data-stock-precioMayorista="<?php echo (is_array($value["stock"])) ? $value["stock"]["precioMayorista"] : "0" ?>"
-                            data-stock-precioKiosco="<?php echo (is_array($value["stock"])) ? $value["stock"]["precioKiosco"] : "0" ?>"
-                            data-stock-operador="<?php echo (is_array($value["stock"])) ? $value["stock"]["operador"] : "0" ?>"
-                            data-stock-fechaModificacion="<?php echo (is_array($value["stock"])) ? $value["stock"]["fechaModificacion"] : "0" ?>"
+                            data-stock-id="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["id"] : "0" ?>"
+                            data-stock-productoId="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["producto"] : "0" ?>"
+                            data-stock-productoNCId="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["productoNC"] : "0" ?>"
+                            data-stock-stock="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["stock"] : "0" ?>"
+                            data-stock-precio="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["precio"] : "0" ?>"
+                            data-stock-precioMayorista="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["precioMayorista"] : "0" ?>"
+                            data-stock-precioKiosco="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["precioKiosco"] : "0" ?>"
+                            data-stock-operador="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["operador"] : "0" ?>"
+                            data-stock-fechaModificacion="<?php echo (is_array($value["stock"]) && count($value["stock"]) > 0) ? $value["stock"]["fechaModificacion"] : "0" ?>"
                             </li>
                             <?php
                         }

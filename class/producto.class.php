@@ -50,6 +50,14 @@
                 $limit = 60000;
                 $productoCodificadoCantidad = count($_SESSION["lista"]["producto"]["codificado"]);
                 $productoNoCodificadoCantidad = count($_SESSION["lista"]["producto"]["noCodificado"]);
+                $productoCodificadoPrimerID = array_key_first($_SESSION["lista"]["producto"]["codificado"]);
+                $productoNoCodificadoPrimerID = array_key_first($_SESSION["lista"]["producto"]["noCodificado"]);
+                if(is_numeric($productoCodificadoPrimerID) || is_numeric($productoNoCodificadoPrimerID)){
+                    $comienzo = (($productoCodificadoPrimerID <= $productoNoCodificadoPrimerID) ? $productoCodificadoPrimerID : $productoNoCodificadoPrimerID);
+                }else{
+                    $comienzo = $chunk * $limit;
+                }
+                
                 $productoCantidadMayor = ($productoCodificadoCantidad >= $productoNoCodificadoCantidad) ? $productoCodificadoCantidad : $productoNoCodificadoCantidad;
                 $data = [
                     "tipo" => ($force) ? 1 : 0, 
@@ -66,12 +74,14 @@
                         ],
                         "noCodificado" => [
                             "total" => $productoNoCodificadoCantidad,
+                            "inicio" => array_key_first($_SESSION["lista"]["producto"]["noCodificado"]),
+                            "llave" => array_keys($_SESSION["lista"]["producto"]["noCodificado"]),
                             "cargado" => 0, 
                             "lista" => []
                         ]
                     ]
                 ];
-                for($i = ($chunk * $limit); $i <= ($limit * ($chunk + 1)); $i++){
+                for($i = $comienzo; $i <= ($limit * ($chunk + 1)); $i++){
                     if($i <= $productoCantidadMayor){
                         if($i <= $productoCodificadoCantidad){ 
                             if(array_key_exists($i, $_SESSION["lista"]["producto"]["codificado"])){
@@ -82,19 +92,19 @@
                                     $data["producto"]["codificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock]; 
                                 }
                             }
-                        }
-                        if($i <= $productoNoCodificadoCantidad){
-                            if(array_key_exists($i, $_SESSION["lista"]["producto"]["noCodificado"])){
-                                $idStock = Sistema::buscarProductoIdEnStock($_SESSION["lista"]["producto"]["noCodificado"][$i]["id"], "productoNC");
-                                if(is_numeric($idStock) && $idStock >= 0){
-                                    $data["producto"]["noCodificado"]["cargado"]++;
-                                    $data["producto"]["noCodificado"]["lista"][$i]["data"] = $_SESSION["lista"]["producto"]["noCodificado"][$i];
-                                    $data["producto"]["noCodificado"]["lista"][$i]["stock"] = $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock]; 
-                                } 
-                            }
-                        }
+                        } 
                     }else{
                         break;
+                    }
+                }
+                foreach($data["producto"]["noCodificado"]["llave"] AS $key => $value){
+                    if(array_key_exists($value, $_SESSION["lista"]["producto"]["noCodificado"])){
+                        $idStock = Sistema::buscarProductoIdEnStock($_SESSION["lista"]["producto"]["noCodificado"][$value]["id"], "productoNC");
+                        if(true || (is_numeric($idStock) && $idStock >= 0)){
+                            $data["producto"]["noCodificado"]["cargado"]++;
+                            $data["producto"]["noCodificado"]["lista"][$value]["data"] = $_SESSION["lista"]["producto"]["noCodificado"][$value];
+                            $data["producto"]["noCodificado"]["lista"][$value]["stock"] = ((array_key_exists($idStock, $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"])) ? $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock] : []); 
+                        } 
                     }
                 }
                 return $data;
@@ -894,6 +904,19 @@
                             Session::iniciar();
                             $_SESSION["usuario"]->tareaEliminar('Registro de producto ['.$data["codigo"].']');
                             Sistema::debug("success", "producto.class.php - registro - Producto registrado satisfactoriamente.");
+                            $_SESSION["lista"]["producto"]["codificado"][DataBase::getLastId()] = [
+                                "id" => DataBase::getLastId(),
+                                "nombre" => $data["nombre"],
+                                "tipo" => $data["tipo"],
+                                "codigoBarra" => $data["codigoBarra"],
+                                "categoria" => $data["categoria"],
+                                "subcategoria" => ((isset($data["subcategoria"]) && is_numeric($data["subcategoria"])) ? $data["subcategoria"] : ""),
+                                "estado" => 1,
+                                "operador" => $_SESSION["usuario"]->getId(),
+                                "compania" => $_SESSION["usuario"]->getCompañia(),
+                                "fechaUpdate" => "",
+                                "fechaCarga" => Date::current()
+                            ];
                             $mensaje['tipo'] = 'success';
                             $mensaje['cuerpo'] = 'Se registró el producto <b>'.$data["nombre"].'</b> satisfactoriamente.';
                             if($cargaStock){
@@ -949,28 +972,45 @@
                         $query = DataBase::insert("compañia_producto", "nombre,tipo,codigoBarra,categoria,subcategoria,operador,compañia", "'".$data["nombre"]."','".$data["tipo"]."',".((is_null($data["codigo"]) || strlen($data["codigo"]) == 0) ? "NULL" : "'".$data["codigo"]."'").",'".$data["categoria"]."',".((isset($data["subcategoria"]) && is_numeric($data["subcategoria"])) ? $data["subcategoria"] : "NULL").",'".$_SESSION["usuario"]->getId()."','".$_SESSION["usuario"]->getCompañia()."'");
                         if($query){ 
                             $aCargar = ["stock","minimo","maximo","precio","precioMayorista","precioKiosco"];
-                            $cargaStock = false;
+                            $cargaStock = true;
                             foreach($aCargar AS $key => $value){
-                                if(is_numeric($data[$value]) && $data[$value] >= 0){
-                                    $cargaStock = true;
+                                if(!is_numeric($data[$value]) || $data[$value] <= 0){
+                                    $data[$value] = 0;
                                 }
                             }
                             Session::iniciar();
                             Sistema::debug("success", "producto.class.php - registro - Producto registrado satisfactoriamente.");
+                            $idProducto = DataBase::getLastId();
+                            $_SESSION["lista"]["producto"]["noCodificado"][$idProducto] = [
+                                "id" => $idProducto,
+                                "nombre" => $data["nombre"],
+                                "tipo" => $data["tipo"],
+                                "codigoBarra" => $data["codigo"],
+                                "categoria" => $data["categoria"],
+                                "subcategoria" => ((isset($data["subcategoria"]) && is_numeric($data["subcategoria"])) ? $data["subcategoria"] : ""),
+                                "estado" => 1,
+                                "operador" => $_SESSION["usuario"]->getId(),
+                                "compania" => $_SESSION["usuario"]->getCompañia(),
+                                "fechaUpdate" => "",
+                                "fechaCarga" => Date::current()
+                            ];
                             $mensaje['tipo'] = 'success';
                             $mensaje['cuerpo'] = 'Se registró el producto <b>'.$data["nombre"].'</b> satisfactoriamente.';
                             if($cargaStock){
-                                $data["idProducto"] = DataBase::getLastId();
+                                $data["idProducto"] = $idProducto;
                                 $stockRegistro = Compania::stockRegistro($data, false, false);
                                 if(!$stockRegistro){
                                     $mensaje['cuerpo'] .= '<br><br> <b>¡Advertencia! Hubo un error al registrar el stock del producto.</b> <small>(Regresá a <a href="#"  onclick="compañiaStock()">"Mi Stock"</a> para cargar los datos.)</small> <br>';
                                 }
-                            }
+                            } 
                             $mensaje['cuerpo'] .= '<div class="d-flex justify-content-around">
                                 <button type="button" onclick="compañiaStock()" class="btn btn-success">Ir a Mi Stock</button>
                                 <button type="button" onclick="compañiaStockRegistroProductoFormulario()" class="btn btn-outline-success">Ir a Agregar Producto a Mi Stock</button>
                             </div>';
                             Alert::mensaje($mensaje);
+                            echo '<script>
+                                sistemaCompaniaProductoListaUpdate('.$idProducto.', "noCodificado");
+                            </script>';
                             return true;
                         }else{
                             Sistema::debug('error', 'producto.class.php - nocodifRegistro - Error en query de registro de producto.');
@@ -1462,7 +1502,7 @@
                                                         if($codificado){
                                                             echo "El código comercial debe ser exácto al leido en el <b>código de barra del producto</b>.";
                                                         }else{
-                                                            echo "El atajo debe ser numérico o dejarse vacío. Si se ingresa 1, el sistema creará el atajo <b>CTRL + 1</b>. <br>Si se deja vacío el sistema no creará atajos y solo podrá buscarse este producto mediante su descripción. <u><b>Los atajos no pueden repetirse</b></u>.";
+                                                            echo "El atajo debe ser numérico o dejarse vacío. Si se ingresa 1, el sistema creará el atajo <b>Insert + 1</b> que hace referencia al código <b>PFC-X-1</b>. <br>Si se deja vacío el sistema no creará atajos y solo podrá buscarse este producto mediante su nombre. <u><b>Los atajos no pueden repetirse</b></u>.";
                                                         }
                                                     ?>
                                                 </small>
@@ -1585,29 +1625,29 @@
                                             <div class="d-flex justify-content-between">
                                                 <div class="form-group">
                                                     <label class="col-form-label" for="stock">Stock</label>
-                                                    <input type="number" min="0" class="form-control" placeholder="0" id="stock" name="stock">
+                                                    <input type="number" min="0" class="form-control" placeholder="0" value="0" id="stock" name="stock">
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-form-label" for="minimo">Stock Mímino</label>
-                                                    <input type="number" min="0" class="form-control" placeholder="0" id="minimo" name="minimo">
+                                                    <input type="number" min="0" class="form-control" placeholder="0" value="0" id="minimo" name="minimo">
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-form-label" for="maximo">Stock Máximo</label>
-                                                    <input type="number" min="0" class="form-control" placeholder="0" id="maximo" name="maximo">
+                                                    <input type="number" min="0" class="form-control" placeholder="0" value="0" id="maximo" name="maximo">
                                                 </div>
                                             </div>
                                             <div class="d-flex justify-content-between"> 
                                                 <div class="form-group">
                                                     <label class="col-form-label" for="precio">Precio Minorista</label>
-                                                    <input type="number" min="0" class="form-control" placeholder="0" id="precio" name="precio">
+                                                    <input type="number" min="0" class="form-control" placeholder="0" value="0" id="precio" name="precio">
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-form-label" for="precioMayorista">Precio Mayorista</label>
-                                                    <input type="number" min="0" class="form-control" placeholder="0" id="precioMayorista" name="precioMayorista">
+                                                    <input type="number" min="0" class="form-control" placeholder="0" value="0" id="precioMayorista" name="precioMayorista">
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-form-label" for="precioKiosco">Precio Kiosco</label>
-                                                    <input type="number" min="0" class="form-control" placeholder="0" id="precioKiosco" name="precioKiosco">
+                                                    <input type="number" min="0" class="form-control" placeholder="0" value="0" id="precioKiosco" name="precioKiosco">
                                                 </div>
                                             </div>
                                             <div class="form-group d-flex justify-content-between"> 

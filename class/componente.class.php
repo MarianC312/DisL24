@@ -1,8 +1,16 @@
 <?php
     class Componente{
         public static function inicio(){ 
-            Sistema::alerta("Información importante", "Estimado cliente, el equipo de mantenimiento de EFECE tiene planificado un mantenimiento programado para el 11 de Octubre de 2021 a las 07:30hs. <br><br><b>El servicio puede no estar disponible por un plazo de 30 minutos.</b>");
+            //Sistema::alerta("Información importante", "Estimado cliente, el equipo de mantenimiento de EFECE tiene planificado un mantenimiento programado para el 11 de Octubre de 2021 a las 07:30hs. <br><br><b>El servicio puede no estar disponible por un plazo de 30 minutos.</b>");
             Session::iniciar();
+            /*
+            echo '<pre>';
+            print_r($_SESSION["lista"]["producto"]["noCodificado"]);
+            echo '</pre>';
+            echo '<pre>';
+            print_r($_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"]);
+            echo '</pre>';
+            */
             Alert::feature(1);
         }
 

@@ -10,7 +10,39 @@
         private static $key2 = "ry.E40c*&mEsKft3rECgu¡$"; 
         private static $prime = [2,3,5,7,11,13,17,19];
 
-        public static $version = "Beta-1.226.762b";
+        public static $version = "Beta-1.228.784a";
+
+        public static function productoData($idProducto, $tipo = "codificado"){
+            $response = [
+                "status" => false,
+                "mensajeUser" => "",
+                "mensajeAdmin" => "",
+                "dependencia" => "Sistema / productoData",
+                "data" => [
+                    "array" => [
+                        "data" => [],
+                        "stock" => []
+                    ]
+                ]
+            ];
+            if(isset($idProducto) && is_numeric($idProducto) && $idProducto > 0){
+                Session::iniciar();
+                if(array_key_exists($idProducto, $_SESSION["lista"]["producto"][$tipo])){
+                    $response["status"] = true;
+                    $idStock = Sistema::buscarProductoIdEnStock($_SESSION["lista"]["producto"][$tipo][$idProducto]["id"], (($tipo == "codificado") ? "producto" : "productoNC"));
+                    $response["data"]["array"]["data"] = $_SESSION["lista"]["producto"][$tipo][$idProducto];
+                    if($tipo == "noCodificado"){
+                        $response["data"]["array"]["data"]["codigoBarra"] = "PFC-".$_SESSION["usuario"]->getCompañia()."-".$response["data"]["array"]["data"]["codigoBarra"];
+                    }
+                    $response["data"]["array"]["stock"] = ((array_key_exists($idStock, $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"])) ? $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["sucursal"]["stock"][$idStock] : []);
+                }else{
+                    $response["mensajeUser"] = "No se encontró el producto buscado.";
+                }
+            }else{
+                $response["mensajeUser"] = "El identificador del producto tiene un valor incorrecto o nulo. Intente nuevamente.";
+            }
+            return $response;
+        }
 
         public static function mesaDeAyuda(){
             ?>

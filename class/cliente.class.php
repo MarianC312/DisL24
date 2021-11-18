@@ -517,6 +517,7 @@
         public static function registro($data){
             if(Sistema::usuarioLogueado()){
                 if(isset($data) && is_array($data) && count($data) > 0){
+                    Session::iniciar();
                     $clienteExiste = Cliente::corroboraExistencia(["documento" => $data["documento"], "filtroOpcion" => 2]);
                     if($clienteExiste){
                         $idCliente = Cliente::getId($data["documento"]);
@@ -532,7 +533,6 @@
                     }else{
                         $query = DataBase::insert("cliente", "nombre,documento,telefono,domicilio,email,sucursal,compañia", "'".$data["nombre"]."','".$data["documento"]."',".((isset($data["telefono"])) ? "'".$data["telefono"]."'" : "NULL").",".((isset($data["domicilio"])) ? "'".$data["domicilio"]."'" : "NULL").",".((isset($data["email"])) ? "'".$data["email"]."'" : "NULL").",'".$_SESSION["usuario"]->getSucursal()."','".$_SESSION["usuario"]->getCompañia()."'");
                         if($query){
-                            Session::iniciar();
                             $_SESSION["usuario"]->tareaEliminar('Registro de cliente ['.$data["documento"].']');
                             Sistema::debug("success", "cliente.class.php - registro - cliente registrado satisfactoriamente.");
                             $mensaje['tipo'] = 'success';
@@ -541,6 +541,16 @@
                                 <button type="button" onclick="gotoClienteLegajo('.DataBase::getLastId().')" class="btn btn-success">Ir a legajo</button> 
                                 <button type="button" onclick="clienteRegistroFormulario()" class="btn btn-outline-success">Registrar otro cliente</button> 
                             </div>';
+                            $_SESSION["lista"]["compañia"][$_SESSION["usuario"]->getCompañia()]["cliente"][DataBase::getLastId()] = [
+                                "id" => DataBase::getLastId(),
+                                "nombre" => $data["nombre"],
+                                "documento" => $data["documento"],
+                                "telefono" => ((isset($data["telefono"])) ? $data["telefono"] : ""),
+                                "domicilio" => ((isset($data["domicilio"])) ? $data["domicilio"] : ""),
+                                "email" => ((isset($data["email"])) ? $data["email"] : ""),
+                                "sucursal" => $_SESSION["usuario"]->getSucursal(),
+                                "compañia" => $_SESSION["usuario"]->getCompañia()
+                            ];
                             Alert::mensaje($mensaje);
                             return true;
                         }else{
